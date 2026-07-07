@@ -179,7 +179,7 @@ import Button from '@/components/common/button/Button';
 
 ### Path Alias
 
-> tsconfig에 아직 미설정 — 추가 예정. 설정 후 `@/*` → `apps/web/` 으로 사용.
+`@/*` → `apps/web/*` (예: `@/components/common/button`, `@/types/room`)
 
 ---
 
