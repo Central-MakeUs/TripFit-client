@@ -50,7 +50,7 @@
 - **프레임워크**: Next.js 16 (App Router)
 - **React**: 19.2.0
 - **스타일링**: Tailwind CSS v4
-- **공유 UI**: `@repo/ui`
+- **공유 UI**: 없음 — `components/common`에서 자체 관리 (RN 앱과 UI를 공유하지 않으므로 별도 workspace 패키지 불필요)
 - **아이콘**: SVG 직접 관리 (외부 아이콘 라이브러리 사용 안 함)
 
 ### apps/app (React Native)
@@ -60,7 +60,6 @@
 
 ### packages
 
-- **`@repo/ui`**: 공유 UI 컴포넌트 (button, card, code 등)
 - **`@repo/eslint-config`**: 공유 ESLint 설정
 - **`@repo/typescript-config`**: 공유 TypeScript 설정
 
@@ -80,9 +79,8 @@ TripFit-client/
 ├── apps/
 │   ├── app/              # React Native + Expo (WebView 래퍼)
 │   └── web/               # Next.js 16 (메인 서비스)
-├── docs/                  # Next.js 문서 앱 (Turborepo 기본 템플릿)
+├── docs/                  # 프로젝트 문서 모음 (마크다운, 별도 앱 아님)
 ├── packages/
-│   ├── ui/                # @repo/ui — 공유 UI 컴포넌트
 │   ├── eslint-config/     # @repo/eslint-config
 │   └── typescript-config/ # @repo/typescript-config
 ├── .prettierrc
@@ -181,7 +179,7 @@ import Button from '@/components/common/button/Button';
 
 ### Path Alias
 
-> tsconfig에 아직 미설정 — 추가 예정. 설정 후 `@/*` → `apps/web/` 으로 사용.
+`@/*` → `apps/web/*` (예: `@/components/common/button`, `@/types/room`)
 
 ---
 
@@ -340,7 +338,7 @@ export const usePostRoom = () => {
 ```tsx
 import { useState } from 'react';
 
-import { Button } from '@repo/ui/button';
+import Button from '@/components/common/button';
 import { RoomT } from '@/types/room';
 
 import { formatDate } from './utils';
@@ -408,18 +406,50 @@ main ← dev ← {type}/{issue-number}-{description}
 
 ### 기본 원칙
 
-1. **HTTP Status Code는 REST 의미대로 사용** (200, 201, 400, 401, 403, 404, 500)
-2. **성공/실패 Body 구조 통일**
-3. **`fetch`는 4xx/5xx에서 자동 throw 안 함** → 반드시 `response.ok` 확인
+1. **성공/실패는 HTTP Status Code로만 판단** — Body에 `status`/`success` 필드 없음 (헤더와 중복·모순 방지)
+2. **HTTP Status는 REST 의미대로 사용** (200, 201, 400, 401, 403, 404, 409, 500)
+3. **Body envelope**: `data` / `message` / `code` 조합
+4. **`fetch`는 4xx/5xx에서 자동 throw 안 함** → 반드시 `response.ok` 확인
 
 ### 응답 구조
 
+성공 — 단순 조회 (메시지 불필요 시 `data`만):
+
 ```json
 {
-  "status": 200,
-  "data": {},
-  "detail": "요청이 정상적으로 처리되었습니다.",
-  "code": "COMMON_SUCCESS"
+  "data": {
+    "tripId": 1,
+    "title": "제주 3박 4일"
+  }
+}
+```
+
+성공 — 생성/수정 등 사용자 피드백 필요 시:
+
+```json
+{
+  "code": "COMMON_SUCCESS",
+  "message": "조회가 완료되었습니다.",
+  "data": {}
+}
+```
+
+실패:
+
+```json
+{
+  "code": "TRIP_NOT_FOUND",
+  "message": "여행방을 찾을 수 없습니다."
+}
+```
+
+검증 오류 (400 + `INVALID_INPUT`일 때만 `errors` 포함):
+
+```json
+{
+  "code": "INVALID_INPUT",
+  "message": "입력값이 올바르지 않습니다.",
+  "errors": [{ "field": "title", "message": "제목은 필수입니다." }]
 }
 ```
 
@@ -440,21 +470,32 @@ export async function request(url: string, options?: RequestInit) {
     return body.data;
   }
 
-  throw new Error(body.detail || '요청 처리 중 오류가 발생했습니다.');
+  throw new Error(body.message || '요청 처리 중 오류가 발생했습니다.');
 }
 ```
 
 ### HTTP Status 사용 기준
 
-| 상황        | HTTP Status               |
-| ----------- | ------------------------- |
-| 조회 성공   | 200 OK                    |
-| 생성 성공   | 201 Created               |
-| 잘못된 요청 | 400 Bad Request           |
-| 인증 실패   | 401 Unauthorized          |
-| 권한 없음   | 403 Forbidden             |
-| 리소스 없음 | 404 Not Found             |
-| 서버 오류   | 500 Internal Server Error |
+| 상황                  | HTTP Status               | `code` 예시                                       |
+| --------------------- | ------------------------- | ------------------------------------------------- |
+| 조회 성공             | 200 OK                    | (생략 가능) 또는 `COMMON_SUCCESS`                 |
+| 생성 성공             | 201 Created               | `COMMON_SUCCESS`                                  |
+| 잘못된 요청/검증 실패 | 400 Bad Request           | `INVALID_INPUT`                                   |
+| 인증 실패             | 401 Unauthorized          | `UNAUTHORIZED`, `LOGIN_REQUIRED`, `TOKEN_EXPIRED` |
+| 권한 없음             | 403 Forbidden             | `FORBIDDEN`                                       |
+| 리소스 없음           | 404 Not Found             | `*_NOT_FOUND`                                     |
+| 충돌 (중복·상태 불가) | 409 Conflict              | `*_CONFLICT`                                      |
+| 서버 오류             | 500 Internal Server Error | `INTERNAL_ERROR`                                  |
+
+### `code` 네이밍
+
+- `SCREAMING_SNAKE_CASE`
+- 공통: `COMMON_SUCCESS`, `INVALID_INPUT`, `UNAUTHORIZED`, `FORBIDDEN`, `INTERNAL_ERROR`
+- 도메인: `{리소스}_{상황}` — 예: `TRIP_NOT_FOUND`, `TRIP_ALREADY_CONFIRMED`
+
+### 목록·페이지네이션
+
+`[미정]` — offset vs cursor 확정 전까지 pagination 구현·가정 금지. 확정되면 `data.items` + `data.pageInfo` 형태로 반영.
 
 ---
 
@@ -468,7 +509,7 @@ export async function request(url: string, options?: RequestInit) {
 - 신규 훅: 화살표 함수 + camelCase 파일명
 - 신규 타입: `type` 키워드 + T suffix
 - API 함수: HTTP 메서드 prefix (`getRoom`, `postRoom` 등)
-- `@repo/ui`의 공유 컴포넌트가 있는지 먼저 확인 후 사용
+- `components/common`에 재사용 가능한 컴포넌트가 있는지 먼저 확인 후 사용
 - 경로는 `@/*` 절대경로 우선, 같은 디렉토리는 상대경로 (path alias 설정 후 적용)
 
 ### 도메인 용어 일관성
@@ -489,7 +530,7 @@ export async function request(url: string, options?: RequestInit) {
 ### API 관련 코드 생성 시
 
 - HTTP status 기반 분기 (`response.ok`)
-- body 구조: `{ status, data, detail, code }` 가정
+- body 구조: `{ data, message, code }` 가정 (`status` 필드 없음)
 
 ### 의심스러울 때
 
