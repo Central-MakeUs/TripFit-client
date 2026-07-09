@@ -50,6 +50,7 @@
 - **프레임워크**: Next.js 16 (App Router)
 - **React**: 19.2.0
 - **스타일링**: Tailwind CSS v4
+- **상태관리**: Zustand (클라이언트 전역 상태)
 - **공유 UI**: 없음 — `components/`에서 자체 관리 (RN 앱과 UI를 공유하지 않으므로 별도 workspace 패키지 불필요)
 - **아이콘**: SVG 직접 관리, `@svgr/webpack`으로 React 컴포넌트처럼 import (외부 아이콘 라이브러리 사용 안 함)
 
