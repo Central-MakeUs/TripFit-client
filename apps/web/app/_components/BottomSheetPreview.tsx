@@ -17,7 +17,16 @@ function BottomSheetPreview() {
       >
         바텀시트 열기
       </button>
-      <BottomSheet open={open} onOpenChange={setOpen} title="여행방 관리">
+      <BottomSheet
+        open={open}
+        onOpenChange={setOpen}
+        title="여행방 관리"
+        description={
+          <p className="text-caption-02 text-grey-500">
+            원하는 메뉴를 선택해주세요.
+          </p>
+        }
+      >
         <div className="grid grid-cols-2 gap-2">
           <BottomSheetListItem selected={false}>
             default (미선택)
