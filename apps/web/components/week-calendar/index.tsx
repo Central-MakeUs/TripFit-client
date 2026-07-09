@@ -29,6 +29,7 @@ function WeekCalendar({
   const days = Array.from({ length: SIDE_RANGE_IN_DAYS * 2 + 1 }, (_, index) =>
     addDays(subDays(selectedDate, SIDE_RANGE_IN_DAYS), index),
   );
+  const selectedDateKey = selectedDate.toDateString();
 
   useEffect(() => {
     selectedItemRef.current?.scrollIntoView({
@@ -36,7 +37,7 @@ function WeekCalendar({
       inline: 'center',
       block: 'nearest',
     });
-  }, []);
+  }, [selectedDateKey]);
 
   return (
     <div className="scrollbar-none flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth py-2">
