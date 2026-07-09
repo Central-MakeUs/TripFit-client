@@ -100,7 +100,7 @@ function ScheduleEditor({
   };
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex w-full flex-col gap-10">
       <ScheduleStatusSelector value={selectedTool} onChange={setSelectedTool} />
       <Calendar
         year={year}
