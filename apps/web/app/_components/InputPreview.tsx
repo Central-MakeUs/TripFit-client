@@ -61,12 +61,14 @@ function InputPreview() {
       <Input
         label="이메일"
         value="abc@mail.com"
+        readOnly
         placeholder="이메일을 입력해주세요"
         message="이메일 형식이 맞습니다."
       />
       <Input
         label="이메일"
         value="abc#mail.com"
+        readOnly
         placeholder="이메일을 입력해주세요"
         message="올바른 이메일 형식이 아니에요."
         error
