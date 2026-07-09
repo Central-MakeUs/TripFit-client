@@ -29,7 +29,15 @@ function BottomSheet({
           <div className="mx-auto mt-3 h-1 w-14 shrink-0 cursor-grab rounded-[99px] bg-grey-100 active:cursor-grabbing" />
           <div className="flex flex-col gap-1.5 border-b border-grey-50 p-4">
             <Drawer.Title className="text-body-01">{title}</Drawer.Title>
-            {description}
+            {description && (
+              <Drawer.Description asChild>
+                {typeof description === 'string' ? (
+                  <span>{description}</span>
+                ) : (
+                  description
+                )}
+              </Drawer.Description>
+            )}
           </div>
           <div className="overflow-y-auto">{children}</div>
         </Drawer.Content>
