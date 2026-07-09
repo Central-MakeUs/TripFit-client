@@ -36,7 +36,7 @@ function Input({
         <input
           ref={ref}
           id={inputId}
-          className={`text-body-06 flex-1 outline-none placeholder:text-grey-300 ${className ?? ''}`}
+          className={`text-body-04 text-grey-800 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
           {...rest}
         />
         {suffixSlot && <span className="flex items-center">{suffixSlot}</span>}
