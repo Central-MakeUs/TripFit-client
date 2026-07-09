@@ -1,3 +1,4 @@
+import SettingsIcon from '@/assets/icons/settings.svg';
 import Header from '@/components/header';
 
 function HeaderPreview() {
@@ -10,8 +11,8 @@ function HeaderPreview() {
         variant="page"
         title="여행방 상세"
         rightSlot={
-          <button type="button" aria-label="메뉴" className="cursor-pointer">
-            ☰
+          <button type="button" aria-label="설정" className="cursor-pointer">
+            <SettingsIcon className="h-6 w-6 text-grey-500" />
           </button>
         }
       />
@@ -20,8 +21,8 @@ function HeaderPreview() {
         title="여행방 상세"
         titleAlign="left"
         rightSlot={
-          <button type="button" aria-label="메뉴" className="cursor-pointer">
-            ☰
+          <button type="button" aria-label="설정" className="cursor-pointer">
+            <SettingsIcon className="h-6 w-6 text-grey-500" />
           </button>
         }
       />
