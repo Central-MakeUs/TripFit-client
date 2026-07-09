@@ -1,12 +1,15 @@
 import { InputHTMLAttributes, ReactNode, Ref, useId } from 'react';
 
+import ErrorIcon from '@/assets/icons/error.svg';
+
 import { inputContainerStyle } from './input.style';
 
 type InputProps = {
   label?: string;
   prefixSlot?: ReactNode;
   suffixSlot?: ReactNode;
-  errorMessage?: string;
+  message?: ReactNode;
+  error?: boolean;
   ref?: Ref<HTMLInputElement>;
 } & InputHTMLAttributes<HTMLInputElement>;
 
@@ -14,7 +17,8 @@ function Input({
   label,
   prefixSlot,
   suffixSlot,
-  errorMessage,
+  message,
+  error = false,
   id,
   className,
   ref,
@@ -22,7 +26,6 @@ function Input({
 }: InputProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
-  const hasError = Boolean(errorMessage);
 
   return (
     <div className="flex w-full flex-col">
@@ -31,7 +34,7 @@ function Input({
           {label}
         </label>
       )}
-      <div className={inputContainerStyle({ error: hasError })}>
+      <div className={inputContainerStyle({ error })}>
         {prefixSlot && <span className="flex items-center">{prefixSlot}</span>}
         <input
           ref={ref}
@@ -41,9 +44,12 @@ function Input({
         />
         {suffixSlot && <span className="flex items-center">{suffixSlot}</span>}
       </div>
-      {errorMessage && (
-        <span className="text-caption-02 text-red-500 mt-[5.5px] flex items-center gap-[3.13px]">
-          {errorMessage}
+      {message && (
+        <span
+          className={`text-caption-02 mt-1 flex items-center gap-1 ${error ? 'text-red-300' : 'text-grey-500'}`}
+        >
+          {error && <ErrorIcon className="h-4 w-4" />}
+          {message}
         </span>
       )}
     </div>

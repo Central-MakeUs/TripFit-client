@@ -9,6 +9,7 @@ import Input from '@/components/input';
 function InputPreview() {
   const [value, setValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
+  const [numValue, setNumValue] = useState('');
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -48,14 +49,27 @@ function InputPreview() {
         }
       />
       <Input
+        value={numValue}
+        onChange={(event) => setNumValue(event.target.value)}
+        suffixSlot={<span>박</span>}
+      />
+      <Input
         label="여행 기간"
         placeholder="기간을 선택해주세요"
         prefixSlot={<CalendarMonthIcon className="h-4 w-4 text-grey-200" />}
       />
       <Input
         label="이메일"
+        value="abc@mail.com"
         placeholder="이메일을 입력해주세요"
-        errorMessage="올바른 이메일 형식이 아니에요"
+        message="이메일 형식이 맞습니다."
+      />
+      <Input
+        label="이메일"
+        value="abc#mail.com"
+        placeholder="이메일을 입력해주세요"
+        message="올바른 이메일 형식이 아니에요."
+        error
       />
       <Input label="비활성 필드" placeholder="입력할 수 없어요" disabled />
     </div>
