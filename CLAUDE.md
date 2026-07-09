@@ -50,8 +50,15 @@
 - **프레임워크**: Next.js 16 (App Router)
 - **React**: 19.2.0
 - **스타일링**: Tailwind CSS v4
-- **공유 UI**: 없음 — `components/common`에서 자체 관리 (RN 앱과 UI를 공유하지 않으므로 별도 workspace 패키지 불필요)
-- **아이콘**: SVG 직접 관리 (외부 아이콘 라이브러리 사용 안 함)
+- **상태관리**: Zustand (클라이언트 전역 상태)
+- **공유 UI**: 없음 — `components/`에서 자체 관리 (RN 앱과 UI를 공유하지 않으므로 별도 workspace 패키지 불필요)
+- **아이콘**: SVG 직접 관리, `@svgr/webpack`으로 React 컴포넌트처럼 import (외부 아이콘 라이브러리 사용 안 함)
+
+```tsx
+import PlusIcon from '@/assets/icons/plus.svg';
+
+<PlusIcon width={20} height={20} />;
+```
 
 ### apps/app (React Native)
 
@@ -120,43 +127,42 @@ apps/web/
 │       │   └── page.tsx
 │       └── account/                  # 소셜 계정 연동
 │           └── page.tsx
-├── components/
-│   └── common/   # app/ 밖 — top-level 라우트 간 공유 + 범용 UI
-│       └── {component-name}/
-│           ├── index.tsx
-│           ├── {componentName}.style.ts
-│           └── {componentName}.const.ts
+├── components/   # app/ 밖 — top-level 라우트 간 공유 + 범용 UI
+│   └── {component-name}/
+│       ├── index.tsx
+│       ├── {componentName}.style.ts
+│       └── {componentName}.const.ts
 ├── apis/         # API 호출 함수
 ├── hooks/        # 커스텀 훅
 ├── utils/        # 공통 유틸리티 함수
 ├── types/        # 공통 타입 정의 (T suffix)
-├── assets/       # 정적 리소스 (SVG 등)
+├── assets/       # 정적 리소스 (SVG 등, @svgr/webpack으로 컴포넌트 import)
 └── consts/       # 상수 (API endpoint 등)
 ```
 
 **Colocation 배치 (한 단계씩 레벨업):**
 
-코드는 **가장 가까운 사용처**에 둔다. 재사용 범위가 넓어질 때만 **부모 라우트로 한 단계** 끌어올린다. 처음부터 `components/common/`에 두지 않는다.
+코드는 **가장 가까운 사용처**에 둔다. 재사용 범위가 넓어질 때만 **부모 라우트로 한 단계** 끌어올린다. 처음부터 `components/`에 두지 않는다.
 
 | 재사용 범위                                                     | 배치 위치                                                                           |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | 단일 `page.tsx` 전용                                            | 해당 라우트 폴더의 `_components/` (또는 `_hooks/`, `_apis/`, `_consts/`, `_types/`) |
 | **같은 부모 아래 2개 이상** 하위 라우트에서 공유                | **부모 라우트**의 `_common/_components/` 등으로 끌어올림                            |
-| **`app/` top-level 라우트 간** 공유 (room ↔ my-schedule 등)     | `components/common/{component-name}/` — **App Router 밖**으로 이동                  |
+| **`app/` top-level 라우트 간** 공유 (room ↔ my-schedule 등)     | `components/{component-name}/` — **App Router 밖**으로 이동                         |
 | **2개 이상 top-level 라우트 또는 앱 전역**에서 쓰는 API/훅/유틸 | `apis/`, `hooks/`, `utils/`, `consts/`, `types/`                                    |
 
 ```
 예) [roomId]/page 전용                          → app/room/[roomId]/_components/
     schedule + 여행방 상세(그룹달력/추천) 에서 공유 → app/room/[roomId]/_common/_components/
     room/* 전체에서 공유                           → app/room/_common/_components/
-    room + my-schedule 등 top-level 공유         → components/common/{name}/
-    Button, Calendar 등 범용 UI                  → components/common/button/
+    room + my-schedule 등 top-level 공유         → components/{name}/
+    Button, Calendar 등 범용 UI                  → components/button/
 ```
 
-**`components/common` (App Router 밖):**
+**`components/` (App Router 밖):**
 
 - `{component-name}/` **kebab-case 폴더** 안에 둔다 — 바로 아래 `.tsx` 금지
-- import는 폴더까지만 — `@/components/common/{component-name}`
+- import는 폴더까지만 — `@/components/{component-name}`
 
 **컴포넌트 폴더 내부 파일명:**
 
@@ -169,17 +175,17 @@ apps/web/
 
 ```tsx
 // ✅ Good
-import Button from '@/components/common/button';
-import ScheduleChip from '@/components/common/schedule-chip';
+import Button from '@/components/button';
+import ScheduleChip from '@/components/schedule-chip';
 
 // ❌ Bad
-import Button from '@/components/common/Button';
-import Button from '@/components/common/button/Button';
+import Button from '@/components/Button';
+import Button from '@/components/button/Button';
 ```
 
 ### Path Alias
 
-`@/*` → `apps/web/*` (예: `@/components/common/button`, `@/types/room`)
+`@/*` → `apps/web/*` (예: `@/components/button`, `@/types/room`)
 
 ---
 
@@ -188,7 +194,7 @@ import Button from '@/components/common/button/Button';
 | 대상                     | 규칙                            | 예시                                                 |
 | ------------------------ | ------------------------------- | ---------------------------------------------------- |
 | **폴더**                 | kebab-case                      | `room-card/`, `schedule-chip/`                       |
-| **공통 컴포넌트 본체**   | `index.tsx`                     | `components/common/button/index.tsx`                 |
+| **공통 컴포넌트 본체**   | `index.tsx`                     | `components/button/index.tsx`                        |
 | **보조 컴포넌트 파일**   | PascalCase                      | `RoomCard.tsx`, `ParticipantAvatar.tsx`              |
 | **스타일/상수 파일**     | camelCase                       | `button.style.ts`, `roomCard.const.ts`               |
 | **일반 파일** (훅, 유틸) | camelCase                       | `useRoom.ts`, `formatDate.ts`                        |
@@ -338,7 +344,7 @@ export const usePostRoom = () => {
 ```tsx
 import { useState } from 'react';
 
-import Button from '@/components/common/button';
+import Button from '@/components/button';
 import { RoomT } from '@/types/room';
 
 import { formatDate } from './utils';
@@ -509,7 +515,7 @@ export async function request(url: string, options?: RequestInit) {
 - 신규 훅: 화살표 함수 + camelCase 파일명
 - 신규 타입: `type` 키워드 + T suffix
 - API 함수: HTTP 메서드 prefix (`getRoom`, `postRoom` 등)
-- `components/common`에 재사용 가능한 컴포넌트가 있는지 먼저 확인 후 사용
+- `components/`에 재사용 가능한 컴포넌트가 있는지 먼저 확인 후 사용
 - 경로는 `@/*` 절대경로 우선, 같은 디렉토리는 상대경로 (path alias 설정 후 적용)
 
 ### 도메인 용어 일관성
