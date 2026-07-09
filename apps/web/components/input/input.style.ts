@@ -7,7 +7,7 @@ export const inputContainerStyle = cva(
       error: {
         true: 'border-red-200 bg-red-20',
         false:
-          'border-grey-100 bg-white hover:border-grey-400 focus:border-grey-400 has-[:disabled]:border-grey-100 has-[:disabled]:bg-grey-20',
+          'border-grey-100 bg-white hover:border-grey-400 focus-within:border-grey-400 has-[:disabled]:border-grey-100 has-[:disabled]:bg-grey-20',
       },
     },
     defaultVariants: {
