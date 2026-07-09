@@ -1,8 +1,13 @@
 import { VariantProps } from 'class-variance-authority';
 
-import { daySolidIndicatorStyle } from './dayIndicator.style';
+import UncertainIcon from '@/assets/icons/schedule-status-uncertain.svg';
 
-type DaySegmentStatus = 'available' | 'unavailable';
+import {
+  DaySegmentStatus,
+  getSegmentKey,
+  SEGMENT_ICON_MAP,
+} from './dayIndicator.const';
+import { daySolidIndicatorStyle } from './dayIndicator.style';
 
 export type DayIndicatorProps =
   | ({ variant: 'solid' } & VariantProps<typeof daySolidIndicatorStyle>)
@@ -15,28 +20,24 @@ export type DayIndicatorProps =
       evening: DaySegmentStatus;
     };
 
-const segmentColor = (status: DaySegmentStatus) =>
-  status === 'unavailable' ? 'var(--color-red-300)' : 'var(--color-red-50)';
-
 function DayIndicator(props: DayIndicatorProps) {
   if (props.variant === 'solid') {
     return <div className={daySolidIndicatorStyle({ status: props.status })} />;
   }
 
   if (props.status === 'uncertain') {
-    return <div className={`h-8 w-8 rounded-full bg-grey-50`} />;
+    return <UncertainIcon className="h-8 w-8" />;
   }
 
   const { morning, afternoon, evening } = props;
+  const segmentKey = getSegmentKey(morning, afternoon, evening);
+  const Icon = SEGMENT_ICON_MAP[segmentKey];
 
-  return (
-    <div
-      className="h-8 w-8 rounded-full"
-      style={{
-        background: `conic-gradient(${segmentColor(morning)} 0deg 120deg, ${segmentColor(afternoon)} 120deg 240deg, ${segmentColor(evening)} 240deg 360deg)`,
-      }}
-    />
-  );
+  if (!Icon) {
+    return <div className="h-8 w-8 rounded-[99px] bg-grey-50" />;
+  }
+
+  return <Icon className="h-8 w-8" />;
 }
 
 export default DayIndicator;
