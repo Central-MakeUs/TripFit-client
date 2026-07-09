@@ -108,6 +108,7 @@ function ScheduleEditor({
         onChangeMonth={onChangeMonth}
         onClickDay={handleClickDay}
         getIndicatorProps={getIndicatorProps}
+        showYear
       />
     </div>
   );

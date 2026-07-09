@@ -26,6 +26,7 @@ type CalendarProps = {
   getIndicatorProps: (date: Date) => DayIndicatorProps;
   onClickDay?: (date: Date) => void;
   renderHeader?: (params: CalendarHeaderRenderParams) => ReactNode;
+  showYear?: boolean;
 };
 
 function Calendar({
@@ -35,8 +36,10 @@ function Calendar({
   getIndicatorProps,
   onClickDay,
   renderHeader,
+  showYear = false,
 }: CalendarProps) {
   const currentMonth = new Date(year, month - 1, 1);
+  const titleFormat = showYear ? 'yyyy년 M월' : 'M월';
   const monthStart = startOfMonth(currentMonth);
 
   const days = eachDayOfInterval({
@@ -76,7 +79,7 @@ function Calendar({
             ‹
           </button>
           <span className="text-body-05 justify-self-center">
-            {format(currentMonth, 'M월')}
+            {format(currentMonth, titleFormat)}
           </span>
           <button
             type="button"
@@ -89,7 +92,9 @@ function Calendar({
         </div>
       ) : (
         <div className="flex items-center justify-start px-1 py-3">
-          <span className="text-body-05">{format(currentMonth, 'M월')}</span>
+          <span className="text-body-05">
+            {format(currentMonth, titleFormat)}
+          </span>
         </div>
       )}
 
