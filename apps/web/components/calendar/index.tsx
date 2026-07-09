@@ -10,6 +10,9 @@ import {
   subMonths,
 } from 'date-fns';
 
+import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
+import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+
 import { WEEKDAY_LABELS } from './calendar.const';
 import DayIndicator, { DayIndicatorProps } from './DayIndicator';
 
@@ -74,25 +77,25 @@ function Calendar({
             type="button"
             onClick={handlePrevMonth}
             aria-label="이전 달"
-            className="cursor-pointer justify-self-start"
+            className="cursor-pointer justify-self-start p-2.5"
           >
-            ‹
+            <ArrowLeftIcon className="h-3 w-3 text-grey-500" />
           </button>
-          <span className="text-body-05 justify-self-center">
+          <span className="text-body-05 justify-self-center text-grey-700">
             {format(currentMonth, titleFormat)}
           </span>
           <button
             type="button"
             onClick={handleNextMonth}
             aria-label="다음 달"
-            className="cursor-pointer justify-self-end"
+            className="cursor-pointer justify-self-end p-2.5"
           >
-            ›
+            <ArrowRightIcon className="h-3 w-3 text-grey-500" />
           </button>
         </div>
       ) : (
         <div className="flex items-center justify-start px-1 py-3">
-          <span className="text-body-05">
+          <span className="text-body-05 text-grey-700">
             {format(currentMonth, titleFormat)}
           </span>
         </div>
