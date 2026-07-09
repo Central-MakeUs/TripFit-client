@@ -9,6 +9,7 @@ import {
   startOfMonth,
   subMonths,
 } from 'date-fns';
+import Link from 'next/link';
 
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
@@ -28,6 +29,7 @@ type CalendarProps = {
   onChangeMonth?: (year: number, month: number) => void;
   getIndicatorProps: (date: Date) => DayIndicatorProps;
   onClickDay?: (date: Date) => void;
+  getHref?: (date: Date) => string;
   renderHeader?: (params: CalendarHeaderRenderParams) => ReactNode;
   showYear?: boolean;
 };
@@ -38,6 +40,7 @@ function Calendar({
   onChangeMonth,
   getIndicatorProps,
   onClickDay,
+  getHref,
   renderHeader,
   showYear = false,
 }: CalendarProps) {
@@ -50,8 +53,8 @@ function Calendar({
     end: endOfMonth(currentMonth),
   });
   const leadingEmptyCount = monthStart.getDay();
-  const CellElement = onClickDay ? 'button' : 'div';
-  const cellClassName = `flex flex-col items-center justify-center gap-0.5 ${onClickDay ? 'cursor-pointer' : ''}`;
+  const isInteractive = Boolean(onClickDay || getHref);
+  const cellClassName = `flex flex-col items-center justify-center gap-0.5 ${isInteractive ? 'cursor-pointer' : ''}`;
 
   const handlePrevMonth = () => {
     const prevMonth = subMonths(currentMonth, 1);
@@ -118,21 +121,46 @@ function Calendar({
         ))}
         {days.map((date) => {
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-          return (
-            <CellElement
-              key={date.toISOString()}
-              type={onClickDay ? 'button' : undefined}
-              onClick={onClickDay ? () => onClickDay(date) : undefined}
-              className={cellClassName}
-            >
+          const cellContent = (
+            <>
               <span
                 className={`text-caption-05 ${isWeekend ? 'text-red-300' : 'text-grey-400'}`}
               >
                 {date.getDate()}
               </span>
               <DayIndicator {...getIndicatorProps(date)} />
-            </CellElement>
+            </>
+          );
+
+          if (getHref) {
+            return (
+              <Link
+                key={date.toISOString()}
+                href={getHref(date)}
+                className={cellClassName}
+              >
+                {cellContent}
+              </Link>
+            );
+          }
+
+          if (onClickDay) {
+            return (
+              <button
+                key={date.toISOString()}
+                type="button"
+                onClick={() => onClickDay(date)}
+                className={cellClassName}
+              >
+                {cellContent}
+              </button>
+            );
+          }
+
+          return (
+            <div key={date.toISOString()} className={cellClassName}>
+              {cellContent}
+            </div>
           );
         })}
       </div>
