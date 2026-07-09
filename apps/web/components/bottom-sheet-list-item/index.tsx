@@ -1,10 +1,10 @@
-import { ButtonHTMLAttributes } from 'react';
+import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { VariantProps } from 'class-variance-authority';
 
 import { bottomSheetListItemStyle } from './bottomSheetListItem.style';
 
 type BottomSheetListItemProps = {
-  children: string;
+  children: ReactNode;
 } & VariantProps<typeof bottomSheetListItemStyle> &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
