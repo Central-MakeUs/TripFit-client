@@ -1,12 +1,5 @@
 import type { Metadata } from 'next';
-import { Google_Sans_Flex } from 'next/font/google';
 import './globals.css';
-
-const googleSansFlex = Google_Sans_Flex({
-  subsets: ['latin'],
-  weight: 'variable',
-  variable: '--font-num',
-});
 
 export const metadata: Metadata = {
   title: 'TripFit',
@@ -21,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={googleSansFlex.variable}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
