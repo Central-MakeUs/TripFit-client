@@ -1,5 +1,6 @@
-import Image from 'next/image';
-
+import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import CheckCircleIcon from '@/assets/icons/check-circle.svg';
+import RankBadgeIcon from '@/assets/icons/rank-badge.svg';
 import { cn } from '@/utils/cn';
 
 type RankIconProps = {
@@ -7,18 +8,30 @@ type RankIconProps = {
 };
 
 function RankIcon({ rank }: RankIconProps) {
-  return (
-    <div className="flex size-6 shrink-0 flex-col items-center justify-end">
-      <Image
-        src="/icons/rank-crown.svg"
-        alt=""
-        width={20}
-        height={20}
-        className="-mb-2"
-      />
-      <div className="flex size-6 items-center justify-center rounded-[10px] border-[1.5px] border-grey-50 bg-blue-500">
-        <span className="text-caption-01 text-white">{rank}</span>
+  if (rank === 1) {
+    return (
+      <div className="relative flex h-[33px] w-6 shrink-0 items-end justify-center">
+        <RankBadgeIcon className="absolute inset-0 size-full text-blue-500" />
+        <span className="relative text-caption-01 text-white">{rank}</span>
       </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex size-6 shrink-0 items-center justify-center rounded-[10px]',
+        rank === 2 ? 'bg-blue-200' : 'bg-blue-100',
+      )}
+    >
+      <span
+        className={cn(
+          'text-caption-01',
+          rank === 2 ? 'text-blue-500' : 'text-blue-400',
+        )}
+      >
+        {rank}
+      </span>
     </div>
   );
 }
@@ -68,12 +81,7 @@ function RecommendationListItem({
             </div>
           </div>
           <div className="flex size-8 shrink-0 items-center justify-center">
-            <Image
-              src="/icons/chevron-right.svg"
-              alt=""
-              width={16}
-              height={16}
-            />
+            <ArrowRightIcon className="size-4 text-grey-500" />
           </div>
         </>
       ) : (
@@ -84,11 +92,7 @@ function RecommendationListItem({
               {description}
             </p>
           </div>
-          {active && (
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-500">
-              <Image src="/icons/check.svg" alt="" width={24} height={24} />
-            </div>
-          )}
+          {active && <CheckCircleIcon className="size-6 shrink-0" />}
         </>
       )}
     </div>

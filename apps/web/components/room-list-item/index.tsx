@@ -1,5 +1,4 @@
-import Image from 'next/image';
-
+import MoreVertIcon from '@/assets/icons/more-vert.svg';
 import Tag from '@/components/tag';
 import { cn } from '@/utils/cn';
 
@@ -47,9 +46,9 @@ function RoomListItem({
           event.stopPropagation();
           onMoreClick?.();
         }}
-        className="shrink-0"
+        className="shrink-0 cursor-pointer"
       >
-        <Image src="/icons/more-vert.svg" alt="더보기" width={24} height={24} />
+        <MoreVertIcon className="size-6 text-black" />
       </button>
     </div>
   );

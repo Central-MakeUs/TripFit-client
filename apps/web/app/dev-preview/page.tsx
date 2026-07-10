@@ -1,8 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
+import AddIcon from '@/assets/icons/add.svg';
+import RemoveIcon from '@/assets/icons/remove.svg';
 import Badge from '@/components/badge';
 import Button from '@/components/button';
 import Checkbox from '@/components/checkbox';
@@ -24,6 +25,7 @@ const colors = ['purple', 'pink', 'orange', 'yellow', 'green'] as const;
 
 function DevPreview() {
   const [checked, setChecked] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [radioChecked, setRadioChecked] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3]);
   const [count, setCount] = useState('4');
@@ -54,6 +56,11 @@ function DevPreview() {
       description: '참석률 75%, 부분 참여 2명, 불확실 일정 0명',
       rank: 2,
       title: '6.19(월) - 6.22(목)',
+    },
+    {
+      description: '참석률 70%, 부분 참여 2명, 불확실 일정 1명',
+      rank: 3,
+      title: '6.26(월) - 6.29(목)',
     },
   ];
 
@@ -116,6 +123,11 @@ function DevPreview() {
           <TextButton size="S" text="전체 보기" />
           <TextButton size="M" text="전체 보기" />
           <TextButton size="L" text="전체 보기" />
+          <TextButton
+            size="M"
+            text="추가하기"
+            icon={<AddIcon className="size-4" />}
+          />
         </div>
       </section>
 
@@ -159,6 +171,8 @@ function DevPreview() {
             days={3}
             dateRange="26.07.01 - 26.08.31"
             isHost
+            isPinned={pinned}
+            onPin={() => setPinned((prev) => !prev)}
             statusTag="응답 대기"
             participants={[
               { name: '민서', color: 'purple' },
@@ -169,7 +183,7 @@ function DevPreview() {
             ]}
             respondedCount={4}
             capacity={5}
-            progress={0.5}
+            progress={50}
           />
           <RoomCard type="empty" />
         </div>
@@ -195,7 +209,7 @@ function DevPreview() {
                 ],
                 respondedCount: 4,
                 capacity: 5,
-                progress: 0.5,
+                progress: 50,
               },
               {
                 type: 'fill',
@@ -210,7 +224,7 @@ function DevPreview() {
                 ],
                 respondedCount: 2,
                 capacity: 2,
-                progress: 1,
+                progress: 100,
               },
               { type: 'empty' },
             ]}
@@ -259,12 +273,7 @@ function DevPreview() {
             }}
             className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04),0px_0px_6px_0px_rgba(0,0,0,0.08)]"
           >
-            <Image
-              src="/icons/stepper-minus.svg"
-              alt=""
-              width={28}
-              height={28}
-            />
+            <RemoveIcon className="size-7 text-grey-500" />
           </button>
           <Roulette
             value={count}
@@ -282,12 +291,7 @@ function DevPreview() {
             }}
             className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04),0px_0px_6px_0px_rgba(0,0,0,0.08)]"
           >
-            <Image
-              src="/icons/stepper-plus.svg"
-              alt=""
-              width={28}
-              height={28}
-            />
+            <AddIcon className="size-7 text-grey-500" />
           </button>
         </div>
       </section>

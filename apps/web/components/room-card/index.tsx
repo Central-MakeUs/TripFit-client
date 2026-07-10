@@ -1,6 +1,10 @@
-import Image from 'next/image';
 import { memo } from 'react';
 
+import AddIcon from '@/assets/icons/add.svg';
+import KeepFillIcon from '@/assets/icons/keep-fill.svg';
+import KeepLineIcon from '@/assets/icons/keep-line.svg';
+import ShareIcon from '@/assets/icons/share.svg';
+import ProgressBar from '@/components/progress-bar';
 import Profile from '@/components/profile';
 import Tag from '@/components/tag';
 import { cn } from '@/utils/cn';
@@ -25,12 +29,13 @@ export type RoomCardProps =
       dateRange: string;
       days: number;
       isHost?: boolean;
+      isPinned?: boolean;
       nights: number;
       onClick?: () => void;
       onPin?: () => void;
       onShare?: () => void;
       participants: ParticipantT[];
-      progress: number;
+      progress: number; // 0 ~ 100
       respondedCount: number;
       statusTag?: string;
       title: string;
@@ -45,7 +50,7 @@ function RoomCard(props: RoomCardProps) {
         onClick={props.onClick}
         className={cn(roomCardStyle({ type: 'empty' }), props.className)}
       >
-        <Image src="/icons/plus.svg" alt="" width={28} height={28} />
+        <AddIcon className="size-7 text-grey-400" />
         <p className="text-body-04 text-grey-400">여행방 신규 생성하기</p>
       </button>
     );
@@ -57,6 +62,7 @@ function RoomCard(props: RoomCardProps) {
     dateRange,
     days,
     isHost = false,
+    isPinned = false,
     nights,
     onClick,
     onPin,
@@ -99,14 +105,18 @@ function RoomCard(props: RoomCardProps) {
             onClick={onPin}
             className="flex size-9 cursor-pointer items-center justify-center"
           >
-            <Image src="/icons/pin.svg" alt="고정" width={24} height={24} />
+            {isPinned ? (
+              <KeepFillIcon className="size-6 text-blue-700" />
+            ) : (
+              <KeepLineIcon className="size-6 text-blue-700" />
+            )}
           </button>
           <button
             type="button"
             onClick={onShare}
             className="flex size-9 cursor-pointer items-center justify-center"
           >
-            <Image src="/icons/share.svg" alt="공유" width={24} height={24} />
+            <ShareIcon className="size-6 text-blue-700" />
           </button>
         </div>
       </div>
@@ -135,12 +145,7 @@ function RoomCard(props: RoomCardProps) {
             {respondedCount}/{capacity}
           </p>
         </div>
-        <div className="h-2.5 w-full rounded-full bg-white">
-          <div
-            className="h-2.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-500"
-            style={{ width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }}
-          />
-        </div>
+        <ProgressBar value={progress} size="lg" trackColor="white" />
       </div>
     </div>
   );
