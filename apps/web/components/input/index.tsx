@@ -26,6 +26,7 @@ function Input({
   value,
   onChange,
   disabled,
+  readOnly,
   ...rest
 }: InputProps) {
   const generatedId = useId();
@@ -37,7 +38,7 @@ function Input({
 
   const resolvedSuffixSlot =
     suffixSlot ??
-    (value && !disabled ? (
+    (value && !disabled && !readOnly ? (
       <button
         type="button"
         aria-label="지우기"
@@ -63,6 +64,7 @@ function Input({
           value={value}
           onChange={onChange}
           disabled={disabled}
+          readOnly={readOnly}
           className={`text-body-04 text-grey-800 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
           {...rest}
         />
