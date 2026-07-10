@@ -1,18 +1,12 @@
 'use client';
 
 import { ReactNode } from 'react';
-import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  format,
-  startOfMonth,
-  subMonths,
-} from 'date-fns';
+import { format } from 'date-fns';
 import Link from 'next/link';
 
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import { useMonthGrid } from '@/hooks/useMonthGrid';
 
 import { WEEKDAY_LABELS } from './calendar.const';
 import DayIndicator, { DayIndicatorProps } from './DayIndicator';
@@ -44,27 +38,16 @@ function Calendar({
   renderHeader,
   showYear = false,
 }: CalendarProps) {
-  const currentMonth = new Date(year, month - 1, 1);
   const titleFormat = showYear ? 'yyyy년 M월' : 'M월';
-  const monthStart = startOfMonth(currentMonth);
-
-  const days = eachDayOfInterval({
-    start: monthStart,
-    end: endOfMonth(currentMonth),
-  });
-  const leadingEmptyCount = monthStart.getDay();
+  const {
+    currentMonth,
+    days,
+    leadingEmptyCount,
+    handlePrevMonth,
+    handleNextMonth,
+  } = useMonthGrid({ year, month, onChangeMonth });
   const isInteractive = Boolean(onClickDay || getHref);
   const cellClassName = `flex flex-col items-center justify-center gap-0.5 ${isInteractive ? 'cursor-pointer' : ''}`;
-
-  const handlePrevMonth = () => {
-    const prevMonth = subMonths(currentMonth, 1);
-    onChangeMonth?.(prevMonth.getFullYear(), prevMonth.getMonth() + 1);
-  };
-
-  const handleNextMonth = () => {
-    const nextMonth = addMonths(currentMonth, 1);
-    onChangeMonth?.(nextMonth.getFullYear(), nextMonth.getMonth() + 1);
-  };
 
   return (
     <div className="w-full">
