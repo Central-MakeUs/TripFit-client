@@ -1,4 +1,11 @@
-import { ChangeEvent, InputHTMLAttributes, ReactNode, Ref, useId } from 'react';
+import {
+  ChangeEvent,
+  InputHTMLAttributes,
+  MouseEventHandler,
+  ReactNode,
+  Ref,
+  useId,
+} from 'react';
 
 import CloseCircleIcon from '@/assets/icons/colse-circle.svg';
 import ErrorIcon from '@/assets/icons/error.svg';
@@ -12,7 +19,9 @@ type InputProps = {
   message?: ReactNode;
   error?: boolean;
   ref?: Ref<HTMLInputElement>;
-} & InputHTMLAttributes<HTMLInputElement>;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'onClick'> & {
+    onClick?: MouseEventHandler<HTMLDivElement>;
+  };
 
 function Input({
   label,
@@ -27,6 +36,7 @@ function Input({
   onChange,
   disabled,
   readOnly,
+  onClick,
   ...rest
 }: InputProps) {
   const generatedId = useId();
@@ -56,7 +66,7 @@ function Input({
           {label}
         </label>
       )}
-      <div className={inputContainerStyle({ error })}>
+      <div className={inputContainerStyle({ error })} onClick={onClick}>
         {prefixSlot && <span className="flex items-center">{prefixSlot}</span>}
         <input
           ref={ref}
@@ -65,7 +75,7 @@ function Input({
           onChange={onChange}
           disabled={disabled}
           readOnly={readOnly}
-          className={`text-body-04 text-grey-800 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
+          className={`text-body-04 text-grey-800 min-w-0 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
           {...rest}
         />
         {resolvedSuffixSlot && (
