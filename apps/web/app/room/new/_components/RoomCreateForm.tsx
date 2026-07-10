@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
+import ParticipantCountStep from './ParticipantCountStep';
 import RoomNameStep from './RoomNameStep';
 import TripDurationStep, { TripDurationValue } from './TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
@@ -24,6 +25,7 @@ function RoomCreateForm() {
     nights: '',
     days: '',
   });
+  const [participantCount, setParticipantCount] = useState(0);
 
   const handleBack = () => {
     if (step === 1) {
@@ -40,7 +42,9 @@ function RoomCreateForm() {
         ? !tripPeriod.startDate || !tripPeriod.endDate
         : step === 3
           ? !tripDuration.nights || !tripDuration.days
-          : false;
+          : step === 4
+            ? participantCount === 0
+            : false;
 
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
@@ -53,7 +57,7 @@ function RoomCreateForm() {
         <div className="py-1">
           <ProgressBar size="sm" value={(step / TOTAL_STEPS) * 100} />
         </div>
-        <form className="flex w-full flex-col">
+        <form className="flex w-full flex-1 flex-col">
           {step === 1 && (
             <RoomNameStep value={roomName} onChange={setRoomName} />
           )}
@@ -63,13 +67,18 @@ function RoomCreateForm() {
           {step === 3 && (
             <TripDurationStep value={tripDuration} onChange={setTripDuration} />
           )}
-          {/* 인원 */}
+          {step === 4 && (
+            <ParticipantCountStep
+              value={participantCount}
+              onChange={setParticipantCount}
+            />
+          )}
           {/* 여행지 */}
           {/* 선약 일정 선택 */}
           {/* 완료 */}
         </form>
         <div className="mt-auto w-full pt-2 pb-0.5">
-          {/* 임시 다음 버튼 */}
+          {/* TODO: 공통 버튼 컴포넌트로 교체 */}
           <button
             type="button"
             disabled={isNextDisabled}
