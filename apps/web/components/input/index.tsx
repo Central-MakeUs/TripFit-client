@@ -69,7 +69,13 @@ function Input({
           {label}
         </label>
       )}
-      <div className={inputContainerStyle({ error })} onClick={onClick}>
+      <div
+        className={inputContainerStyle({
+          error,
+          hasPrefix: Boolean(prefixSlot),
+        })}
+        onClick={onClick}
+      >
         {prefixSlot && <span className="flex items-center">{prefixSlot}</span>}
         <input
           ref={ref}
