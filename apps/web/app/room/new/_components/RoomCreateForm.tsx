@@ -8,6 +8,7 @@ import ProgressBar from '@/components/progress-bar';
 
 import DestinationStep from './DestinationStep';
 import ParticipantCountStep from './ParticipantCountStep';
+import PriorScheduleStep, { PriorScheduleValue } from './PriorScheduleStep';
 import RoomNameStep from './RoomNameStep';
 import TripDurationStep, { TripDurationValue } from './TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
@@ -28,6 +29,7 @@ function RoomCreateForm() {
   });
   const [participantCount, setParticipantCount] = useState(0);
   const [destination, setDestination] = useState('');
+  const [priorSchedule, setPriorSchedule] = useState<PriorScheduleValue>({});
 
   const handleBack = () => {
     if (step === 1) {
@@ -80,7 +82,12 @@ function RoomCreateForm() {
           {step === 5 && (
             <DestinationStep value={destination} onChange={setDestination} />
           )}
-          {/* 선약 일정 선택 */}
+          {step === 6 && (
+            <PriorScheduleStep
+              value={priorSchedule}
+              onChange={setPriorSchedule}
+            />
+          )}
           {/* 완료 */}
         </form>
         <div className="mt-auto w-full pt-2 pb-0.5">
