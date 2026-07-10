@@ -7,6 +7,7 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
 import RoomNameStep from './RoomNameStep';
+import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
 
 const TOTAL_STEPS = 7;
 
@@ -14,6 +15,10 @@ function RoomCreateForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [roomName, setRoomName] = useState('');
+  const [tripPeriod, setTripPeriod] = useState<TripPeriodValue>({
+    startDate: null,
+    endDate: null,
+  });
 
   const handleBack = () => {
     if (step === 1) {
@@ -23,7 +28,12 @@ function RoomCreateForm() {
     setStep((prev) => prev - 1);
   };
 
-  const isNextDisabled = step === 1 ? !roomName : false;
+  const isNextDisabled =
+    step === 1
+      ? !roomName
+      : step === 2
+        ? !tripPeriod.startDate || !tripPeriod.endDate
+        : false;
 
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
@@ -40,7 +50,9 @@ function RoomCreateForm() {
           {step === 1 && (
             <RoomNameStep value={roomName} onChange={setRoomName} />
           )}
-          {/* 여행 시기 */}
+          {step === 2 && (
+            <TripPeriodStep value={tripPeriod} onChange={setTripPeriod} />
+          )}
           {/* 여행 일수 */}
           {/* 인원 */}
           {/* 여행지 */}
