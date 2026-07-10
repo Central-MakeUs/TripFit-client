@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
+import DestinationStep from './DestinationStep';
 import ParticipantCountStep from './ParticipantCountStep';
 import RoomNameStep from './RoomNameStep';
 import TripDurationStep, { TripDurationValue } from './TripDurationStep';
@@ -26,6 +27,7 @@ function RoomCreateForm() {
     days: '',
   });
   const [participantCount, setParticipantCount] = useState(0);
+  const [destination, setDestination] = useState('');
 
   const handleBack = () => {
     if (step === 1) {
@@ -44,7 +46,9 @@ function RoomCreateForm() {
           ? !tripDuration.nights || !tripDuration.days
           : step === 4
             ? participantCount === 0
-            : false;
+            : step === 5
+              ? !destination
+              : false;
 
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
@@ -73,7 +77,9 @@ function RoomCreateForm() {
               onChange={setParticipantCount}
             />
           )}
-          {/* 여행지 */}
+          {step === 5 && (
+            <DestinationStep value={destination} onChange={setDestination} />
+          )}
           {/* 선약 일정 선택 */}
           {/* 완료 */}
         </form>
@@ -87,7 +93,7 @@ function RoomCreateForm() {
           >
             다음
           </button>
-          {step === 3 && (
+          {(step === 3 || step === 5) && (
             <button
               type="button"
               onClick={handleNext}
