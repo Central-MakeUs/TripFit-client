@@ -75,7 +75,7 @@ function Input({
           onChange={onChange}
           disabled={disabled}
           readOnly={readOnly}
-          className={`text-body-04 text-grey-800 min-w-0 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
+          className={`text-body-04 text-grey-800 min-w-0 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none ${className ?? ''}`}
           {...rest}
         />
         {resolvedSuffixSlot && (
