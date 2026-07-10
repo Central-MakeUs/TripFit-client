@@ -21,7 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={googleSansFlex.variable}>{children}</body>
+      <body className={`${googleSansFlex.variable}`}>
+        <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

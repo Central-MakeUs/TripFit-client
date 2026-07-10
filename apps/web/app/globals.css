@@ -131,7 +131,7 @@
 body {
   font-family: var(--font-kr);
   color: var(--color-black);
-  background: var(--color-white);
+  background: var(--color-grey-50);
 }
 
 /* Title */
