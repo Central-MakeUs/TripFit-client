@@ -1,5 +1,6 @@
-import { InputHTMLAttributes, ReactNode, Ref, useId } from 'react';
+import { ChangeEvent, InputHTMLAttributes, ReactNode, Ref, useId } from 'react';
 
+import CloseCircleIcon from '@/assets/icons/colse-circle.svg';
 import ErrorIcon from '@/assets/icons/error.svg';
 
 import { inputContainerStyle } from './input.style';
@@ -22,10 +23,30 @@ function Input({
   id,
   className,
   ref,
+  value,
+  onChange,
+  disabled,
   ...rest
 }: InputProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
+
+  const handleClear = () => {
+    onChange?.({ target: { value: '' } } as ChangeEvent<HTMLInputElement>);
+  };
+
+  const resolvedSuffixSlot =
+    suffixSlot ??
+    (value && !disabled ? (
+      <button
+        type="button"
+        aria-label="지우기"
+        className="cursor-pointer"
+        onClick={handleClear}
+      >
+        <CloseCircleIcon className="h-3 w-3" />
+      </button>
+    ) : null);
 
   return (
     <div className="flex w-full flex-col">
@@ -39,10 +60,15 @@ function Input({
         <input
           ref={ref}
           id={inputId}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
           className={`text-body-04 text-grey-800 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 ${className ?? ''}`}
           {...rest}
         />
-        {suffixSlot && <span className="flex items-center">{suffixSlot}</span>}
+        {resolvedSuffixSlot && (
+          <span className="flex items-center">{resolvedSuffixSlot}</span>
+        )}
       </div>
       {message && (
         <span

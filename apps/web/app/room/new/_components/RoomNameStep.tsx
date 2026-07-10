@@ -1,4 +1,3 @@
-import CloseCircleIcon from '@/assets/icons/colse-circle.svg';
 import Input from '@/components/input';
 
 type RoomNameStepProps = {
@@ -15,18 +14,6 @@ function RoomNameStep({ value, onChange }: RoomNameStepProps) {
         placeholder="00자 이하"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        suffixSlot={
-          value && (
-            <button
-              type="button"
-              aria-label="지우기"
-              className="cursor-pointer"
-              onClick={() => onChange('')}
-            >
-              <CloseCircleIcon className="h-4 w-4" />
-            </button>
-          )
-        }
       />
     </div>
   );
