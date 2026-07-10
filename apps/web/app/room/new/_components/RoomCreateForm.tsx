@@ -93,7 +93,7 @@ function RoomCreateForm() {
               onChange={setPriorSchedule}
             />
           )}
-          {step === 7 && <CompleteStep destination={destination} />}
+          {step === 7 && <CompleteStep roomName={roomName} />}
         </form>
         {step === 7 ? (
           <StepActions
