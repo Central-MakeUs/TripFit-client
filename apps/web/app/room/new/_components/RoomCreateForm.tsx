@@ -57,6 +57,7 @@ function RoomCreateForm() {
               : false;
 
   const handleNext = () => {
+    // TODO: 6 → 7 전환 시 여행방 생성 API 호출 예정 (응답/요청 스키마 확정 후 연결)
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
