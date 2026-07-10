@@ -7,7 +7,7 @@ import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
 import Input from '@/components/input';
 
-import RangeCalendar from './RangeCalendar';
+import RangeCalendar from '../RangeCalendar';
 
 export type TripPeriodValue = {
   startDate: Date | null;

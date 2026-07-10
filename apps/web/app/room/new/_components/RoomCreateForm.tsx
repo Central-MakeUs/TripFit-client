@@ -6,14 +6,16 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
-import CompleteStep from './CompleteStep';
-import DestinationStep from './DestinationStep';
-import ParticipantCountStep from './ParticipantCountStep';
-import PriorScheduleStep, { PriorScheduleValue } from './PriorScheduleStep';
-import RoomNameStep from './RoomNameStep';
 import StepActions from './StepActions';
-import TripDurationStep, { TripDurationValue } from './TripDurationStep';
-import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
+import CompleteStep from './steps/CompleteStep';
+import DestinationStep from './steps/DestinationStep';
+import ParticipantCountStep from './steps/ParticipantCountStep';
+import PriorScheduleStep, {
+  PriorScheduleValue,
+} from './steps/PriorScheduleStep';
+import RoomNameStep from './steps/RoomNameStep';
+import TripDurationStep, { TripDurationValue } from './steps/TripDurationStep';
+import TripPeriodStep, { TripPeriodValue } from './steps/TripPeriodStep';
 
 const TOTAL_STEPS = 7;
 
