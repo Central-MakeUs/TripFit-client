@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const buttonStyle = cva(
-  'inline-flex items-center justify-center rounded-xl font-semibold disabled:cursor-not-allowed',
+  'inline-flex cursor-pointer items-center justify-center rounded-xl font-semibold disabled:cursor-not-allowed',
   {
     variants: {
       style: {

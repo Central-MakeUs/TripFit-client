@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const dayItemStyle = cva(
-  'flex h-[47px] flex-1 items-center justify-center rounded-2xl p-2.5 text-body-06',
+  'flex h-[47px] flex-1 cursor-pointer items-center justify-center rounded-2xl p-2.5 text-body-06',
   {
     variants: {
       selected: {
