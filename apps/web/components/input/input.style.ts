@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const inputContainerStyle = cva(
-  'flex items-center gap-2 rounded-xl border px-4 py-3 transition-colors',
+  'flex items-center gap-2 rounded-xl border p-3 transition-colors',
   {
     variants: {
       error: {
