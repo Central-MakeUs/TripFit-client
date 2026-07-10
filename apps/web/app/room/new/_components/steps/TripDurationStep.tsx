@@ -10,6 +10,8 @@ type TripDurationStepProps = {
   onChange: (value: TripDurationValue) => void;
 };
 
+const toDigitsOnly = (value: string) => value.replace(/\D/g, '');
+
 function TripDurationStep({ value, onChange }: TripDurationStepProps) {
   return (
     <div className="flex flex-col">
@@ -23,10 +25,11 @@ function TripDurationStep({ value, onChange }: TripDurationStepProps) {
       <div className="flex items-center gap-1">
         <div className="min-w-0 flex-1">
           <Input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={value.nights}
             onChange={(event) =>
-              onChange({ ...value, nights: event.target.value })
+              onChange({ ...value, nights: toDigitsOnly(event.target.value) })
             }
             suffixSlot={<span className="text-body-03 text-grey-500">박</span>}
           />
@@ -34,10 +37,11 @@ function TripDurationStep({ value, onChange }: TripDurationStepProps) {
         <div className="h-[1.5px] w-1.5 shrink-0 bg-grey-200" />
         <div className="min-w-0 flex-1">
           <Input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={value.days}
             onChange={(event) =>
-              onChange({ ...value, days: event.target.value })
+              onChange({ ...value, days: toDigitsOnly(event.target.value) })
             }
             suffixSlot={<span className="text-body-03 text-grey-500">일</span>}
           />
