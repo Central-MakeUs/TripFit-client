@@ -24,6 +24,7 @@ type CalendarProps = {
   getIndicatorProps: (date: Date) => DayIndicatorProps;
   onClickDay?: (date: Date) => void;
   getHref?: (date: Date) => string;
+  isDateDisabled?: (date: Date) => boolean;
   renderHeader?: (params: CalendarHeaderRenderParams) => ReactNode;
   showYear?: boolean;
 };
@@ -35,6 +36,7 @@ function Calendar({
   getIndicatorProps,
   onClickDay,
   getHref,
+  isDateDisabled,
   renderHeader,
   showYear = false,
 }: CalendarProps) {
@@ -47,7 +49,8 @@ function Calendar({
     handleNextMonth,
   } = useMonthGrid({ year, month, onChangeMonth });
   const isInteractive = Boolean(onClickDay || getHref);
-  const cellClassName = `flex flex-col items-center justify-center gap-0.5 ${isInteractive ? 'cursor-pointer' : ''}`;
+  const baseCellClassName = 'flex flex-col items-center justify-center gap-0.5';
+  const cellClassName = `${baseCellClassName} ${isInteractive ? 'cursor-pointer' : ''}`;
 
   return (
     <div className="w-full">
@@ -104,16 +107,35 @@ function Calendar({
         ))}
         {days.map((date) => {
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isDisabled = isDateDisabled?.(date) ?? false;
+
+          const numberClassName = isDisabled
+            ? 'text-grey-300'
+            : isWeekend
+              ? 'text-red-300'
+              : 'text-grey-400';
+
           const cellContent = (
             <>
-              <span
-                className={`text-caption-05 ${isWeekend ? 'text-red-300' : 'text-grey-400'}`}
-              >
+              <span className={`text-caption-05 ${numberClassName}`}>
                 {date.getDate()}
               </span>
-              <DayIndicator {...getIndicatorProps(date)} />
+              <div className={isDisabled ? 'invisible' : ''}>
+                <DayIndicator {...getIndicatorProps(date)} />
+              </div>
             </>
           );
+
+          if (isDisabled) {
+            return (
+              <div
+                key={date.toISOString()}
+                className={`${baseCellClassName} cursor-not-allowed`}
+              >
+                {cellContent}
+              </div>
+            );
+          }
 
           if (getHref) {
             return (

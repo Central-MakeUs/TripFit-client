@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { isBefore, startOfToday } from 'date-fns';
 
 import Calendar from '@/components/calendar';
 import { DayIndicatorProps } from '@/components/calendar/DayIndicator';
@@ -128,6 +129,7 @@ function ScheduleEditor({
         onChangeMonth={onChangeMonth}
         onClickDay={handleClickDay}
         getIndicatorProps={getIndicatorProps}
+        isDateDisabled={(date) => isBefore(date, startOfToday())}
         showYear
       />
     </div>

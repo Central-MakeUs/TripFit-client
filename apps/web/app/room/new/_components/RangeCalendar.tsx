@@ -1,6 +1,12 @@
 'use client';
 
-import { format, isSameDay, isWithinInterval } from 'date-fns';
+import {
+  format,
+  isBefore,
+  isSameDay,
+  isWithinInterval,
+  startOfToday,
+} from 'date-fns';
 
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
@@ -78,6 +84,18 @@ function RangeCalendar({
             startDate &&
             endDate &&
             isWithinInterval(date, { start: startDate, end: endDate });
+          const isDisabled = isBefore(date, startOfToday());
+
+          if (isDisabled) {
+            return (
+              <div
+                key={date.toISOString()}
+                className="text-caption-05 flex h-9 cursor-not-allowed items-center justify-center text-grey-200"
+              >
+                {date.getDate()}
+              </div>
+            );
+          }
 
           return (
             <button
