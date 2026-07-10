@@ -7,6 +7,7 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
 import RoomNameStep from './RoomNameStep';
+import TripDurationStep, { TripDurationValue } from './TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
 
 const TOTAL_STEPS = 7;
@@ -18,6 +19,10 @@ function RoomCreateForm() {
   const [tripPeriod, setTripPeriod] = useState<TripPeriodValue>({
     startDate: null,
     endDate: null,
+  });
+  const [tripDuration, setTripDuration] = useState<TripDurationValue>({
+    nights: '',
+    days: '',
   });
 
   const handleBack = () => {
@@ -33,7 +38,9 @@ function RoomCreateForm() {
       ? !roomName
       : step === 2
         ? !tripPeriod.startDate || !tripPeriod.endDate
-        : false;
+        : step === 3
+          ? !tripDuration.nights || !tripDuration.days
+          : false;
 
   const handleNext = () => {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
@@ -53,7 +60,9 @@ function RoomCreateForm() {
           {step === 2 && (
             <TripPeriodStep value={tripPeriod} onChange={setTripPeriod} />
           )}
-          {/* 여행 일수 */}
+          {step === 3 && (
+            <TripDurationStep value={tripDuration} onChange={setTripDuration} />
+          )}
           {/* 인원 */}
           {/* 여행지 */}
           {/* 선약 일정 선택 */}
@@ -69,6 +78,15 @@ function RoomCreateForm() {
           >
             다음
           </button>
+          {step === 3 && (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="text-body-05 text-grey-500 mx-auto block w-fit cursor-pointer mt-2 p-2 text-center"
+            >
+              아직 못 정했어요
+            </button>
+          )}
         </div>
       </div>
     </div>
