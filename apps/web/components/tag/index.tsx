@@ -1,8 +1,7 @@
-import Image from 'next/image';
-
+import CrownIcon from '@/assets/icons/crown.svg';
 import { cn } from '@/utils/cn';
 
-import { tagIconSrc, tagStyle } from './tag.style';
+import { tagStyle } from './tag.style';
 
 type TagProps = {
   category?: 'icon' | 'icon-L' | 'text';
@@ -20,18 +19,11 @@ function Tag({
   type = 'primary',
 }: TagProps) {
   const hasIcon = category === 'icon' || category === 'icon-L';
-  const iconSize = category === 'icon' ? 12 : 16;
+  const iconSize = category === 'icon' ? 'size-3' : 'size-4';
 
   return (
     <div className={cn(tagStyle({ category, color, type }), className)}>
-      {hasIcon && (
-        <Image
-          src={tagIconSrc(color, type)}
-          alt=""
-          width={iconSize}
-          height={iconSize}
-        />
-      )}
+      {hasIcon && <CrownIcon className={iconSize} />}
       {category !== 'icon' && <span>{text}</span>}
     </div>
   );

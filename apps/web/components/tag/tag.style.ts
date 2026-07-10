@@ -29,15 +29,3 @@ export const tagStyle = cva('inline-flex items-center justify-center', {
     type: 'primary',
   },
 });
-
-export const tagIconSrc = (
-  color: 'blue' | 'red',
-  type: 'primary' | 'secondary' | 'tertiary',
-) => {
-  if (type === 'tertiary') return '/icons/crown-grey.svg';
-  if (color === 'red')
-    return type === 'primary'
-      ? '/icons/crown-red-300.svg'
-      : '/icons/crown-red-200.svg';
-  return '/icons/crown-blue.svg';
-};

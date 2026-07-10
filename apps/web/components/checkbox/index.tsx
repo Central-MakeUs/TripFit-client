@@ -1,5 +1,4 @@
-import Image from 'next/image';
-
+import CheckIcon from '@/assets/icons/check.svg';
 import { cn } from '@/utils/cn';
 
 import { checkboxStyle } from './checkbox.style';
@@ -34,9 +33,7 @@ function Checkbox({
       )}
     >
       <span className={checkboxStyle({ checked })}>
-        {checked && (
-          <Image src="/icons/check.svg" alt="" width={16} height={16} />
-        )}
+        {checked && <CheckIcon className="size-4 text-white" />}
       </span>
     </button>
   );
