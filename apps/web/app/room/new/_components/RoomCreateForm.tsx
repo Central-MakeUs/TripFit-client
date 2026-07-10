@@ -6,10 +6,12 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
+import CompleteStep from './CompleteStep';
 import DestinationStep from './DestinationStep';
 import ParticipantCountStep from './ParticipantCountStep';
 import PriorScheduleStep, { PriorScheduleValue } from './PriorScheduleStep';
 import RoomNameStep from './RoomNameStep';
+import StepActions from './StepActions';
 import TripDurationStep, { TripDurationValue } from './TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './TripPeriodStep';
 
@@ -88,28 +90,28 @@ function RoomCreateForm() {
               onChange={setPriorSchedule}
             />
           )}
-          {/* 완료 */}
+          {step === 7 && <CompleteStep destination={destination} />}
         </form>
-        <div className="mt-auto w-full pt-2 pb-0.5">
-          {/* TODO: 공통 버튼 컴포넌트로 교체 */}
-          <button
-            type="button"
-            disabled={isNextDisabled}
-            onClick={handleNext}
-            className="w-full cursor-pointer rounded-xl px-4 py-2.5 bg-grey-800 text-center text-white disabled:cursor-not-allowed disabled:bg-grey-100 disabled:text-white"
-          >
-            다음
-          </button>
-          {(step === 3 || step === 5) && (
-            <button
-              type="button"
-              onClick={handleNext}
-              className="text-body-05 text-grey-500 mx-auto block w-fit cursor-pointer mt-2 p-2 text-center"
-            >
-              아직 못 정했어요
-            </button>
-          )}
-        </div>
+        {step === 7 ? (
+          <StepActions
+            primaryLabel="참여자 초대하기"
+            onPrimaryClick={() => {
+              /* TODO: 참여자 초대하기 플로우 연결 */
+            }}
+            secondaryLabel="나중에 할게요"
+            onSecondaryClick={() => router.push('/')}
+          />
+        ) : (
+          <StepActions
+            primaryLabel="다음"
+            onPrimaryClick={handleNext}
+            primaryDisabled={isNextDisabled}
+            secondaryLabel={
+              step === 3 || step === 5 ? '아직 못 정했어요' : undefined
+            }
+            onSecondaryClick={handleNext}
+          />
+        )}
       </div>
     </div>
   );
