@@ -1,18 +1,13 @@
 'use client';
 
 import { ReactNode } from 'react';
-import {
-  addMonths,
-  eachDayOfInterval,
-  endOfMonth,
-  format,
-  startOfMonth,
-  subMonths,
-} from 'date-fns';
+import { format } from 'date-fns';
 import Link from 'next/link';
 
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import { useMonthGrid } from '@/hooks/useMonthGrid';
+import { cn } from '@/utils/cn';
 
 import { WEEKDAY_LABELS } from './calendar.const';
 import DayIndicator, { DayIndicatorProps } from './DayIndicator';
@@ -30,6 +25,7 @@ type CalendarProps = {
   getIndicatorProps: (date: Date) => DayIndicatorProps;
   onClickDay?: (date: Date) => void;
   getHref?: (date: Date) => string;
+  isDateDisabled?: (date: Date) => boolean;
   renderHeader?: (params: CalendarHeaderRenderParams) => ReactNode;
   showYear?: boolean;
 };
@@ -41,30 +37,23 @@ function Calendar({
   getIndicatorProps,
   onClickDay,
   getHref,
+  isDateDisabled,
   renderHeader,
   showYear = false,
 }: CalendarProps) {
-  const currentMonth = new Date(year, month - 1, 1);
   const titleFormat = showYear ? 'yyyy년 M월' : 'M월';
-  const monthStart = startOfMonth(currentMonth);
-
-  const days = eachDayOfInterval({
-    start: monthStart,
-    end: endOfMonth(currentMonth),
-  });
-  const leadingEmptyCount = monthStart.getDay();
+  const {
+    currentMonth,
+    days,
+    leadingEmptyCount,
+    handlePrevMonth,
+    handleNextMonth,
+  } = useMonthGrid({ year, month, onChangeMonth });
   const isInteractive = Boolean(onClickDay || getHref);
-  const cellClassName = `flex flex-col items-center justify-center gap-0.5 ${isInteractive ? 'cursor-pointer' : ''}`;
-
-  const handlePrevMonth = () => {
-    const prevMonth = subMonths(currentMonth, 1);
-    onChangeMonth?.(prevMonth.getFullYear(), prevMonth.getMonth() + 1);
-  };
-
-  const handleNextMonth = () => {
-    const nextMonth = addMonths(currentMonth, 1);
-    onChangeMonth?.(nextMonth.getFullYear(), nextMonth.getMonth() + 1);
-  };
+  const cellClassName = cn(
+    'flex flex-col items-center justify-center gap-0.5',
+    isInteractive && 'cursor-pointer',
+  );
 
   return (
     <div className="w-full">
@@ -121,16 +110,36 @@ function Calendar({
         ))}
         {days.map((date) => {
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isDisabled = isDateDisabled?.(date) ?? false;
+
+          const numberClassName = cn(
+            'text-caption-05',
+            isDisabled
+              ? 'text-grey-300'
+              : isWeekend
+                ? 'text-red-300'
+                : 'text-grey-400',
+          );
+
           const cellContent = (
             <>
-              <span
-                className={`text-caption-05 ${isWeekend ? 'text-red-300' : 'text-grey-400'}`}
-              >
-                {date.getDate()}
-              </span>
-              <DayIndicator {...getIndicatorProps(date)} />
+              <span className={numberClassName}>{date.getDate()}</span>
+              <div className={cn(isDisabled && 'invisible')}>
+                <DayIndicator {...getIndicatorProps(date)} />
+              </div>
             </>
           );
+
+          if (isDisabled) {
+            return (
+              <div
+                key={date.toISOString()}
+                className={cn(cellClassName, 'cursor-not-allowed')}
+              >
+                {cellContent}
+              </div>
+            );
+          }
 
           if (getHref) {
             return (

@@ -24,7 +24,11 @@ export default function RootLayout({
     // --font-numerals가 :root에서 참조하는 --font-kr의 하위 변수라, body에 붙이면
     // 크로미움이 중첩 var()를 제대로 재평가하지 못한다. html(=:root)에 붙여야 한다.
     <html lang="ko" className={pretendardNumerals.variable}>
-      <body>{children}</body>
+      <body>
+        <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

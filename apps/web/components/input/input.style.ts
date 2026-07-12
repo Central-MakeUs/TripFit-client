@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const inputContainerStyle = cva(
-  'flex items-center gap-2 rounded-xl border px-4 py-3 transition-colors',
+  'flex items-center gap-2 rounded-xl border py-3 transition-colors',
   {
     variants: {
       error: {
@@ -9,9 +9,14 @@ export const inputContainerStyle = cva(
         false:
           'border-grey-100 bg-white hover:border-grey-400 focus-within:border-grey-400 has-[:disabled]:border-grey-100 has-[:disabled]:bg-grey-20',
       },
+      hasPrefix: {
+        true: 'pl-3 pr-4',
+        false: 'px-4',
+      },
     },
     defaultVariants: {
       error: false,
+      hasPrefix: false,
     },
   },
 );

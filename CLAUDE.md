@@ -242,6 +242,22 @@ function RoomCard({ roomId, title }: RoomCardProps) {
 export default RoomCard;
 ```
 
+### className 조합
+
+- **`cn()`(`@/utils/cn`, clsx + tailwind-merge) 사용** — 템플릿 리터럴로 직접 이어붙이지 않는다
+- 충돌하는 Tailwind 클래스(같은 속성끼리, 예: `cursor-pointer`/`cursor-not-allowed`, `text-body-04`/소비자가 넘긴 `className`)를 `cn()`이 자동으로 정리해준다 — 나중에 온 클래스가 우선순위를 가짐
+- 커스텀 타이포그래피 유틸(`text-title-01` 등)은 `utils/cn.ts`의 `extendTailwindMerge`에 `font-size` 그룹으로 등록돼 있어 충돌 정리 대상에 포함됨. 새로운 이름 체계의 커스텀 유틸(간격, radius 등)을 추가하면 이 config에도 등록해야 함
+
+```tsx
+// ✅ Good
+import { cn } from '@/utils/cn';
+
+className={cn('flex items-center gap-2', isActive && 'bg-blue-500', className)}
+
+// ❌ Bad
+className={`flex items-center gap-2 ${isActive ? 'bg-blue-500' : ''} ${className ?? ''}`}
+```
+
 ### 유틸 함수
 
 - **화살표 함수** 사용

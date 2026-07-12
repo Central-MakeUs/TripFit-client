@@ -70,7 +70,7 @@ function Header(props: HeaderProps) {
 
   if (titleAlign === 'left') {
     return (
-      <header className="flex w-full items-center justify-between px-5 py-3">
+      <header className="flex w-full items-center justify-between px-2.5 py-2">
         <div className="flex items-center gap-4">
           {backButton}
           <h1 className="text-body-03 text-black">{title}</h1>
@@ -81,7 +81,7 @@ function Header(props: HeaderProps) {
   }
 
   return (
-    <header className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-5 py-3">
+    <header className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-2.5 py-2">
       <div className="justify-self-start">{backButton}</div>
       <h1 className="text-body-03 text-black col-start-2 justify-self-center">
         {title}

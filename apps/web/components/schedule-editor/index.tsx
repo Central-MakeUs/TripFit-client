@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { isBefore, startOfToday } from 'date-fns';
 
 import Calendar from '@/components/calendar';
 import { DayIndicatorProps } from '@/components/calendar/DayIndicator';
@@ -33,8 +34,22 @@ function ScheduleEditor({
 
   const handleClickDay = (date: Date) => {
     const key = date.toDateString();
+    const current = value[key];
 
     if (selectedTool === 'unavailable') {
+      const isFullyUnavailable =
+        current?.status === 'responded' &&
+        current.morning === 'unavailable' &&
+        current.afternoon === 'unavailable' &&
+        current.evening === 'unavailable';
+
+      if (isFullyUnavailable) {
+        const next = { ...value };
+        delete next[key];
+        onChange(next);
+        return;
+      }
+
       onChange({
         ...value,
         [key]: {
@@ -48,11 +63,17 @@ function ScheduleEditor({
     }
 
     if (selectedTool === 'uncertain') {
+      if (current?.status === 'uncertain') {
+        const next = { ...value };
+        delete next[key];
+        onChange(next);
+        return;
+      }
+
       onChange({ ...value, [key]: { status: 'uncertain' } });
       return;
     }
 
-    const current = value[key];
     const base =
       current?.status === 'responded'
         ? current
@@ -108,6 +129,7 @@ function ScheduleEditor({
         onChangeMonth={onChangeMonth}
         onClickDay={handleClickDay}
         getIndicatorProps={getIndicatorProps}
+        isDateDisabled={(date) => isBefore(date, startOfToday())}
         showYear
       />
     </div>
