@@ -18,7 +18,8 @@ const ICON_SIZE_MAP: Record<IconButtonSize, number> = {
 type IconButtonProps = {
   icon: ReactNode;
   size?: IconButtonSize;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'>;
+  'aria-label': string;
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'>;
 
 function IconButton({
   icon,
