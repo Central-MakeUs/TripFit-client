@@ -38,10 +38,12 @@ function Input({
   disabled,
   readOnly,
   onClick,
+  maxLength,
   ...rest
 }: InputProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
+  const currentLength = typeof value === 'string' ? value.length : 0;
 
   const handleClear = () => {
     onChange?.({ target: { value: '' } } as ChangeEvent<HTMLInputElement>);
@@ -65,10 +67,24 @@ function Input({
 
   return (
     <div className="flex w-full flex-col">
-      {label && (
-        <label htmlFor={inputId} className="text-body-05 text-black mb-2">
-          {label}
-        </label>
+      {(label || maxLength !== undefined) && (
+        <div className="mb-2 flex items-center justify-between">
+          {label && (
+            <label htmlFor={inputId} className="text-body-05 text-black">
+              {label}
+            </label>
+          )}
+          {maxLength !== undefined && (
+            <span
+              className={cn(
+                'text-caption-02',
+                error ? 'text-red-300' : 'text-grey-400',
+              )}
+            >
+              {currentLength}/{maxLength}
+            </span>
+          )}
+        </div>
       )}
       <div
         className={inputContainerStyle({
@@ -85,6 +101,7 @@ function Input({
           onChange={onChange}
           disabled={disabled}
           readOnly={readOnly}
+          maxLength={maxLength}
           className={cn(
             'text-body-04 text-grey-800 min-w-0 flex-1 outline-none placeholder:text-body-04 placeholder:text-grey-200 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none',
             className,
