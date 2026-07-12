@@ -1,3 +1,6 @@
+import Button from '@/components/button';
+import TextButton from '@/components/text-button';
+
 type StepActionsProps = {
   primaryLabel: string;
   onPrimaryClick: () => void;
@@ -15,23 +18,20 @@ function StepActions({
 }: StepActionsProps) {
   return (
     <div className="mt-auto w-full pt-2 pb-0.5">
-      {/* TODO: 공통 버튼 컴포넌트로 교체 */}
-      <button
-        type="button"
+      <Button
+        text={primaryLabel}
+        type="secondary"
         disabled={primaryDisabled}
         onClick={onPrimaryClick}
-        className="w-full cursor-pointer rounded-xl px-4 py-2.5 bg-grey-800 text-center text-white disabled:cursor-not-allowed disabled:bg-grey-100 disabled:text-white"
-      >
-        {primaryLabel}
-      </button>
+        className="w-full"
+      />
       {secondaryLabel && onSecondaryClick && (
-        <button
-          type="button"
+        <TextButton
+          text={secondaryLabel}
+          icon={false}
           onClick={onSecondaryClick}
-          className="text-body-05 text-grey-500 mx-auto block w-fit cursor-pointer mt-2 p-2 text-center"
-        >
-          {secondaryLabel}
-        </button>
+          className="mx-auto block w-fit"
+        />
       )}
     </div>
   );
