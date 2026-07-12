@@ -124,8 +124,10 @@
   --color-white: #ffffff;
 
   /* Fonts */
-  --font-kr: 'Pretendard Variable', 'Pretendard', sans-serif;
-  --font-num: 'Pretendard Variable', sans-serif;
+  /* --font-numerals(숫자 0-9 글리프만 있는 서브셋, layout.tsx의 next/font/local)를 맨 앞에 둬서
+     숫자는 이 폰트로, 그 폰트에 없는 문자(한글 등)는 자동으로 Pretendard로 폴백되게 한다. */
+  --font-kr:
+    var(--font-numerals), 'Pretendard Variable', 'Pretendard', sans-serif;
 }
 
 body {
@@ -248,4 +250,11 @@ body {
   font-weight: 500;
   line-height: 16px;
   letter-spacing: -0.02em;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

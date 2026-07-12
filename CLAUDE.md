@@ -60,6 +60,13 @@ import PlusIcon from '@/assets/icons/plus.svg';
 <PlusIcon width={20} height={20} />;
 ```
 
+- **폰트**: 한글/영문은 Pretendard, 숫자(0-9)는 Google Sans Flex.
+  숫자 전용 클래스를 따로 붙일 필요 없음 — 숫자 글리프만 서브셋한 폰트 파일(`assets/fonts/google-sans-flex-digits.woff2`)을
+  `layout.tsx`에서 `next/font/local`로 로드해 `--font-numerals` 변수로 노출하고, `globals.css`의
+  `--font-kr` 폰트 스택 맨 앞에 둔다. 숫자는 자동으로 Google Sans Flex로 그려지고 그 외 문자(한글 등)는
+  자동으로 Pretendard로 폴백된다. 같은 폰트 이름에 `unicode-range`만 얹는 방식은 먼저 선언된 Pretendard의
+  무제한 range가 숫자까지 먼저 매칭해버려 무시되므로, 반드시 **별도 이름의 폰트로 분리해서 스택 순서로 우선시켜야 한다.**
+
 ### apps/app (React Native)
 
 - **프레임워크**: React Native + Expo ~56
@@ -322,6 +329,9 @@ export const usePostRoom = () => {
 
 - **`page.tsx`는 가능하면 RSC** — `'use client'`는 상호작용이 필요한 자식 컴포넌트로 내림
 - **고정 width 지양** — 모바일은 `w-full + px-5` 패턴, 상한은 `max-w-*`로
+- **`[Npx]` 임의값 지양** — Tailwind v4는 spacing(`w`/`h`/`gap`/`p`/`m` 등)에 4px 배수의 정수를 그대로 받는다
+  (`h-51` = 204px). `h-[204px]` 대신 `h-51`. border-radius/border-width처럼 스케일이 열려있지 않고
+  4px 배수도 아닌 값(`rounded-[10px]`, `border-[1.5px]`)만 예외적으로 arbitrary value 사용
 - **Semantic tag** — 컨테이너는 `<main>`, 타이틀은 `<h1>`/`<h2>`
 - **클릭 요소엔 `cursor-pointer`** (Tailwind v4는 자동 적용 X)
 - **Next 기능 우선** — `<Link>`, `<Image>`, `next/font` 등. `router.push`는 부수 작업(모달 닫기, API 후 처리)이 있을 때만

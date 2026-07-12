@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
-import { Google_Sans_Flex } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const googleSansFlex = Google_Sans_Flex({
-  subsets: ['latin'],
-  weight: 'variable',
-  variable: '--font-num',
+const pretendardNumerals = localFont({
+  src: '../assets/fonts/google-sans-flex-digits.woff2',
+  variable: '--font-numerals',
+  display: 'swap',
+  weight: '1 1000',
 });
 
 export const metadata: Metadata = {
@@ -20,8 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body className={`${googleSansFlex.variable}`}>
+    // --font-numerals가 :root에서 참조하는 --font-kr의 하위 변수라, body에 붙이면
+    // 크로미움이 중첩 var()를 제대로 재평가하지 못한다. html(=:root)에 붙여야 한다.
+    <html lang="ko" className={pretendardNumerals.variable}>
+      <body>
         <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
           {children}
         </div>
