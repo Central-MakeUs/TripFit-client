@@ -3,6 +3,8 @@
 import { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
 
+import { cn } from '@/utils/cn';
+
 const floatingButtonClassName =
   'fixed right-5 bottom-10 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-[2.5px] border-white/40 bg-blue-500 text-white shadow-[0_8px_12px_0_var(--color-grey-100)] transition-colors hover:bg-[linear-gradient(0deg,rgba(0,119,204,0.3)_0%,rgba(0,119,204,0.3)_100%),var(--color-blue-500)] active:bg-[linear-gradient(0deg,rgba(0,119,204,0.3)_0%,rgba(0,119,204,0.3)_100%),var(--color-blue-500)] disabled:cursor-not-allowed disabled:opacity-50';
 
@@ -36,7 +38,11 @@ function FloatingButton(props: FloatingButtonProps) {
           }
           onClick?.(event);
         }}
-        className={`${floatingButtonClassName} ${disabled ? 'pointer-events-none cursor-not-allowed opacity-50' : ''} ${className ?? ''}`}
+        className={cn(
+          floatingButtonClassName,
+          disabled && 'pointer-events-none cursor-not-allowed opacity-50',
+          className,
+        )}
         {...rest}
       >
         {icon}
@@ -51,7 +57,7 @@ function FloatingButton(props: FloatingButtonProps) {
     <button
       type="button"
       disabled={disabled}
-      className={`${floatingButtonClassName} ${className ?? ''}`}
+      className={cn(floatingButtonClassName, className)}
       {...rest}
     >
       {icon}

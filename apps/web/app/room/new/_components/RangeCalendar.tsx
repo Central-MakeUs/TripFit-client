@@ -12,6 +12,7 @@ import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
+import { cn } from '@/utils/cn';
 
 type RangeCalendarProps = {
   year: number;
@@ -102,10 +103,16 @@ function RangeCalendar({
               key={date.toISOString()}
               type="button"
               onClick={() => onSelectDate(date)}
-              className={`text-caption-05 flex h-9 cursor-pointer items-center justify-center ${isInRange ? 'bg-blue-20 text-blue-500' : 'text-grey-700'}`}
+              className={cn(
+                'text-caption-05 flex h-9 cursor-pointer items-center justify-center',
+                isInRange ? 'bg-blue-20 text-blue-500' : 'text-grey-700',
+              )}
             >
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center ${isStart || isEnd ? 'rounded-full bg-blue-500 text-white' : ''}`}
+                className={cn(
+                  'flex h-9 w-9 shrink-0 items-center justify-center',
+                  (isStart || isEnd) && 'rounded-full bg-blue-500 text-white',
+                )}
               >
                 {date.getDate()}
               </span>

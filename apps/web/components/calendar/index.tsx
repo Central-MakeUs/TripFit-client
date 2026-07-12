@@ -7,6 +7,7 @@ import Link from 'next/link';
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
+import { cn } from '@/utils/cn';
 
 import { WEEKDAY_LABELS } from './calendar.const';
 import DayIndicator, { DayIndicatorProps } from './DayIndicator';
@@ -49,8 +50,10 @@ function Calendar({
     handleNextMonth,
   } = useMonthGrid({ year, month, onChangeMonth });
   const isInteractive = Boolean(onClickDay || getHref);
-  const baseCellClassName = 'flex flex-col items-center justify-center gap-0.5';
-  const cellClassName = `${baseCellClassName} ${isInteractive ? 'cursor-pointer' : ''}`;
+  const cellClassName = cn(
+    'flex flex-col items-center justify-center gap-0.5',
+    isInteractive && 'cursor-pointer',
+  );
 
   return (
     <div className="w-full">
@@ -109,18 +112,19 @@ function Calendar({
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
           const isDisabled = isDateDisabled?.(date) ?? false;
 
-          const numberClassName = isDisabled
-            ? 'text-grey-300'
-            : isWeekend
-              ? 'text-red-300'
-              : 'text-grey-400';
+          const numberClassName = cn(
+            'text-caption-05',
+            isDisabled
+              ? 'text-grey-300'
+              : isWeekend
+                ? 'text-red-300'
+                : 'text-grey-400',
+          );
 
           const cellContent = (
             <>
-              <span className={`text-caption-05 ${numberClassName}`}>
-                {date.getDate()}
-              </span>
-              <div className={isDisabled ? 'invisible' : ''}>
+              <span className={numberClassName}>{date.getDate()}</span>
+              <div className={cn(isDisabled && 'invisible')}>
                 <DayIndicator {...getIndicatorProps(date)} />
               </div>
             </>
@@ -130,7 +134,7 @@ function Calendar({
             return (
               <div
                 key={date.toISOString()}
-                className={`${baseCellClassName} cursor-not-allowed`}
+                className={cn(cellClassName, 'cursor-not-allowed')}
               >
                 {cellContent}
               </div>

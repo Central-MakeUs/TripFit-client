@@ -1,6 +1,8 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { VariantProps } from 'class-variance-authority';
 
+import { cn } from '@/utils/cn';
+
 import { bottomSheetListItemStyle } from './bottomSheetListItem.style';
 
 type BottomSheetListItemProps = {
@@ -18,7 +20,10 @@ function BottomSheetListItem({
   return (
     <button
       type="button"
-      className={`${bottomSheetListItemStyle({ selected, category })} ${className ?? ''}`}
+      className={cn(
+        bottomSheetListItemStyle({ selected, category }),
+        className,
+      )}
       {...rest}
     >
       {children}
