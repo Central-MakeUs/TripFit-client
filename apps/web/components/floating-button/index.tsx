@@ -5,26 +5,36 @@ import Link from 'next/link';
 
 import { cn } from '@/utils/cn';
 
-const floatingButtonClassName =
-  'fixed right-5 bottom-10 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-[2.5px] border-white/40 bg-blue-500 text-white shadow-[0_8px_12px_0_var(--color-grey-100)] transition-colors hover:bg-[linear-gradient(0deg,rgba(0,119,204,0.3)_0%,rgba(0,119,204,0.3)_100%),var(--color-blue-500)] active:bg-[linear-gradient(0deg,rgba(0,119,204,0.3)_0%,rgba(0,119,204,0.3)_100%),var(--color-blue-500)] disabled:cursor-not-allowed disabled:opacity-50';
+import { floatingButtonStyle } from './floatingButton.style';
+
+type FloatingButtonColor = 'blue' | 'black';
 
 type LinkFloatingButtonProps = {
   icon: ReactNode;
   href: string;
+  color?: FloatingButtonColor;
   disabled?: boolean;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>;
 
 type ButtonFloatingButtonProps = {
   icon: ReactNode;
   href?: undefined;
+  color?: FloatingButtonColor;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 type FloatingButtonProps = LinkFloatingButtonProps | ButtonFloatingButtonProps;
 
 function FloatingButton(props: FloatingButtonProps) {
   if (props.href) {
-    const { icon, href, disabled, className, onClick, ...rest } =
-      props as LinkFloatingButtonProps;
+    const {
+      icon,
+      href,
+      color = 'blue',
+      disabled,
+      className,
+      onClick,
+      ...rest
+    } = props as LinkFloatingButtonProps;
 
     return (
       <Link
@@ -39,7 +49,7 @@ function FloatingButton(props: FloatingButtonProps) {
           onClick?.(event);
         }}
         className={cn(
-          floatingButtonClassName,
+          floatingButtonStyle({ color }),
           disabled && 'pointer-events-none cursor-not-allowed opacity-50',
           className,
         )}
@@ -50,14 +60,19 @@ function FloatingButton(props: FloatingButtonProps) {
     );
   }
 
-  const { icon, disabled, className, ...rest } =
-    props as ButtonFloatingButtonProps;
+  const {
+    icon,
+    color = 'blue',
+    disabled,
+    className,
+    ...rest
+  } = props as ButtonFloatingButtonProps;
 
   return (
     <button
       type="button"
       disabled={disabled}
-      className={cn(floatingButtonClassName, className)}
+      className={cn(floatingButtonStyle({ color }), className)}
       {...rest}
     >
       {icon}
