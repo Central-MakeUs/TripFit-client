@@ -86,7 +86,7 @@ function Textarea({
           )}
           {...rest}
         />
-        {value && !disabled && !readOnly && (
+        {!label && value && !disabled && !readOnly && (
           <span className="flex items-center">
             <button
               type="button"
