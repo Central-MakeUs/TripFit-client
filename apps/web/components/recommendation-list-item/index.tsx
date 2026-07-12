@@ -55,17 +55,26 @@ function RecommendationListItem({
 }: RecommendationListItemProps) {
   const hasRank = rank !== undefined;
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={cn(
         'flex w-full cursor-pointer items-center rounded-2xl',
         hasRank ? 'h-20 gap-0.5 py-5 pr-2 pl-4' : cn('p-4', active && 'gap-1'),
         active
           ? 'border border-blue-200 bg-blue-20'
           : 'bg-grey-20 active:bg-grey-50',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700',
         className,
       )}
     >

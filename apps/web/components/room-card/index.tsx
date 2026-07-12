@@ -74,12 +74,35 @@ function RoomCard(props: RoomCardProps) {
     title,
   } = props;
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
+
+  const handlePin = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onPin?.();
+  };
+
+  const handleShare = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onShare?.();
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
-      className={cn(roomCardStyle({ type: 'fill' }), className)}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        roomCardStyle({ type: 'fill' }),
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700',
+        className,
+      )}
     >
       <div className="flex w-full items-start justify-between">
         <div className="flex flex-1 flex-col items-start gap-3">
@@ -102,7 +125,7 @@ function RoomCard(props: RoomCardProps) {
         <div className="flex h-9 items-end">
           <button
             type="button"
-            onClick={onPin}
+            onClick={handlePin}
             className="flex size-9 cursor-pointer items-center justify-center"
           >
             {isPinned ? (
@@ -113,7 +136,7 @@ function RoomCard(props: RoomCardProps) {
           </button>
           <button
             type="button"
-            onClick={onShare}
+            onClick={handleShare}
             className="flex size-9 cursor-pointer items-center justify-center"
           >
             <ShareIcon className="size-6 text-blue-700" />
