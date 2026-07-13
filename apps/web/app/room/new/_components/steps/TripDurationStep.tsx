@@ -1,3 +1,4 @@
+import ErrorIcon from '@/assets/icons/error.svg';
 import Input from '@/components/input';
 
 export type TripDurationValue = {
@@ -13,6 +14,8 @@ type TripDurationStepProps = {
 const toDigitsOnly = (value: string) => value.replace(/\D/g, '');
 
 function TripDurationStep({ value, onChange }: TripDurationStepProps) {
+  const isDaysZero = value.days === '0';
+
   return (
     <div className="flex flex-col">
       <h2 className="text-body-01 pt-3 pb-0.5">
@@ -31,6 +34,7 @@ function TripDurationStep({ value, onChange }: TripDurationStepProps) {
             onChange={(event) =>
               onChange({ ...value, nights: toDigitsOnly(event.target.value) })
             }
+            error={isDaysZero}
             suffixSlot={<span className="text-body-03 text-grey-500">박</span>}
           />
         </div>
@@ -43,10 +47,17 @@ function TripDurationStep({ value, onChange }: TripDurationStepProps) {
             onChange={(event) =>
               onChange({ ...value, days: toDigitsOnly(event.target.value) })
             }
+            error={isDaysZero}
             suffixSlot={<span className="text-body-03 text-grey-500">일</span>}
           />
         </div>
       </div>
+      {isDaysZero && (
+        <span className="text-caption-02 mt-1 flex items-center gap-1 text-red-300">
+          <ErrorIcon className="h-4 w-4" />
+          여행 일수를 다시 확인해주세요
+        </span>
+      )}
     </div>
   );
 }

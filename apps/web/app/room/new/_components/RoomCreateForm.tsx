@@ -49,7 +49,9 @@ function RoomCreateForm() {
       : step === 2
         ? !tripPeriod.startDate || !tripPeriod.endDate
         : step === 3
-          ? !tripDuration.nights || !tripDuration.days
+          ? !tripDuration.nights ||
+            !tripDuration.days ||
+            tripDuration.days === '0'
           : step === 4
             ? participantCount === 0
             : step === 5
