@@ -26,16 +26,8 @@ const interpolateAtDistance = (
 
 export const rouletteItemOpacity = (distance: number) =>
   interpolateAtDistance(distance, [
-    [0, 0.8],
-    [1, 0.1],
-    [2, 0.04],
-    [3, 0],
-  ]);
-
-export const rouletteItemScale = (distance: number) =>
-  interpolateAtDistance(distance, [
     [0, 1],
-    [1, 1],
-    [2, 0.45],
-    [3, 0.3],
+    [1, 0.16],
+    [2, 0.06],
+    [3, 0],
   ]);
