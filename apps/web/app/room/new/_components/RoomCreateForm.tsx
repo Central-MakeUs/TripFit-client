@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { differenceInCalendarDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 import Header from '@/components/header';
@@ -14,7 +15,10 @@ import PriorScheduleStep, {
   PriorScheduleValue,
 } from './steps/PriorScheduleStep';
 import RoomNameStep from './steps/RoomNameStep';
-import TripDurationStep, { TripDurationValue } from './steps/TripDurationStep';
+import TripDurationStep, {
+  isTripDurationValid,
+  TripDurationValue,
+} from './steps/TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './steps/TripPeriodStep';
 
 const TOTAL_STEPS = 7;
@@ -35,6 +39,11 @@ function RoomCreateForm() {
   const [destination, setDestination] = useState('');
   const [priorSchedule, setPriorSchedule] = useState<PriorScheduleValue>({});
 
+  const periodDays =
+    tripPeriod.startDate && tripPeriod.endDate
+      ? differenceInCalendarDays(tripPeriod.endDate, tripPeriod.startDate) + 1
+      : null;
+
   const handleBack = () => {
     if (step === 1) {
       router.back();
@@ -49,9 +58,7 @@ function RoomCreateForm() {
       : step === 2
         ? !tripPeriod.startDate || !tripPeriod.endDate
         : step === 3
-          ? !tripDuration.nights ||
-            !tripDuration.days ||
-            tripDuration.days === '0'
+          ? !isTripDurationValid(tripDuration, periodDays)
           : step === 4
             ? participantCount === 0
             : step === 5
@@ -78,7 +85,11 @@ function RoomCreateForm() {
             <TripPeriodStep value={tripPeriod} onChange={setTripPeriod} />
           )}
           {step === 3 && (
-            <TripDurationStep value={tripDuration} onChange={setTripDuration} />
+            <TripDurationStep
+              value={tripDuration}
+              onChange={setTripDuration}
+              periodDays={periodDays}
+            />
           )}
           {step === 4 && (
             <ParticipantCountStep
