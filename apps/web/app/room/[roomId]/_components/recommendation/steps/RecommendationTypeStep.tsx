@@ -1,5 +1,3 @@
-// TODO: room/new와 공유하는 컴포넌트라 components/step-actions/로 옮겨야 함
-import StepActions from '@/app/room/new/_components/StepActions';
 import Button from '@/components/button';
 import RecommendationListItem from '@/components/recommendation-list-item';
 
@@ -54,7 +52,8 @@ function RecommendationTypeStep({
           onClick={onRequestResponse}
         />
       </div>
-      <div className="mt-13 flex flex-col gap-2">
+      <div className="w-full" style={{ flexGrow: 52 }} />
+      <div className="flex flex-col gap-2">
         {(Object.keys(RECOMMENDATION_TYPE_LABEL) as RecommendationType[]).map(
           (type) => (
             <RecommendationListItem
@@ -67,11 +66,16 @@ function RecommendationTypeStep({
           ),
         )}
       </div>
-      <StepActions
-        primaryLabel="추천 일정 확인하기"
-        onPrimaryClick={onNext}
-        primaryDisabled={!value}
-      />
+      <div className="w-full" style={{ flexGrow: 137 }} />
+      <div className="w-full pt-2 pb-0.5">
+        <Button
+          text="추천 일정 확인하기"
+          type="primary"
+          disabled={!value}
+          onClick={onNext}
+          className="w-full"
+        />
+      </div>
     </div>
   );
 }
