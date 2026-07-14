@@ -11,7 +11,8 @@ function RoomNameStep({ value, onChange }: RoomNameStepProps) {
       <h2 className="text-body-01 pt-3 pb-13">여행방 이름을 입력해주세요</h2>
       <Input
         label="여행방 이름"
-        placeholder="00자 이하"
+        placeholder="15자 이하"
+        maxLength={15}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
