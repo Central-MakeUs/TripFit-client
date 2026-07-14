@@ -8,6 +8,8 @@ type BadgeProps = {
 const MAX_COUNT = 99;
 
 function Badge({ className, count }: BadgeProps) {
+  if (count <= 0) return null;
+
   return (
     <div
       className={cn(
@@ -16,7 +18,7 @@ function Badge({ className, count }: BadgeProps) {
       )}
     >
       <span className="text-caption-06 text-white">
-        +{Math.min(count, MAX_COUNT)}
+        {count > MAX_COUNT ? `+${MAX_COUNT}` : count}
       </span>
     </div>
   );
