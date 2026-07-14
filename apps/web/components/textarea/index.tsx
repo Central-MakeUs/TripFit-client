@@ -92,7 +92,10 @@ function Textarea({
               type="button"
               aria-label="지우기"
               className="cursor-pointer"
-              onClick={handleClear}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleClear();
+              }}
             >
               <CloseCircleIcon className="h-4 w-4" />
             </button>
