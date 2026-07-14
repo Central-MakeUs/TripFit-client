@@ -229,11 +229,11 @@ function Roulette({
         );
       })}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-white/70 to-white/0"
+        className="pointer-events-none absolute inset-x-0 top-0 bg-linear-to-b from-white/70 to-white/0"
         style={{ height: itemHeight }}
       />
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-white/70 to-white/0"
+        className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-white/70 to-white/0"
         style={{ height: itemHeight }}
       />
     </div>
