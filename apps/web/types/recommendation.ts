@@ -9,10 +9,15 @@ export type RecommendationCandidateT = {
   leaveCount: number;
 };
 
+export type RecommendationParticipantReasonT = {
+  label: string;
+  days?: number;
+};
+
 export type RecommendationParticipantT = {
   name: string;
   isHost: boolean;
-  reason: string;
+  reason: RecommendationParticipantReasonT;
   color: 'purple' | 'pink' | 'orange' | 'yellow' | 'green';
   tone?: 1 | 2;
 };
