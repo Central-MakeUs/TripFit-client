@@ -23,6 +23,7 @@ import {
 import { cn } from '@/utils/cn';
 
 import { formatDateLabel } from '../_utils/formatDateLabel';
+import { formatParticipantReason } from '../_utils/formatParticipantReason';
 import RecommendationStatBox from '../RecommendationStatBox';
 
 const REVIEW_BACKGROUND_CLASS_NAME =
@@ -46,18 +47,20 @@ const FEEDBACK_REASON_ITEMS: { value: FeedbackReason; label: string }[] = [
   { value: FEEDBACK_REASON_OTHER, label: '기타 (직접 입력)' },
 ];
 
-const FEEDBACK_ICON = {
-  up: {
+const FEEDBACK_ICON_ITEMS = [
+  {
+    value: 'up' as const,
     line: ThumbUpIcon,
     fill: ThumbUpFillIcon,
     label: '도움이 됐어요',
   },
-  down: {
+  {
+    value: 'down' as const,
     line: ThumbDownIcon,
     fill: ThumbDownFillIcon,
     label: '도움이 안 됐어요',
   },
-};
+];
 
 type RecommendationDetailStepProps = {
   roomName: string;
@@ -107,7 +110,7 @@ function ParticipantSection({
                 )}
               </div>
               <span className="text-caption-03 text-grey-400">
-                {participant.reason}
+                {formatParticipantReason(participant.reason)}
               </span>
             </div>
           </li>
@@ -129,35 +132,31 @@ function RecommendationDetailStep({
   );
   const [customFeedbackReason, setCustomFeedbackReason] = useState('');
 
+  const resetFeedbackReason = () => {
+    setFeedbackReason(null);
+    setCustomFeedbackReason('');
+  };
+
   const handleClickFeedbackIcon = (value: 'up' | 'down') => {
-    if (value === 'up') {
-      setFeedback((prev) => (prev === 'up' ? null : 'up'));
-      setFeedbackReason(null);
-      setCustomFeedbackReason('');
-      return;
-    }
-
-    if (feedback === 'down') {
-      setFeedback(null);
-      setFeedbackReason(null);
-      setCustomFeedbackReason('');
-      return;
-    }
-
-    setFeedback(null);
-    setIsFeedbackSheetOpen(true);
+    setFeedback((prev) => {
+      const next = prev === value ? null : value;
+      if (next === 'down') {
+        setIsFeedbackSheetOpen(true);
+      } else {
+        resetFeedbackReason();
+      }
+      return next;
+    });
   };
 
   const handleFeedbackSheetOpenChange = (open: boolean) => {
     setIsFeedbackSheetOpen(open);
-    if (!open && feedback !== 'down') {
-      setFeedbackReason(null);
-      setCustomFeedbackReason('');
+    if (!open) {
+      resetFeedbackReason();
     }
   };
 
   const handleSaveFeedbackReason = () => {
-    setFeedback('down');
     setIsFeedbackSheetOpen(false);
   };
 
@@ -214,25 +213,22 @@ function RecommendationDetailStep({
           이 추천이 도움이 되었나요?
         </span>
         <div className="flex items-center gap-3">
-          {(
-            Object.entries(FEEDBACK_ICON) as [
-              'up' | 'down',
-              (typeof FEEDBACK_ICON)['up'],
-            ][]
-          ).map(([value, { line: LineIcon, fill: FillIcon, label }]) => (
-            <IconButton
-              key={value}
-              icon={
-                feedback === value ? (
-                  <FillIcon className="text-grey-400" />
-                ) : (
-                  <LineIcon className="text-grey-400" />
-                )
-              }
-              aria-label={label}
-              onClick={() => handleClickFeedbackIcon(value)}
-            />
-          ))}
+          {FEEDBACK_ICON_ITEMS.map(
+            ({ value, line: LineIcon, fill: FillIcon, label }) => (
+              <IconButton
+                key={value}
+                icon={
+                  feedback === value ? (
+                    <FillIcon className="text-grey-400" />
+                  ) : (
+                    <LineIcon className="text-grey-400" />
+                  )
+                }
+                aria-label={label}
+                onClick={() => handleClickFeedbackIcon(value)}
+              />
+            ),
+          )}
         </div>
       </div>
 
