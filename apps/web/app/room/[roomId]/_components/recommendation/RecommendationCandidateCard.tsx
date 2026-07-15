@@ -1,9 +1,8 @@
-import { format } from 'date-fns';
-
 import ArrowOutwardIcon from '@/assets/icons/arrow-outward.svg';
 import RankBadgeIcon from '@/assets/icons/rank-badge.svg';
-import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
 import { cn } from '@/utils/cn';
+
+import { formatDateLabel } from './_utils/formatDateLabel';
 
 export type RecommendationCandidate = {
   id: string;
@@ -14,11 +13,6 @@ export type RecommendationCandidate = {
   uncertainCount: number;
   partialCount: number;
   leaveCount: number;
-};
-
-const formatDateLabel = (isoDate: string) => {
-  const date = new Date(isoDate);
-  return `${format(date, 'M.d')}(${WEEKDAY_LABELS[date.getDay()]})`;
 };
 
 type RecommendationCandidateCardProps = {
