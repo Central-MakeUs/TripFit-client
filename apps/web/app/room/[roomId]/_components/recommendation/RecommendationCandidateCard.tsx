@@ -4,6 +4,7 @@ import { RecommendationCandidateT } from '@/types/recommendation';
 import { cn } from '@/utils/cn';
 
 import { formatDateLabel } from './_utils/formatDateLabel';
+import RecommendationStatBox from './RecommendationStatBox';
 
 type RecommendationCandidateCardProps = {
   candidate: RecommendationCandidateT;
@@ -20,18 +21,12 @@ const CARD_THEME = {
     rankRow: '-mt-2 items-end',
     buttonBg: 'bg-blue-50',
     iconColor: 'text-blue-200',
-    boxBg: 'bg-blue-50/60',
-    valueColor: 'text-blue-600',
-    borderColor: 'border-blue-100',
   },
   rest: {
     cardBg: 'bg-grey-20',
     rankRow: 'items-center',
     buttonBg: 'bg-grey-100/40',
     iconColor: 'text-grey-300',
-    boxBg: 'bg-grey-100/40',
-    valueColor: 'text-grey-600',
-    borderColor: 'border-grey-100',
   },
 };
 
@@ -51,16 +46,6 @@ function RecommendationCandidateCard({
   } = candidate;
   const isTopRank = rank === 1;
   const theme = isTopRank ? CARD_THEME.top : CARD_THEME.rest;
-
-  const statLabelClassName = 'text-caption-03 text-grey-400 whitespace-nowrap';
-  const statValueClassName = cn('text-body-01', theme.valueColor);
-  const statBorderClassName = cn('border-r', theme.borderColor);
-
-  const stats = [
-    { label: '불확실 일정', value: uncertainCount },
-    { label: '부분 참여', value: partialCount },
-    { label: '연차 일수', value: leaveCount },
-  ];
 
   return (
     <div
@@ -107,25 +92,13 @@ function RecommendationCandidateCard({
           <span>참석률</span>
           <span>{attendanceRate}%</span>
         </p>
-        <div
-          className={cn(
-            'mt-4 grid grid-cols-3 pt-4 pb-3 rounded-[20px] text-center',
-            theme.boxBg,
-          )}
-        >
-          {stats.map((stat, index) => (
-            <div
-              key={stat.label}
-              className={cn(
-                'flex flex-col items-start gap-1.75 px-4',
-                index < stats.length - 1 && statBorderClassName,
-              )}
-            >
-              <span className={statLabelClassName}>{stat.label}</span>
-              <span className={statValueClassName}>{stat.value}명</span>
-            </div>
-          ))}
-        </div>
+        <RecommendationStatBox
+          uncertainCount={uncertainCount}
+          partialCount={partialCount}
+          leaveCount={leaveCount}
+          theme={isTopRank ? 'blue' : 'grey'}
+          className="mt-4"
+        />
       </div>
     </div>
   );
