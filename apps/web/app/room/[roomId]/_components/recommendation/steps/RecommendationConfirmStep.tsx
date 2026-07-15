@@ -9,7 +9,7 @@ import TextButton from '@/components/text-button';
 import { RecommendationCandidateDetailT } from '@/types/recommendation';
 
 import { MOCK_CANDIDATES } from '../_mocks/candidates';
-import RecommendationCandidateCard from '../RecommendationCandidateCard';
+import RecommendationCandidateCard from './_components/RecommendationCandidateCard';
 import { RecommendationType } from './RecommendationTypeStep';
 
 const CARD_WIDTH = 292;

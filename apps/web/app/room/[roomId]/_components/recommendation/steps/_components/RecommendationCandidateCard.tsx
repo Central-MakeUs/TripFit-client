@@ -3,7 +3,7 @@ import RankBadgeIcon from '@/assets/icons/rank-badge.svg';
 import { RecommendationCandidateT } from '@/types/recommendation';
 import { cn } from '@/utils/cn';
 
-import { formatDateLabel } from './_utils/formatDateLabel';
+import { formatDateLabel } from '../../_utils/formatDateLabel';
 import RecommendationStatBox from './RecommendationStatBox';
 
 type RecommendationCandidateCardProps = {

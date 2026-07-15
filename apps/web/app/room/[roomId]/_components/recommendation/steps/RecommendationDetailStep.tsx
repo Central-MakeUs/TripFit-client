@@ -14,8 +14,8 @@ import { cn } from '@/utils/cn';
 
 import { formatDateLabel } from '../_utils/formatDateLabel';
 import { formatParticipantReason } from '../_utils/formatParticipantReason';
-import RecommendationFeedback from '../RecommendationFeedback';
-import RecommendationStatBox from '../RecommendationStatBox';
+import RecommendationFeedback from './_components/RecommendationFeedback';
+import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationDetailStepProps = {
   roomName: string;
