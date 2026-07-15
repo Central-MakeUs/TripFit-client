@@ -43,7 +43,7 @@ function ParticipantSection({
       <ul className="mt-2 rounded-[20px] bg-grey-20/50">
         {participants.map((participant, index) => (
           <li
-            key={participant.name}
+            key={`${participant.name}-${index}`}
             className={cn(
               'flex items-center gap-3 p-3',
               index < participants.length - 1 && 'border-b border-grey-50',
