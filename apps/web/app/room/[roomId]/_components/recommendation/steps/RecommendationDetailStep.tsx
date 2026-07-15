@@ -117,7 +117,7 @@ function RecommendationDetailStep({
           participants={candidate.uncertainParticipants}
         />
         <ParticipantSection
-          icon={<CompletionIcon className="size-5 text-green-500" />}
+          icon={<CompletionIcon className="size-5 text-[#68E494]" />}
           title={`참석 가능한 인원 ${candidate.availableParticipants.length}명`}
           participants={candidate.availableParticipants}
         />
