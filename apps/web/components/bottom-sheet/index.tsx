@@ -21,7 +21,11 @@ function BottomSheet({
   dismissible = true,
 }: BottomSheetProps) {
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange}>
+    <Drawer.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      dismissible={dismissible}
+    >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/25" />
         <Drawer.Content
