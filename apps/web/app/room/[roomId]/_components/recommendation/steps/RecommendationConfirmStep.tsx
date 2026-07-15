@@ -6,6 +6,7 @@ import ReplayIcon from '@/assets/icons/replay.svg';
 import Button from '@/components/button';
 import Pagination from '@/components/pagination';
 import TextButton from '@/components/text-button';
+import { RecommendationCandidateDetailT } from '@/types/recommendation';
 
 import { MOCK_CANDIDATES } from '../_mocks/candidates';
 import RecommendationCandidateCard from '../RecommendationCandidateCard';
@@ -50,7 +51,7 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
 
 type RecommendationConfirmStepProps = {
   type: RecommendationType;
-  onSelectCandidate: (candidateId: string) => void;
+  onSelectCandidate: (candidate: RecommendationCandidateDetailT) => void;
   onConfirm: () => void;
   onRetry: () => void;
 };
@@ -87,7 +88,7 @@ function RecommendationConfirmStep({
             <RecommendationCandidateCard
               key={candidate.id}
               candidate={candidate}
-              onClick={() => onSelectCandidate(candidate.id)}
+              onClick={() => onSelectCandidate(candidate)}
               className="snap-center first:ml-[calc(50%-146px)] last:mr-[calc(50%-146px)]"
             />
           ))}

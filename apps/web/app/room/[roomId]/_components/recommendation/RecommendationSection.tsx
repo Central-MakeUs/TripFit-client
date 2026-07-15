@@ -3,13 +3,16 @@
 import { useState } from 'react';
 
 import Header from '@/components/header';
+import { RecommendationCandidateDetailT } from '@/types/recommendation';
 
 import RecommendationConfirmStep from './steps/RecommendationConfirmStep';
+import RecommendationDetailStep from './steps/RecommendationDetailStep';
 import RecommendationTypeStep, {
   RecommendationType,
 } from './steps/RecommendationTypeStep';
 
 type RecommendationSectionProps = {
+  roomName: string;
   onExit: () => void;
   onConfirm: () => void;
   respondedCount: number;
@@ -17,6 +20,7 @@ type RecommendationSectionProps = {
 };
 
 function RecommendationSection({
+  roomName,
   onExit,
   onConfirm,
   respondedCount,
@@ -24,13 +28,25 @@ function RecommendationSection({
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationType | null>(null);
+  const [selectedCandidate, setSelectedCandidate] =
+    useState<RecommendationCandidateDetailT | null>(null);
 
   const handleBack = () => {
     if (step === 1) {
       onExit();
       return;
     }
+    if (step === 3) {
+      setSelectedCandidate(null);
+      setStep(2);
+      return;
+    }
     setStep((prev) => prev - 1);
+  };
+
+  const handleSelectCandidate = (candidate: RecommendationCandidateDetailT) => {
+    setSelectedCandidate(candidate);
+    setStep(3);
   };
 
   return (
@@ -49,11 +65,16 @@ function RecommendationSection({
         {step === 2 && type && (
           <RecommendationConfirmStep
             type={type}
-            onSelectCandidate={() => {
-              /* TODO: 후보 상세보기(3단계)는 다음 커밋에서 연결 */
-            }}
+            onSelectCandidate={handleSelectCandidate}
             onConfirm={onConfirm}
             onRetry={() => setStep(1)}
+          />
+        )}
+        {step === 3 && selectedCandidate && (
+          <RecommendationDetailStep
+            roomName={roomName}
+            candidate={selectedCandidate}
+            onConfirm={onConfirm}
           />
         )}
       </div>
