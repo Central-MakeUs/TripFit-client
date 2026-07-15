@@ -1,22 +1,12 @@
 import ArrowOutwardIcon from '@/assets/icons/arrow-outward.svg';
 import RankBadgeIcon from '@/assets/icons/rank-badge.svg';
+import { RecommendationCandidateT } from '@/types/recommendation';
 import { cn } from '@/utils/cn';
 
 import { formatDateLabel } from './_utils/formatDateLabel';
 
-export type RecommendationCandidate = {
-  id: string;
-  rank: number;
-  startDate: string;
-  endDate: string;
-  attendanceRate: number;
-  uncertainCount: number;
-  partialCount: number;
-  leaveCount: number;
-};
-
 type RecommendationCandidateCardProps = {
-  candidate: RecommendationCandidate;
+  candidate: RecommendationCandidateT;
   onClick: () => void;
   className?: string;
 };

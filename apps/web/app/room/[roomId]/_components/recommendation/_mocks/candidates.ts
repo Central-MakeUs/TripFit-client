@@ -1,7 +1,7 @@
-import { RecommendationCandidate } from '../RecommendationCandidateCard';
+import { RecommendationCandidateT } from '@/types/recommendation';
 
 // TODO: 실제 API 연동 전까지 사용하는 임시 데이터
-export const MOCK_CANDIDATES: RecommendationCandidate[] = [
+export const MOCK_CANDIDATES: RecommendationCandidateT[] = [
   {
     id: 'candidate-1',
     rank: 1,
