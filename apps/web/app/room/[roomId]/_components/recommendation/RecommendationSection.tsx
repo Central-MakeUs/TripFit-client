@@ -3,13 +3,14 @@
 import { useState } from 'react';
 
 import Header from '@/components/header';
-import { RecommendationCandidateDetailT } from '@/types/recommendation';
+import {
+  RecommendationCandidateDetailT,
+  RecommendationTypeT,
+} from '@/types/recommendation';
 
 import RecommendationConfirmStep from './steps/RecommendationConfirmStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
-import RecommendationTypeStep, {
-  RecommendationType,
-} from './steps/RecommendationTypeStep';
+import RecommendationTypeStep from './steps/RecommendationTypeStep';
 
 type RecommendationSectionProps = {
   roomName: string;
@@ -27,7 +28,7 @@ function RecommendationSection({
   onRequestResponse,
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
-  const [type, setType] = useState<RecommendationType | null>(null);
+  const [type, setType] = useState<RecommendationTypeT | null>(null);
   const [selectedCandidate, setSelectedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
 

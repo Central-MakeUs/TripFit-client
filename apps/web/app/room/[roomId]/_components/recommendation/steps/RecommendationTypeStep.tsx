@@ -1,20 +1,15 @@
 import Button from '@/components/button';
 import RecommendationListItem from '@/components/recommendation-list-item';
+import { RecommendationTypeT } from '@/types/recommendation';
 
-export type RecommendationType =
-  | 'default'
-  | 'allAttend'
-  | 'saveLeave'
-  | 'certain';
-
-const RECOMMENDATION_TYPE_LABEL: Record<RecommendationType, string> = {
+const RECOMMENDATION_TYPE_LABEL: Record<RecommendationTypeT, string> = {
   default: '기본 선택',
   allAttend: '모두 참석',
   saveLeave: '휴가 아끼기',
   certain: '확실하게 가기',
 };
 
-const RECOMMENDATION_TYPE_DESCRIPTION: Record<RecommendationType, string> = {
+const RECOMMENDATION_TYPE_DESCRIPTION: Record<RecommendationTypeT, string> = {
   default: '연차, 참석률, 불확정 일정을 골고루 반영해요',
   allAttend: '되도록 많은 사람이 함께할 수 있는 날짜를 찾아요',
   saveLeave: '연차를 최대한 적게 쓰는 날짜를 찾아요',
@@ -22,8 +17,8 @@ const RECOMMENDATION_TYPE_DESCRIPTION: Record<RecommendationType, string> = {
 };
 
 type RecommendationTypeStepProps = {
-  value: RecommendationType | null;
-  onChange: (value: RecommendationType) => void;
+  value: RecommendationTypeT | null;
+  onChange: (value: RecommendationTypeT) => void;
   onNext: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
@@ -54,7 +49,7 @@ function RecommendationTypeStep({
       </div>
       <div className="w-full" style={{ flexGrow: 52 }} />
       <div className="flex flex-col gap-2">
-        {(Object.keys(RECOMMENDATION_TYPE_LABEL) as RecommendationType[]).map(
+        {(Object.keys(RECOMMENDATION_TYPE_LABEL) as RecommendationTypeT[]).map(
           (type) => (
             <RecommendationListItem
               key={type}

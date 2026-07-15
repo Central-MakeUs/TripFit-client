@@ -1,3 +1,9 @@
+export type RecommendationTypeT =
+  | 'default'
+  | 'allAttend'
+  | 'saveLeave'
+  | 'certain';
+
 export type RecommendationCandidateT = {
   id: string;
   rank: number;

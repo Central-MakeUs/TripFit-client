@@ -6,17 +6,19 @@ import ReplayIcon from '@/assets/icons/replay.svg';
 import Button from '@/components/button';
 import Pagination from '@/components/pagination';
 import TextButton from '@/components/text-button';
-import { RecommendationCandidateDetailT } from '@/types/recommendation';
+import {
+  RecommendationCandidateDetailT,
+  RecommendationTypeT,
+} from '@/types/recommendation';
 
 import { MOCK_CANDIDATES } from '../_mocks/candidates';
 import RecommendationCandidateCard from './_components/RecommendationCandidateCard';
-import { RecommendationType } from './RecommendationTypeStep';
 
 const CARD_WIDTH = 292;
 const CARD_GAP = 6;
 
 const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
-  RecommendationType,
+  RecommendationTypeT,
   ReactNode
 > = {
   default: (
@@ -50,7 +52,7 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
 };
 
 type RecommendationConfirmStepProps = {
-  type: RecommendationType;
+  type: RecommendationTypeT;
   onSelectCandidate: (candidate: RecommendationCandidateDetailT) => void;
   onConfirm: () => void;
   onRetry: () => void;
