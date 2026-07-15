@@ -7,15 +7,13 @@ import Button from '@/components/button';
 import Pagination from '@/components/pagination';
 import TextButton from '@/components/text-button';
 
-import RecommendationCandidateCard, {
-  RecommendationCandidate,
-} from '../RecommendationCandidateCard';
+import { MOCK_CANDIDATES } from '../_mocks/candidates';
+import RecommendationCandidateCard from '../RecommendationCandidateCard';
 import { RecommendationType } from './RecommendationTypeStep';
 
 const CARD_WIDTH = 292;
 const CARD_GAP = 6;
 
-// TODO: 디자인 시안에 맞는 문구로 교체
 const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
   RecommendationType,
   ReactNode
@@ -49,40 +47,6 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
     </>
   ),
 };
-
-// TODO: 실제 API 연동 전까지 사용하는 임시 데이터
-const MOCK_CANDIDATES: RecommendationCandidate[] = [
-  {
-    id: 'candidate-1',
-    rank: 1,
-    startDate: '2026-06-12',
-    endDate: '2026-06-15',
-    attendanceRate: 80,
-    uncertainCount: 1,
-    partialCount: 1,
-    leaveCount: 2,
-  },
-  {
-    id: 'candidate-2',
-    rank: 2,
-    startDate: '2026-06-19',
-    endDate: '2026-06-22',
-    attendanceRate: 70,
-    uncertainCount: 2,
-    partialCount: 1,
-    leaveCount: 3,
-  },
-  {
-    id: 'candidate-3',
-    rank: 3,
-    startDate: '2026-06-26',
-    endDate: '2026-06-29',
-    attendanceRate: 60,
-    uncertainCount: 2,
-    partialCount: 2,
-    leaveCount: 2,
-  },
-];
 
 type RecommendationConfirmStepProps = {
   type: RecommendationType;
