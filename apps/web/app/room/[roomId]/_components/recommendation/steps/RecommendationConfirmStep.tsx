@@ -86,10 +86,11 @@ function RecommendationConfirmStep({
           onScroll={handleScroll}
           className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto"
         >
-          {MOCK_CANDIDATES.map((candidate) => (
+          {MOCK_CANDIDATES.map((candidate, index) => (
             <RecommendationCandidateCard
               key={candidate.id}
               candidate={candidate}
+              active={index === current}
               onClick={() => onSelectCandidate(candidate)}
               className="snap-center first:ml-[calc(50%-146px)] last:mr-[calc(50%-146px)]"
             />

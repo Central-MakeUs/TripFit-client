@@ -8,6 +8,7 @@ import RecommendationStatBox from './RecommendationStatBox';
 
 type RecommendationCandidateCardProps = {
   candidate: RecommendationCandidateT;
+  active: boolean;
   onClick: () => void;
   className?: string;
 };
@@ -16,22 +17,29 @@ const GRADIENT_OVERLAY_CLASS_NAME =
   'bg-[linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0)_100%)]';
 
 const CARD_THEME = {
-  top: {
+  active: {
     cardBg: 'bg-blue-20',
-    rankRow: '-mt-2 items-end',
     buttonBg: 'bg-blue-50',
     iconColor: 'text-blue-200',
+    badgeIconColor: 'text-blue-500',
+    plainBadgeBg: 'bg-blue-200',
+    plainBadgeText: 'text-blue-500',
+    statBoxTheme: 'blue' as const,
   },
-  rest: {
+  inactive: {
     cardBg: 'bg-grey-20',
-    rankRow: 'items-center',
     buttonBg: 'bg-grey-100/40',
     iconColor: 'text-grey-300',
+    badgeIconColor: 'text-grey-300',
+    plainBadgeBg: 'bg-grey-300',
+    plainBadgeText: 'text-white',
+    statBoxTheme: 'grey' as const,
   },
 };
 
 function RecommendationCandidateCard({
   candidate,
+  active,
   onClick,
   className,
 }: RecommendationCandidateCardProps) {
@@ -45,7 +53,7 @@ function RecommendationCandidateCard({
     leaveCount,
   } = candidate;
   const isTopRank = rank === 1;
-  const theme = isTopRank ? CARD_THEME.top : CARD_THEME.rest;
+  const theme = active ? CARD_THEME.active : CARD_THEME.inactive;
 
   return (
     <div
@@ -57,17 +65,28 @@ function RecommendationCandidateCard({
         className,
       )}
     >
-      <div className={cn('flex', theme.rankRow)}>
+      <div
+        className={cn('flex', isTopRank ? '-mt-2 items-end' : 'items-center')}
+      >
         {isTopRank ? (
           <div className="relative flex h-11 w-8 items-end justify-center">
-            <RankBadgeIcon className="absolute inset-0 size-full text-blue-500" />
+            <RankBadgeIcon
+              className={cn('absolute inset-0 size-full', theme.badgeIconColor)}
+            />
             <span className="relative mb-0.5 text-body-03 text-white">
               {rank}
             </span>
           </div>
         ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-[13.333px] bg-grey-300">
-            <span className="text-body-03 text-white">{rank}</span>
+          <div
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-[13.333px]',
+              theme.plainBadgeBg,
+            )}
+          >
+            <span className={cn('text-body-03', theme.plainBadgeText)}>
+              {rank}
+            </span>
           </div>
         )}
         <button
@@ -96,7 +115,7 @@ function RecommendationCandidateCard({
           uncertainCount={uncertainCount}
           partialCount={partialCount}
           leaveCount={leaveCount}
-          theme={isTopRank ? 'blue' : 'grey'}
+          theme={theme.statBoxTheme}
           className="mt-4"
         />
       </div>
