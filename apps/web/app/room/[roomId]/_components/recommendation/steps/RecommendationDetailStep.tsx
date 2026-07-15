@@ -1,8 +1,9 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ComponentType, ReactNode, SVGProps, useState } from 'react';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
+import SmileIcon from '@/assets/icons/smile.svg';
 import ThumbDownFillIcon from '@/assets/icons/thumb-down-fill-200.svg';
 import ThumbDownIcon from '@/assets/icons/thumb-down-line-200.svg';
 import ThumbUpFillIcon from '@/assets/icons/thumb-up-fill-200.svg';
@@ -29,6 +30,9 @@ import RecommendationStatBox from '../RecommendationStatBox';
 const REVIEW_BACKGROUND_CLASS_NAME =
   '[background:linear-gradient(180deg,rgba(232,233,235,0.50)_0%,rgba(232,233,235,0)_100%),var(--color-grey-50)]';
 
+const REVIEW_FEEDBACK_SUBMITTED_BACKGROUND_CLASS_NAME =
+  '[background:linear-gradient(180deg,rgba(229,244,255,0.50)_0%,rgba(229,244,255,0)_32.68%),var(--color-blue-20)]';
+
 const FEEDBACK_REASON_OPTIONS = [
   '참석 인원이 너무 적어요',
   '연차를 너무 많이 써야 해요',
@@ -47,15 +51,22 @@ const FEEDBACK_REASON_ITEMS: { value: FeedbackReason; label: string }[] = [
   { value: FEEDBACK_REASON_OTHER, label: '기타 (직접 입력)' },
 ];
 
-const FEEDBACK_ICON_ITEMS = [
+type FeedbackIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+const FEEDBACK_ICON_ITEMS: {
+  value: 'up' | 'down';
+  line: FeedbackIconComponent;
+  fill: FeedbackIconComponent;
+  label: string;
+}[] = [
   {
-    value: 'up' as const,
+    value: 'up',
     line: ThumbUpIcon,
     fill: ThumbUpFillIcon,
     label: '도움이 됐어요',
   },
   {
-    value: 'down' as const,
+    value: 'down',
     line: ThumbDownIcon,
     fill: ThumbDownFillIcon,
     label: '도움이 안 됐어요',
@@ -132,21 +143,18 @@ function RecommendationDetailStep({
   );
   const [customFeedbackReason, setCustomFeedbackReason] = useState('');
 
+  const isFeedbackSubmitted = feedback !== null && !isFeedbackSheetOpen;
+
   const resetFeedbackReason = () => {
     setFeedbackReason(null);
     setCustomFeedbackReason('');
   };
 
   const handleClickFeedbackIcon = (value: 'up' | 'down') => {
-    setFeedback((prev) => {
-      const next = prev === value ? null : value;
-      if (next === 'down') {
-        setIsFeedbackSheetOpen(true);
-      } else {
-        resetFeedbackReason();
-      }
-      return next;
-    });
+    setFeedback(value);
+    if (value === 'down') {
+      setIsFeedbackSheetOpen(true);
+    }
   };
 
   const handleFeedbackSheetOpenChange = (open: boolean) => {
@@ -205,31 +213,45 @@ function RecommendationDetailStep({
 
       <div
         className={cn(
-          '-mx-5 flex flex-col items-center gap-px px-5 pt-8 pb-5 text-center',
-          REVIEW_BACKGROUND_CLASS_NAME,
+          '-mx-5 flex flex-col items-center px-5 pt-8 pb-5 text-center',
+          isFeedbackSubmitted
+            ? REVIEW_FEEDBACK_SUBMITTED_BACKGROUND_CLASS_NAME
+            : REVIEW_BACKGROUND_CLASS_NAME,
         )}
       >
-        <span className="text-caption-01 text-grey-400">
-          이 추천이 도움이 되었나요?
-        </span>
-        <div className="flex items-center gap-3">
-          {FEEDBACK_ICON_ITEMS.map(
-            ({ value, line: LineIcon, fill: FillIcon, label }) => (
-              <IconButton
-                key={value}
-                icon={
-                  feedback === value ? (
-                    <FillIcon className="text-grey-400" />
-                  ) : (
-                    <LineIcon className="text-grey-400" />
-                  )
-                }
-                aria-label={label}
-                onClick={() => handleClickFeedbackIcon(value)}
-              />
-            ),
-          )}
-        </div>
+        {isFeedbackSubmitted ? (
+          <div className="flex flex-col items-center gap-2">
+            <SmileIcon className="size-9 text-blue-500 [&>path:first-child]:text-blue-200" />
+            <p className="text-caption-01 text-grey-600">
+              소중한 의견 감사합니다.
+              <br />더 나은 TripFit을 만드는 데 반영할게요.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-caption-01 text-grey-400">
+              이 추천이 도움이 되었나요?
+            </span>
+            <div className="flex items-center gap-3">
+              {FEEDBACK_ICON_ITEMS.map(
+                ({ value, line: LineIcon, fill: FillIcon, label }) => (
+                  <IconButton
+                    key={value}
+                    icon={
+                      feedback === value ? (
+                        <FillIcon className="text-grey-400" />
+                      ) : (
+                        <LineIcon className="text-grey-400" />
+                      )
+                    }
+                    aria-label={label}
+                    onClick={() => handleClickFeedbackIcon(value)}
+                  />
+                ),
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-auto w-full pt-2 pb-0.5">
