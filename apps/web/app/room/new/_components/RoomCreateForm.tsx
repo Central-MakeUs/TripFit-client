@@ -77,7 +77,7 @@ function RoomCreateForm() {
         <div className="py-1">
           <ProgressBar size="sm" value={(step / TOTAL_STEPS) * 100} />
         </div>
-        <form className="flex w-full flex-1 flex-col">
+        <form className="flex w-full flex-1 flex-col pb-15">
           {step === 1 && (
             <RoomNameStep value={roomName} onChange={setRoomName} />
           )}
