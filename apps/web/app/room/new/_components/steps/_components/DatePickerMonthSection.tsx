@@ -54,6 +54,8 @@ function DatePickerMonthSection({
             isStart || (isInRange && isFirstDayOfMonth(date));
           const isRangeRightCap =
             isEnd || (isInRange && isLastDayOfMonth(date));
+          // TODO: 공휴일 데이터 연동 시 공휴일도 포함
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           if (isDisabled) {
             return (
@@ -81,7 +83,11 @@ function DatePickerMonthSection({
               <span
                 className={cn(
                   'mx-[0.03rem] flex h-full flex-1 items-center justify-center rounded-full',
-                  isStart || isEnd ? 'bg-blue-500 text-white' : 'text-grey-700',
+                  isStart || isEnd
+                    ? 'bg-blue-500 text-white'
+                    : isWeekend
+                      ? 'text-red-300'
+                      : 'text-grey-700',
                 )}
               >
                 {date.getDate()}
