@@ -56,7 +56,12 @@ function ScheduleDayBottomSheet({
   };
 
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange} title={title}>
+    <BottomSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      variant="non-modal"
+    >
       <div className="flex items-center justify-between px-5 py-2.5">
         <span className="text-body-06 text-grey-600">
           이 날 일정이 변경될 수 있어요
