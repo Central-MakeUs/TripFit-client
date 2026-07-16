@@ -77,12 +77,15 @@ function ScheduleCalendar({
       const sheet = document.querySelector<HTMLElement>('[data-vaul-drawer]');
       if (!cell || !sheet) return;
 
-      const cellBottom = cell.getBoundingClientRect().bottom;
+      const cellRect = cell.getBoundingClientRect();
       const sheetTop = window.innerHeight - sheet.offsetHeight;
-      const hiddenHeight = cellBottom - sheetTop + SCROLL_BUFFER_PX;
+      const hiddenBottomHeight = cellRect.bottom - sheetTop + SCROLL_BUFFER_PX;
+      const hiddenTopHeight = SCROLL_BUFFER_PX - cellRect.top;
 
-      if (hiddenHeight > 0) {
-        window.scrollBy({ top: hiddenHeight, behavior: 'smooth' });
+      if (hiddenBottomHeight > 0) {
+        window.scrollBy({ top: hiddenBottomHeight, behavior: 'smooth' });
+      } else if (hiddenTopHeight > 0) {
+        window.scrollBy({ top: -hiddenTopHeight, behavior: 'smooth' });
       }
     });
 
