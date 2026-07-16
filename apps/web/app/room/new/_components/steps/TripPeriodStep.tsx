@@ -6,10 +6,9 @@ import { format, isSameDay } from 'date-fns';
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
 import Button from '@/components/button';
+import DatePicker from '@/components/date-picker';
+import DatePickerTitle from '@/components/date-picker/DatePickerTitle';
 import Input from '@/components/input';
-
-import DatePicker from './_components/DatePicker';
-import DatePickerTitle from './_components/DatePickerTitle';
 
 export type TripPeriodValue = {
   startDate: Date | null;
