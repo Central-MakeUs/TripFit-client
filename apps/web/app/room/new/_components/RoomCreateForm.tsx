@@ -72,11 +72,13 @@ function RoomCreateForm() {
 
   return (
     <div className="flex w-full flex-1 flex-col">
-      <Header variant="page" title="여행방 추가하기" onBack={handleBack} />
-      <div className="flex w-full flex-1 flex-col px-5">
-        <div className="py-1">
+      <div className="sticky top-0 z-10 flex w-full flex-col bg-white">
+        <Header variant="page" title="여행방 추가하기" onBack={handleBack} />
+        <div className="px-5 py-1">
           <ProgressBar size="sm" value={(step / TOTAL_STEPS) * 100} />
         </div>
+      </div>
+      <div className="flex w-full flex-1 flex-col px-5">
         <form className="flex w-full flex-1 flex-col pb-15">
           {step === 1 && (
             <RoomNameStep value={roomName} onChange={setRoomName} />
