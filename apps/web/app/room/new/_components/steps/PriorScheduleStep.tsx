@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import ScheduleCalendar from '@/components/schedule-calendar';
+import { DayScheduleValueT } from '@/types/schedule';
 
-import ScheduleEditor from '@/components/schedule-editor';
-import { ScheduleDateStatus } from '@/components/schedule-editor/scheduleEditor.const';
-
-export type PriorScheduleValue = Record<string, ScheduleDateStatus>;
+export type PriorScheduleValue = Record<string, DayScheduleValueT>;
 
 type PriorScheduleStepProps = {
   value: PriorScheduleValue;
@@ -14,8 +12,6 @@ type PriorScheduleStepProps = {
 
 function PriorScheduleStep({ value, onChange }: PriorScheduleStepProps) {
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
 
   return (
     <div className="flex flex-col">
@@ -25,13 +21,9 @@ function PriorScheduleStep({ value, onChange }: PriorScheduleStepProps) {
       <p className="text-caption-01 text-grey-500 pb-7.5">
         항목을 선택하고 날짜를 칠해주세요
       </p>
-      <ScheduleEditor
-        year={year}
-        month={month}
-        onChangeMonth={(nextYear, nextMonth) => {
-          setYear(nextYear);
-          setMonth(nextMonth);
-        }}
+      <ScheduleCalendar
+        year={today.getFullYear()}
+        month={today.getMonth() + 1}
         value={value}
         onChange={onChange}
       />
