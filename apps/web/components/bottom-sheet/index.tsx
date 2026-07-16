@@ -29,7 +29,7 @@ function BottomSheet({
       dismissible={dismissible}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/25" />
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/25" />
         <Drawer.Content
           onPointerDownOutside={(event) => {
             if (!dismissible) event.preventDefault();

@@ -17,7 +17,7 @@ function StepActions({
   onSecondaryClick,
 }: StepActionsProps) {
   return (
-    <div className="mt-auto w-full pt-2 pb-0.5">
+    <div className="fixed inset-x-0 bottom-0 z-10 mx-auto w-full px-5 pt-2 pb-0.5 sm:max-w-90">
       <Button
         text={primaryLabel}
         type="secondary"
