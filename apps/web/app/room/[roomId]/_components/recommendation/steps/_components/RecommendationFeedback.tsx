@@ -151,10 +151,14 @@ function RecommendationFeedback() {
         <ul className="flex flex-col gap-2 px-4 pt-3 pb-1">
           {FEEDBACK_REASON_ITEMS.map((item) => (
             <li key={item.value}>
-              <div className="flex items-center gap-3 py-2.5">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setFeedbackReason(item.value)}
+                className="flex cursor-pointer items-center gap-3 py-2.5"
+              >
                 <RadioButton
                   checked={feedbackReason === item.value}
-                  onCheckedChange={() => setFeedbackReason(item.value)}
                   className="size-4"
                 />
                 <span className="text-body-05 text-grey-800">{item.label}</span>
