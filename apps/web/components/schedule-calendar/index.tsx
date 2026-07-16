@@ -137,6 +137,10 @@ function ScheduleCalendar({
               date={selectedDate}
               onPrevDay={handlePrevDay}
               onNextDay={handleNextDay}
+              isPrevDisabled={isBefore(
+                subDays(selectedDate, 1),
+                startOfToday(),
+              )}
             />
           }
           value={selectedValue}
