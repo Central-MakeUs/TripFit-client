@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { addDays, addMonths, subDays } from 'date-fns';
 
-import ScheduleDayBottomSheet from './ScheduleDayBottomSheet';
+import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
+import ScheduleDayNavTitle from '@/components/schedule-day-bottom-sheet/ScheduleDayNavTitle';
+import { DayScheduleValueT } from '@/types/schedule';
+
 import ScheduleMonthSection from './ScheduleMonthSection';
-import { DayScheduleValue, getDateKey } from './scheduleCalendar.const';
+import { getDateKey } from './scheduleCalendar.const';
 
 const INITIAL_MONTH_COUNT = 3;
 const SCROLL_BUFFER_PX = 100;
 
-const DEFAULT_DAY_VALUE: DayScheduleValue = {
+const DEFAULT_DAY_VALUE: DayScheduleValueT = {
   isUncertain: false,
   morning: 'available',
   afternoon: 'available',
@@ -20,8 +23,8 @@ const DEFAULT_DAY_VALUE: DayScheduleValue = {
 type ScheduleCalendarProps = {
   year: number;
   month: number;
-  value: Record<string, DayScheduleValue>;
-  onChange: (value: Record<string, DayScheduleValue>) => void;
+  value: Record<string, DayScheduleValueT>;
+  onChange: (value: Record<string, DayScheduleValueT>) => void;
 };
 
 function ScheduleCalendar({
@@ -91,7 +94,7 @@ function ScheduleCalendar({
     setIsSheetOpen(true);
   };
 
-  const handleChangeSelectedValue = (nextValue: DayScheduleValue) => {
+  const handleChangeSelectedValue = (nextValue: DayScheduleValueT) => {
     if (!selectedDateKey) return;
     onChange({ ...value, [selectedDateKey]: nextValue });
   };
@@ -124,11 +127,15 @@ function ScheduleCalendar({
         <ScheduleDayBottomSheet
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          date={selectedDate}
+          title={
+            <ScheduleDayNavTitle
+              date={selectedDate}
+              onPrevDay={handlePrevDay}
+              onNextDay={handleNextDay}
+            />
+          }
           value={selectedValue}
           onChange={handleChangeSelectedValue}
-          onPrevDay={handlePrevDay}
-          onNextDay={handleNextDay}
           onSubmit={() => setIsSheetOpen(false)}
         />
       )}
