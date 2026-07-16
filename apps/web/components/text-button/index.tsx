@@ -21,6 +21,8 @@ function TextButton({
   text,
 }: TextButtonProps) {
   const iconSize = size === 'L' ? 'size-5' : 'size-4';
+  const resolvedIcon =
+    icon === undefined ? <ArrowLeftIcon className={iconSize} /> : icon;
 
   return (
     <button
@@ -29,7 +31,7 @@ function TextButton({
       className={cn(textButtonStyle({ size }), className)}
     >
       <span>{text}</span>
-      {icon ?? <ArrowLeftIcon className={iconSize} />}
+      {resolvedIcon}
     </button>
   );
 }
