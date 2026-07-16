@@ -12,7 +12,7 @@ import Button from '@/components/button';
 import IconButton from '@/components/icon-button';
 import { cn } from '@/utils/cn';
 
-import { DaySegmentStatus } from './scheduleEditor.const';
+import { DayScheduleValue } from './scheduleCalendar.const';
 
 const TIME_SEGMENTS = [
   {
@@ -34,13 +34,6 @@ const TIME_SEGMENTS = [
     iconColor: 'text-purple-300',
   },
 ] as const;
-
-export type DayScheduleValue = {
-  isUncertain: boolean;
-  morning: DaySegmentStatus;
-  afternoon: DaySegmentStatus;
-  evening: DaySegmentStatus;
-};
 
 type ScheduleDayBottomSheetProps = {
   open: boolean;
