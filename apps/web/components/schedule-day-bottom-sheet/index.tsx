@@ -62,11 +62,16 @@ function ScheduleDayBottomSheet({
           이 날 일정이 변경될 수 있어요
         </span>
         {/* TODO: Toggle 컴포넌트 연동 */}
-        <div
+        <button
+          type="button"
+          onClick={() =>
+            onChange({ ...value, isUncertain: !value.isUncertain })
+          }
           className={cn(
             'h-6 w-10 rounded-full transition-colors',
             value.isUncertain ? 'bg-blue-500' : 'bg-grey-200',
           )}
+          aria-label="미정 상태 토글"
         />
       </div>
       <div className="flex flex-col gap-1 px-5 py-2">
