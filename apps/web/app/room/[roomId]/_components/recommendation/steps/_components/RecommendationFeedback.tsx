@@ -139,11 +139,13 @@ function RecommendationFeedback() {
       <BottomSheet
         open={isFeedbackSheetOpen}
         onOpenChange={handleFeedbackSheetOpenChange}
-        title="어떤 점이 아쉬웠나요?"
-        description={
-          <span className="text-body-06 text-grey-500">
-            다음 추천을 더 만족스럽게 만들게요
-          </span>
+        title={
+          <div className="flex flex-col gap-0.5 p-4">
+            <span className="text-body-01">어떤 점이 아쉬웠나요?</span>
+            <span className="text-body-06 text-grey-500">
+              다음 추천을 더 만족스럽게 만들게요
+            </span>
+          </div>
         }
       >
         <ul className="flex flex-col gap-2 px-4 pt-3 pb-1">
