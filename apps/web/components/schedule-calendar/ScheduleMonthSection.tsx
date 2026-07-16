@@ -2,11 +2,12 @@ import { format, isBefore, startOfToday } from 'date-fns';
 
 import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
+import { DayScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
 
-import { DayScheduleValue, getDateKey } from './scheduleCalendar.const';
+import { getDateKey } from './scheduleCalendar.const';
 
-const hasScheduleData = (dayValue?: DayScheduleValue) =>
+const hasScheduleData = (dayValue?: DayScheduleValueT) =>
   Boolean(
     dayValue &&
     (dayValue.isUncertain ||
@@ -18,7 +19,7 @@ const hasScheduleData = (dayValue?: DayScheduleValue) =>
 type ScheduleMonthSectionProps = {
   year: number;
   month: number;
-  value: Record<string, DayScheduleValue>;
+  value: Record<string, DayScheduleValueT>;
   selectedDateKey: string | null;
   onSelectDate: (date: Date) => void;
 };

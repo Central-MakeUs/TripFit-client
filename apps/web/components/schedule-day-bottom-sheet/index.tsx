@@ -1,18 +1,14 @@
-import { format } from 'date-fns';
+import { ReactNode } from 'react';
 
 import AfternoonIcon from '@/assets/icons/afternoon.svg';
-import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
-import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import DinnerIcon from '@/assets/icons/dinner-1.svg';
 import EventNoteIcon from '@/assets/icons/event-note.svg';
 import MorningIcon from '@/assets/icons/morning.svg';
 import TravelIcon from '@/assets/icons/travel.svg';
 import BottomSheet from '@/components/bottom-sheet';
 import Button from '@/components/button';
-import IconButton from '@/components/icon-button';
 import { cn } from '@/utils/cn';
-
-import { DayScheduleValue } from './scheduleCalendar.const';
+import { DayScheduleValueT } from '@/types/schedule';
 
 const TIME_SEGMENTS = [
   {
@@ -38,22 +34,18 @@ const TIME_SEGMENTS = [
 type ScheduleDayBottomSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  date: Date;
-  value: DayScheduleValue;
-  onChange: (value: DayScheduleValue) => void;
-  onPrevDay: () => void;
-  onNextDay: () => void;
+  title: ReactNode;
+  value: DayScheduleValueT;
+  onChange: (value: DayScheduleValueT) => void;
   onSubmit: () => void;
 };
 
 function ScheduleDayBottomSheet({
   open,
   onOpenChange,
-  date,
+  title,
   value,
   onChange,
-  onPrevDay,
-  onNextDay,
   onSubmit,
 }: ScheduleDayBottomSheetProps) {
   const handleToggleSegment = (key: (typeof TIME_SEGMENTS)[number]['key']) => {
@@ -64,27 +56,7 @@ function ScheduleDayBottomSheet({
   };
 
   return (
-    <BottomSheet
-      open={open}
-      onOpenChange={onOpenChange}
-      title={
-        <div className="flex w-full items-center justify-between">
-          <IconButton
-            size="small"
-            icon={<ArrowLeftIcon className="text-grey-500" />}
-            onClick={onPrevDay}
-            aria-label="이전 날짜"
-          />
-          <span className="text-body-03">{format(date, 'yyyy년 M월 d일')}</span>
-          <IconButton
-            size="small"
-            icon={<ArrowRightIcon className="text-grey-500" />}
-            onClick={onNextDay}
-            aria-label="다음 날짜"
-          />
-        </div>
-      }
-    >
+    <BottomSheet open={open} onOpenChange={onOpenChange} title={title}>
       <div className="flex items-center justify-between px-5 py-2.5">
         <span className="text-body-06 text-grey-600">
           이 날 일정이 변경될 수 있어요
