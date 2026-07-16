@@ -30,6 +30,7 @@ function DatePickerMonthSection({
     year,
     month,
   });
+  const today = startOfToday();
 
   return (
     <div className="w-full pt-4 py-6">
@@ -42,9 +43,9 @@ function DatePickerMonthSection({
           <div key={`empty-${index}`} />
         ))}
         {days.map((date) => {
-          const isDisabled = isBefore(date, startOfToday());
-          const isStart = Boolean(startDate) && isSameDay(date, startDate!);
-          const isEnd = Boolean(endDate) && isSameDay(date, endDate!);
+          const isDisabled = isBefore(date, today);
+          const isStart = startDate ? isSameDay(date, startDate) : false;
+          const isEnd = endDate ? isSameDay(date, endDate) : false;
           const isInRange = Boolean(
             startDate &&
             endDate &&
