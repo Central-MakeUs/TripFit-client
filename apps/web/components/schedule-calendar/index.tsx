@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { addDays, addMonths, subDays } from 'date-fns';
+import { addDays, addMonths, isBefore, startOfToday, subDays } from 'date-fns';
 
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
 import ScheduleDayNavTitle from '@/components/schedule-day-bottom-sheet/ScheduleDayNavTitle';
@@ -101,7 +101,9 @@ function ScheduleCalendar({
 
   const handlePrevDay = () => {
     if (!selectedDate) return;
-    setSelectedDate(subDays(selectedDate, 1));
+    const prevDate = subDays(selectedDate, 1);
+    if (isBefore(prevDate, startOfToday())) return;
+    setSelectedDate(prevDate);
   };
 
   const handleNextDay = () => {
