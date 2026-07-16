@@ -58,24 +58,14 @@ function DatePickerMonthSection({
           // TODO: 공휴일 데이터 연동 시 공휴일도 포함
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
-          if (isDisabled) {
-            return (
-              <div
-                key={date.toISOString()}
-                className="text-body-06 flex aspect-square items-center justify-center text-grey-200"
-              >
-                {date.getDate()}
-              </div>
-            );
-          }
-
           return (
             <button
               key={date.toISOString()}
               type="button"
+              disabled={isDisabled}
               onClick={() => onSelectDate(date)}
               className={cn(
-                'text-body-06 flex aspect-square cursor-pointer items-center justify-center',
+                'text-body-06 flex aspect-square cursor-pointer items-center justify-center disabled:cursor-not-allowed',
                 isInRange && 'bg-blue-50',
                 isRangeLeftCap && 'rounded-l-full',
                 isRangeRightCap && 'rounded-r-full',
@@ -86,9 +76,11 @@ function DatePickerMonthSection({
                   'mx-[0.03rem] flex h-full flex-1 items-center justify-center rounded-full',
                   isStart || isEnd
                     ? 'bg-blue-500 text-white'
-                    : isWeekend
-                      ? 'text-red-300'
-                      : 'text-grey-700',
+                    : isDisabled
+                      ? 'text-grey-200'
+                      : isWeekend
+                        ? 'text-red-300'
+                        : 'text-grey-700',
                 )}
               >
                 {date.getDate()}
