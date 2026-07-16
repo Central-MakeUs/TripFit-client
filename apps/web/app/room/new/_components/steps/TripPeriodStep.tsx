@@ -72,7 +72,11 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
           />
         </div>
       </div>
-      <BottomSheet open={open} onOpenChange={setOpen} title="여행 시기 선택">
+      <BottomSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={<span className="text-body-01 block p-4">여행 시기 선택</span>}
+      >
         <div className="px-4 pb-4">
           <RangeCalendar
             year={year}

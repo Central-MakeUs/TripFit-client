@@ -31,7 +31,10 @@ function IconButton({
   const iconSize = ICON_SIZE_MAP[size];
 
   const iconElement = (
-    <span className="shrink-0" style={{ width: iconSize, height: iconSize }}>
+    <span
+      className="shrink-0 [&>svg]:size-full"
+      style={{ width: iconSize, height: iconSize }}
+    >
       {icon}
     </span>
   );
