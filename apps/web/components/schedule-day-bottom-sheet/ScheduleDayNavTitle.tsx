@@ -18,7 +18,7 @@ function ScheduleDayNavTitle({
   isPrevDisabled,
 }: ScheduleDayNavTitleProps) {
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between px-3 py-2">
       <IconButton
         size="small"
         icon={<ArrowLeftIcon className="text-grey-500" />}
