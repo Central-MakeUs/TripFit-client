@@ -80,19 +80,27 @@ function ScheduleDayBottomSheet({
               </div>
               <button
                 type="button"
+                disabled={value.isUncertain}
                 onClick={() => handleToggleSegment(key)}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-2 rounded-2xl p-3 cursor-pointer',
                   isUnavailable
                     ? 'bg-red-300 text-red-20'
                     : 'bg-grey-50 text-grey-400',
+                  value.isUncertain &&
+                    'cursor-not-allowed bg-grey-100 text-grey-200',
                 )}
               >
                 <span className="text-body-05">
                   {isUnavailable ? '일정이 있어요' : '여행 가능해요'}
                 </span>
                 {isUnavailable ? (
-                  <EventNoteIcon className="size-5 text-red-100" />
+                  <EventNoteIcon
+                    className={cn(
+                      'size-5',
+                      value.isUncertain ? 'text-grey-200' : 'text-red-100',
+                    )}
+                  />
                 ) : (
                   <TravelIcon className="size-5 text-grey-200" />
                 )}
