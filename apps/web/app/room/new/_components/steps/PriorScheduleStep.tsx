@@ -15,12 +15,9 @@ function PriorScheduleStep({ value, onChange }: PriorScheduleStepProps) {
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-body-01 pt-3 pb-0.5">
-        선약이 있는 날짜를 알려주세요
+      <h2 className="text-body-01 mt-3 mb-13">
+        날짜를 클릭해 스케줄을 입력해주세요
       </h2>
-      <p className="text-caption-01 text-grey-500 pb-7.5">
-        항목을 선택하고 날짜를 칠해주세요
-      </p>
       <ScheduleCalendar
         year={today.getFullYear()}
         month={today.getMonth() + 1}
