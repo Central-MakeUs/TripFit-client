@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { addDays, addMonths, isBefore, startOfToday, subDays } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { addDays, isBefore, startOfToday, subDays } from 'date-fns';
 
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
 import ScheduleDayNavTitle from '@/components/schedule-day-bottom-sheet/ScheduleDayNavTitle';
+import { useInfiniteMonths } from '@/hooks/useInfiniteMonths';
 import { DayScheduleValueT } from '@/types/schedule';
 
 import ScheduleMonthSection from './ScheduleMonthSection';
 import { getDateKey } from './scheduleCalendar.const';
 
-const INITIAL_MONTH_COUNT = 3;
 const SCROLL_BUFFER_PX = 100;
 
 const DEFAULT_DAY_VALUE: DayScheduleValueT = {
@@ -33,33 +33,9 @@ function ScheduleCalendar({
   value,
   onChange,
 }: ScheduleCalendarProps) {
-  const [monthCount, setMonthCount] = useState(INITIAL_MONTH_COUNT);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  const baseMonth = new Date(year, month - 1, 1);
-  const months = Array.from({ length: monthCount }, (_, index) => {
-    const target = addMonths(baseMonth, index);
-    return { year: target.getFullYear(), month: target.getMonth() + 1 };
-  });
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setMonthCount((prev) => prev + 1);
-        }
-      },
-      { rootMargin: '200px' },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
+  const { months, sentinelRef } = useInfiniteMonths({ year, month });
 
   const selectedDateKey = selectedDate ? getDateKey(selectedDate) : null;
   const selectedValue = selectedDateKey
