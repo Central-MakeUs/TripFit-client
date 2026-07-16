@@ -1,6 +1,8 @@
 import {
   format,
   isBefore,
+  isFirstDayOfMonth,
+  isLastDayOfMonth,
   isSameDay,
   isWithinInterval,
   startOfToday,
@@ -30,8 +32,8 @@ function DatePickerMonthSection({
   });
 
   return (
-    <div className="w-full">
-      <h3 className="text-body-05 mb-5">
+    <div className="w-full pt-4 py-6">
+      <h3 className="text-body-03 mb-3">
         {format(currentMonth, 'yyyy년 M월')}
       </h3>
 
@@ -43,10 +45,15 @@ function DatePickerMonthSection({
           const isDisabled = isBefore(date, startOfToday());
           const isStart = Boolean(startDate) && isSameDay(date, startDate!);
           const isEnd = Boolean(endDate) && isSameDay(date, endDate!);
-          const isInRange =
+          const isInRange = Boolean(
             startDate &&
             endDate &&
-            isWithinInterval(date, { start: startDate, end: endDate });
+            isWithinInterval(date, { start: startDate, end: endDate }),
+          );
+          const isRangeLeftCap =
+            isStart || (isInRange && isFirstDayOfMonth(date));
+          const isRangeRightCap =
+            isEnd || (isInRange && isLastDayOfMonth(date));
 
           if (isDisabled) {
             return (
@@ -67,13 +74,13 @@ function DatePickerMonthSection({
               className={cn(
                 'text-body-06 flex aspect-square cursor-pointer items-center justify-center',
                 isInRange && 'bg-blue-50',
-                isStart && 'rounded-l-full',
-                isEnd && 'rounded-r-full',
+                isRangeLeftCap && 'rounded-l-full',
+                isRangeRightCap && 'rounded-r-full',
               )}
             >
               <span
                 className={cn(
-                  'flex aspect-square w-full items-center justify-center rounded-full',
+                  'mx-[0.03rem] flex h-full flex-1 items-center justify-center rounded-full',
                   isStart || isEnd ? 'bg-blue-500 text-white' : 'text-grey-700',
                 )}
               >

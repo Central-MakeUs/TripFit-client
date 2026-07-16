@@ -22,7 +22,7 @@ function DatePicker({
   const { months, sentinelRef } = useInfiniteMonths({ year, month });
 
   return (
-    <div className="flex w-full flex-col gap-7">
+    <div className="flex w-full flex-col">
       {months.map(({ year: sectionYear, month: sectionMonth }) => (
         <DatePickerMonthSection
           key={`${sectionYear}-${sectionMonth}`}
