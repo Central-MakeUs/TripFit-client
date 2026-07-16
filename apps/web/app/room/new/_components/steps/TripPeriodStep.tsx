@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
@@ -26,10 +26,14 @@ const formatDate = (date: Date | null) =>
 function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
   const [open, setOpen] = useState(false);
   const today = new Date();
-  const baseDate = value.startDate ?? today;
 
   const handleSelectDate = (date: Date) => {
     const { startDate, endDate } = value;
+
+    if (startDate && !endDate && isSameDay(date, startDate)) {
+      onChange({ startDate: null, endDate: null });
+      return;
+    }
 
     if (!startDate || (startDate && endDate)) {
       onChange({ startDate: date, endDate: null });
@@ -85,8 +89,8 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
       >
         <div className="px-4 pb-4">
           <DatePicker
-            year={baseDate.getFullYear()}
-            month={baseDate.getMonth() + 1}
+            year={today.getFullYear()}
+            month={today.getMonth() + 1}
             startDate={value.startDate}
             endDate={value.endDate}
             onSelectDate={handleSelectDate}
