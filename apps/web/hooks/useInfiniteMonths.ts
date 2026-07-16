@@ -12,6 +12,10 @@ export const useInfiniteMonths = ({ year, month }: UseInfiniteMonthsParams) => {
   const [monthCount, setMonthCount] = useState(INITIAL_MONTH_COUNT);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setMonthCount(INITIAL_MONTH_COUNT);
+  }, [year, month]);
+
   const baseMonth = new Date(year, month - 1, 1);
   const months = Array.from({ length: monthCount }, (_, index) => {
     const target = addMonths(baseMonth, index);
@@ -33,7 +37,7 @@ export const useInfiniteMonths = ({ year, month }: UseInfiniteMonthsParams) => {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, []);
+  }, [monthCount]);
 
   return { months, sentinelRef };
 };
