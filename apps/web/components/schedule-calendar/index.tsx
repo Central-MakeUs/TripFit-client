@@ -110,7 +110,7 @@ function ScheduleCalendar({
   };
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex w-full flex-col gap-7">
       {months.map(({ year: sectionYear, month: sectionMonth }) => (
         <ScheduleMonthSection
           key={`${sectionYear}-${sectionMonth}`}
