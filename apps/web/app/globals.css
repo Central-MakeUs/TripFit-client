@@ -130,10 +130,25 @@
     var(--font-numerals), 'Pretendard Variable', 'Pretendard', sans-serif;
 }
 
+/* WebView로 감싸는 앱이라 데스크톱 브라우저의 스크롤바가 노출되면
+   네이티브 느낌이 깨진다. 스크롤 동작은 유지한 채 스크롤바만 숨긴다. */
+html {
+  overscroll-behavior-y: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   font-family: var(--font-kr);
   color: var(--color-black);
   background: var(--color-grey-50);
+  overscroll-behavior-y: none;
+  scrollbar-width: none;
+}
+body::-webkit-scrollbar {
+  display: none;
 }
 
 /* Title */
