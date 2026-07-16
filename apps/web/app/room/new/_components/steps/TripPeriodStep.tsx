@@ -5,6 +5,7 @@ import { format, isSameDay } from 'date-fns';
 
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
+import Button from '@/components/button';
 import Input from '@/components/input';
 
 import DatePicker from './_components/DatePicker';
@@ -87,13 +88,22 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
         }
         variant="non-modal"
       >
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-20">
           <DatePicker
             year={today.getFullYear()}
             month={today.getMonth() + 1}
             startDate={value.startDate}
             endDate={value.endDate}
             onSelectDate={handleSelectDate}
+          />
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-10 pt-2 pb-0.5 px-5">
+          <Button
+            text="입력하기"
+            type="secondary"
+            disabled={!value.startDate || !value.endDate}
+            onClick={() => setOpen(false)}
+            className="w-full"
           />
         </div>
       </BottomSheet>
