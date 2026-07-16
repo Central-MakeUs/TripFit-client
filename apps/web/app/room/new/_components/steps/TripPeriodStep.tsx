@@ -7,7 +7,8 @@ import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
 import Input from '@/components/input';
 
-import RangeCalendar from '../RangeCalendar';
+import DatePicker from './_components/DatePicker';
+import DatePickerTitle from './_components/DatePickerTitle';
 
 export type TripPeriodValue = {
   startDate: Date | null;
@@ -25,8 +26,7 @@ const formatDate = (date: Date | null) =>
 function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
   const [open, setOpen] = useState(false);
   const today = new Date();
-  const [year, setYear] = useState((value.startDate ?? today).getFullYear());
-  const [month, setMonth] = useState((value.startDate ?? today).getMonth() + 1);
+  const baseDate = value.startDate ?? today;
 
   const handleSelectDate = (date: Date) => {
     const { startDate, endDate } = value;
@@ -75,16 +75,18 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
       <BottomSheet
         open={open}
         onOpenChange={setOpen}
-        title={<span className="text-body-01 block p-4">여행 시기 선택</span>}
+        title={
+          <DatePickerTitle
+            startDate={value.startDate}
+            endDate={value.endDate}
+          />
+        }
+        variant="non-modal"
       >
         <div className="px-4 pb-4">
-          <RangeCalendar
-            year={year}
-            month={month}
-            onChangeMonth={(nextYear, nextMonth) => {
-              setYear(nextYear);
-              setMonth(nextMonth);
-            }}
+          <DatePicker
+            year={baseDate.getFullYear()}
+            month={baseDate.getMonth() + 1}
             startDate={value.startDate}
             endDate={value.endDate}
             onSelectDate={handleSelectDate}
