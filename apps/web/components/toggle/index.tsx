@@ -7,6 +7,7 @@ type ToggleProps = {
   className?: string;
   disabled?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  'aria-label': string;
 };
 
 function Toggle({
@@ -14,6 +15,7 @@ function Toggle({
   className,
   disabled = false,
   onCheckedChange,
+  'aria-label': ariaLabel,
 }: ToggleProps) {
   const handleClick = () => {
     onCheckedChange?.(!checked);
@@ -24,6 +26,7 @@ function Toggle({
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={handleClick}
       className={cn(
