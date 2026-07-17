@@ -5,7 +5,6 @@ import WarningIcon from '@/assets/icons/warning.svg';
 import Button from '@/components/button';
 import Profile from '@/components/profile';
 import ProgressBar from '@/components/progress-bar';
-import Tag from '@/components/tag';
 import {
   RecommendationCandidateDetailT,
   RecommendationParticipantT,
@@ -57,12 +56,14 @@ function ParticipantSection({
             />
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
+                {participant.isHost && (
+                  <span className="flex size-4 items-center justify-center rounded-md bg-grey-600 text-[8.5px] leading-4 font-bold tracking-[-0.17px] text-white">
+                    나
+                  </span>
+                )}
                 <span className="text-body-05 text-grey-800">
                   {participant.name}
                 </span>
-                {participant.isHost && (
-                  <Tag category="icon" color="blue" type="primary" />
-                )}
               </div>
               <span className="text-caption-03 text-grey-400">
                 {formatParticipantReason(participant.reason)}
