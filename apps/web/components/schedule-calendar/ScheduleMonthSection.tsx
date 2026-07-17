@@ -35,6 +35,7 @@ function ScheduleMonthSection({
     year,
     month,
   });
+  const today = startOfToday();
 
   return (
     <div className="w-full">
@@ -59,7 +60,7 @@ function ScheduleMonthSection({
         ))}
         {days.map((date) => {
           const dateKey = getDateKey(date);
-          const isDisabled = isBefore(date, startOfToday());
+          const isDisabled = isBefore(date, today);
           const isSelected = selectedDateKey === dateKey;
           const hasData = hasScheduleData(value[dateKey]);
           // TODO: 공휴일 데이터 연동 시 공휴일도 포함
