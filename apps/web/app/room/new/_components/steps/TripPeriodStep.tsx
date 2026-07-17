@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
+import Button from '@/components/button';
+import DatePicker from '@/components/date-picker';
+import DatePickerTitle from '@/components/date-picker/DatePickerTitle';
 import Input from '@/components/input';
-
-import RangeCalendar from '../RangeCalendar';
 
 export type TripPeriodValue = {
   startDate: Date | null;
@@ -25,11 +26,14 @@ const formatDate = (date: Date | null) =>
 function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
   const [open, setOpen] = useState(false);
   const today = new Date();
-  const [year, setYear] = useState((value.startDate ?? today).getFullYear());
-  const [month, setMonth] = useState((value.startDate ?? today).getMonth() + 1);
 
   const handleSelectDate = (date: Date) => {
     const { startDate, endDate } = value;
+
+    if (startDate && !endDate && isSameDay(date, startDate)) {
+      onChange({ startDate: null, endDate: null });
+      return;
+    }
 
     if (!startDate || (startDate && endDate)) {
       onChange({ startDate: date, endDate: null });
@@ -72,18 +76,33 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
           />
         </div>
       </div>
-      <BottomSheet open={open} onOpenChange={setOpen} title="여행 시기 선택">
-        <div className="px-4 pb-4">
-          <RangeCalendar
-            year={year}
-            month={month}
-            onChangeMonth={(nextYear, nextMonth) => {
-              setYear(nextYear);
-              setMonth(nextMonth);
-            }}
+      <BottomSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={
+          <DatePickerTitle
+            startDate={value.startDate}
+            endDate={value.endDate}
+          />
+        }
+        variant="non-modal"
+      >
+        <div className="px-4 pb-20">
+          <DatePicker
+            year={today.getFullYear()}
+            month={today.getMonth() + 1}
             startDate={value.startDate}
             endDate={value.endDate}
             onSelectDate={handleSelectDate}
+          />
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-10 pt-2 pb-0.5 px-5">
+          <Button
+            text="입력하기"
+            type="secondary"
+            disabled={!value.startDate || !value.endDate}
+            onClick={() => setOpen(false)}
+            className="w-full"
           />
         </div>
       </BottomSheet>

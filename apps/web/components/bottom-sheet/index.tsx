@@ -3,22 +3,30 @@
 import { ReactNode } from 'react';
 import { Drawer } from 'vaul';
 
+import CloseIcon from '@/assets/icons/close.svg';
+import IconButton from '@/components/icon-button';
+import { cn } from '@/utils/cn';
+
+import { bottomSheetContentStyle } from './bottomSheet.style';
+
 type BottomSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: ReactNode;
-  description?: ReactNode;
   children: ReactNode;
   dismissible?: boolean;
+  variant?: 'modal' | 'non-modal';
+  dismissType?: 'handle' | 'close-button';
 };
 
 function BottomSheet({
   open,
   onOpenChange,
   title,
-  description,
   children,
   dismissible = true,
+  variant = 'modal',
+  dismissType = 'handle',
 }: BottomSheetProps) {
   return (
     <Drawer.Root
@@ -32,20 +40,26 @@ function BottomSheet({
           onPointerDownOutside={(event) => {
             if (!dismissible) event.preventDefault();
           }}
-          className="fixed inset-x-2 bottom-8.5 flex max-h-[90vh] flex-col overflow-hidden rounded-4xl bg-white shadow-[0_16px_60px_0_rgba(0,0,0,0.12),0_12px_20px_0_rgba(0,0,0,0.08),0_2px_8px_0_rgba(0,0,0,0.12)] sm:inset-x-0 sm:mx-auto sm:w-86"
+          className={bottomSheetContentStyle({ variant })}
         >
-          <div className="mx-auto mt-3 h-1 w-14 shrink-0 cursor-grab rounded-[99px] bg-grey-100 active:cursor-grabbing" />
-          <div className="flex flex-col gap-0.5 border-b border-grey-50 p-4">
-            <Drawer.Title className="text-body-01">{title}</Drawer.Title>
-            {description && (
-              <Drawer.Description asChild>
-                {typeof description === 'string' ? (
-                  <span>{description}</span>
-                ) : (
-                  description
-                )}
-              </Drawer.Description>
+          {dismissType === 'handle' ? (
+            <div className="mx-auto mt-2 h-1 w-14 shrink-0 cursor-grab rounded-[99px] bg-grey-100 active:cursor-grabbing" />
+          ) : (
+            <IconButton
+              size="small"
+              icon={<CloseIcon className="text-grey-500" />}
+              onClick={() => onOpenChange(false)}
+              aria-label="닫기"
+              className="absolute top-1 right-2.5 z-10"
+            />
+          )}
+          <div
+            className={cn(
+              'border-b border-grey-50',
+              dismissType === 'close-button' && 'pt-7',
             )}
+          >
+            <Drawer.Title asChild>{title}</Drawer.Title>
           </div>
           <div className="overflow-y-auto overscroll-contain">{children}</div>
         </Drawer.Content>
