@@ -1,3 +1,5 @@
+import { type ReactNode } from 'react';
+
 import Button from '@/components/button';
 import TextButton from '@/components/text-button';
 import { cn } from '@/utils/cn';
@@ -8,7 +10,10 @@ type CtaButtonGroupProps = {
   className?: string;
   onPrimaryClick?: () => void;
   onSecondaryClick?: () => void;
+  primaryColor?: 'primary' | 'secondary';
+  primaryDisabled?: boolean;
   primaryText: string;
+  secondaryIcon?: ReactNode;
   secondaryText?: string;
   secondaryVariant?: 'button-horizontal' | 'button-vertical' | 'text-link';
 };
@@ -17,7 +22,10 @@ function CtaButtonGroup({
   className,
   onPrimaryClick,
   onSecondaryClick,
+  primaryColor = 'primary',
+  primaryDisabled = false,
   primaryText,
+  secondaryIcon = null,
   secondaryText,
   secondaryVariant = 'button-horizontal',
 }: CtaButtonGroupProps) {
@@ -26,6 +34,8 @@ function CtaButtonGroup({
       <div className={cn(ctaButtonGroupStyle({ layout: 'single' }), className)}>
         <Button
           text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
           onClick={onPrimaryClick}
           className="w-full"
         />
@@ -40,10 +50,17 @@ function CtaButtonGroup({
       >
         <Button
           text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
           onClick={onPrimaryClick}
           className="w-full"
         />
-        <TextButton size="M" text={secondaryText} onClick={onSecondaryClick} />
+        <TextButton
+          size="M"
+          text={secondaryText}
+          onClick={onSecondaryClick}
+          icon={secondaryIcon}
+        />
       </div>
     );
   }
@@ -58,6 +75,8 @@ function CtaButtonGroup({
       >
         <Button
           text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
           onClick={onPrimaryClick}
           className="w-full"
         />
@@ -84,7 +103,13 @@ function CtaButtonGroup({
         onClick={onSecondaryClick}
         className="flex-1"
       />
-      <Button text={primaryText} onClick={onPrimaryClick} className="flex-1" />
+      <Button
+        text={primaryText}
+        type={primaryColor}
+        disabled={primaryDisabled}
+        onClick={onPrimaryClick}
+        className="flex-1"
+      />
     </div>
   );
 }

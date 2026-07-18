@@ -3,7 +3,7 @@ import { memo } from 'react';
 import AddIcon from '@/assets/icons/add.svg';
 import KeepFillIcon from '@/assets/icons/keep-fill.svg';
 import KeepLineIcon from '@/assets/icons/keep-line.svg';
-import ShareIcon from '@/assets/icons/share.svg';
+import IconButton from '@/components/icon-button';
 import ProgressBar from '@/components/progress-bar';
 import Profile from '@/components/profile';
 import Tag from '@/components/tag';
@@ -28,12 +28,13 @@ export type RoomCardProps =
       className?: string;
       dateRange: string;
       days: number;
+      id: number;
       isHost?: boolean;
       isPinned?: boolean;
+      lastActivityAt: string;
       nights: number;
       onClick?: () => void;
       onPin?: () => void;
-      onShare?: () => void;
       participants: ParticipantT[];
       progress: number; // 0 ~ 100
       respondedCount: number;
@@ -41,6 +42,11 @@ export type RoomCardProps =
       title: string;
       type: 'fill';
     };
+
+// 5명까지는 전부 아바타로 보여주고, 5명을 넘어갈 때만 4명 + "+N" 배지로 바뀐다
+// (아바타 슬롯 자체는 항상 최대 5개).
+const MAX_PARTICIPANT_SLOTS = 5;
+const MAX_VISIBLE_PARTICIPANTS = 4;
 
 function RoomCard(props: RoomCardProps) {
   if (props.type === 'empty') {
@@ -66,7 +72,6 @@ function RoomCard(props: RoomCardProps) {
     nights,
     onClick,
     onPin,
-    onShare,
     participants,
     progress,
     respondedCount,
@@ -85,11 +90,6 @@ function RoomCard(props: RoomCardProps) {
   const handlePin = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onPin?.();
-  };
-
-  const handleShare = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onShare?.();
   };
 
   return (
@@ -114,8 +114,9 @@ function RoomCard(props: RoomCardProps) {
             <p className="text-body-01 text-black">{title}</p>
             <p className="flex items-center gap-2 text-caption-04 text-grey-400">
               <span>
-                <span className="font-semibold">{nights}</span>박
-                <span className="font-semibold">{days}</span>일
+                {nights}
+                <span className="font-semibold">박</span> {days}
+                <span className="font-semibold">일</span>
               </span>
               <span>·</span>
               <span>{dateRange}</span>
@@ -123,24 +124,18 @@ function RoomCard(props: RoomCardProps) {
           </div>
         </div>
         <div className="flex h-9 items-end">
-          <button
-            type="button"
+          <IconButton
+            size="default"
             onClick={handlePin}
-            className="flex size-9 cursor-pointer items-center justify-center"
-          >
-            {isPinned ? (
-              <KeepFillIcon className="size-6 text-blue-700" />
-            ) : (
-              <KeepLineIcon className="size-6 text-blue-700" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="flex size-9 cursor-pointer items-center justify-center"
-          >
-            <ShareIcon className="size-6 text-blue-700" />
-          </button>
+            aria-label={isPinned ? '고정 해제' : '고정하기'}
+            icon={
+              isPinned ? (
+                <KeepFillIcon className="text-blue-700" />
+              ) : (
+                <KeepLineIcon className="text-blue-700" />
+              )
+            }
+          />
         </div>
       </div>
 
@@ -148,16 +143,36 @@ function RoomCard(props: RoomCardProps) {
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center">
-              {participants.map((participant, index) => (
-                <Profile
-                  key={participant.name}
-                  size="S"
-                  text={participant.name}
-                  color={participant.color}
-                  tone={participant.tone}
-                  className={index === 0 ? '' : '-ml-1'}
-                />
-              ))}
+              {participants
+                .slice(
+                  0,
+                  participants.length > MAX_PARTICIPANT_SLOTS
+                    ? MAX_VISIBLE_PARTICIPANTS
+                    : MAX_PARTICIPANT_SLOTS,
+                )
+                .map((participant, index) => (
+                  <div
+                    key={participant.name}
+                    className={index === 0 ? '' : '-ml-1'}
+                    style={{ zIndex: MAX_VISIBLE_PARTICIPANTS - index }}
+                  >
+                    <Profile
+                      size="S"
+                      text={participant.name}
+                      color={participant.color}
+                      tone={participant.tone}
+                    />
+                  </div>
+                ))}
+              {participants.length > MAX_PARTICIPANT_SLOTS && (
+                <div className="-ml-1" style={{ zIndex: 0 }}>
+                  <Profile
+                    size="S"
+                    disabled
+                    text={`+${participants.length - MAX_VISIBLE_PARTICIPANTS}`}
+                  />
+                </div>
+              )}
             </div>
             <p className="text-caption-04 text-grey-400">
               {participants[0]?.name} 외 {Math.max(participants.length - 1, 0)}

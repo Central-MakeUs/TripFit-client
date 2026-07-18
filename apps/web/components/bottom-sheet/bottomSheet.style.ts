@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const bottomSheetContentStyle = cva(
-  'fixed flex max-h-[90vh] flex-col overflow-hidden bg-white shadow-[0_16px_60px_0_rgba(0,0,0,0.12),0_12px_20px_0_rgba(0,0,0,0.08),0_2px_8px_0_rgba(0,0,0,0.12)] sm:mx-auto',
+  'fixed z-50 flex max-h-[90vh] flex-col overflow-hidden bg-white shadow-[0_16px_60px_0_rgba(0,0,0,0.12),0_12px_20px_0_rgba(0,0,0,0.08),0_2px_8px_0_rgba(0,0,0,0.12)] sm:mx-auto',
   {
     variants: {
       variant: {
