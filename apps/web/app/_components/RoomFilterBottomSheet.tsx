@@ -29,15 +29,16 @@ function RoomFilterBottomSheet({
       onOpenChange={onOpenChange}
       title={<div className="text-body-01 px-4 py-3">필터</div>}
     >
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={onlyMine}
         onClick={() => onOnlyMineChange(!onlyMine)}
         className="flex cursor-pointer items-center pt-2 pr-4 pb-1 pl-1"
       >
-        <Checkbox checked={onlyMine} className="-mr-1" />
+        <Checkbox checked={onlyMine} interactive={false} className="-mr-1" />
         <p className="text-body-06 text-grey-800">내가 생성한 방만 보기</p>
-      </div>
+      </button>
       <div className="flex flex-col gap-1 px-1 pb-3">
         {FILTER_OPTIONS.map((option) => (
           <BottomSheetListItem
