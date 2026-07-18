@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const floatingButtonStyle = cva(
-  'fixed right-5 bottom-10 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-[0_8px_12px_0_var(--color-grey-100)] transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+  'pointer-events-auto absolute right-5 bottom-4 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-[0_8px_12px_0_var(--color-grey-100)] transition-colors disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       color: {

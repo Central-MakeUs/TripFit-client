@@ -1,4 +1,3 @@
-import MoreVertIcon from '@/assets/icons/more-vert.svg';
 import Tag from '@/components/tag';
 import { cn } from '@/utils/cn';
 
@@ -9,8 +8,8 @@ type RoomListItemProps = {
   dateRange: string;
   isHost?: boolean;
   onClick?: () => void;
-  onMoreClick?: () => void;
   statusTag?: string;
+  statusTagType?: 'secondary' | 'tertiary';
   title: string;
 };
 
@@ -19,8 +18,8 @@ function RoomListItem({
   dateRange,
   isHost = false,
   onClick,
-  onMoreClick,
   statusTag,
+  statusTagType = 'secondary',
   title,
 }: RoomListItemProps) {
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -46,23 +45,13 @@ function RoomListItem({
       <div className="flex flex-1 flex-col items-start gap-2">
         <div className="flex h-6 items-center gap-2">
           {isHost && <Tag category="icon-L" text="방장" type="primary" />}
-          {statusTag && <Tag text={statusTag} type="secondary" />}
+          {statusTag && <Tag text={statusTag} type={statusTagType} />}
         </div>
         <div className="flex flex-col items-start gap-0.5">
           <p className="text-body-03 text-black">{title}</p>
           <p className="text-caption-04 text-grey-400">{dateRange}</p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onMoreClick?.();
-        }}
-        className="shrink-0 cursor-pointer"
-      >
-        <MoreVertIcon className="size-6 text-black" />
-      </button>
     </div>
   );
 }
