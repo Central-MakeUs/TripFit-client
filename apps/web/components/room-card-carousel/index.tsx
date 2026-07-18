@@ -28,6 +28,9 @@ function RoomCardCarousel({ className, items }: RoomCardCarouselProps) {
   // "가운데 정렬 기준" 스크롤 위치 사이에 (뷰포트 너비 - 카드 너비)/2 만큼 차이가 난다.
   // 이 상수를 알아야 몇 번째 카드가 지금 중앙에 있는지 계산할 수 있다.
   const centerOffsetRef = useRef(0);
+  // 컨테이너 좌측 패딩(px-5)만큼 첫 카드가 0이 아닌 위치에서 시작하므로,
+  // scrollLeft ↔ index 상호 변환 시 이 오프셋을 함께 보정해야 한다.
+  const firstOffsetRef = useRef(0);
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
@@ -43,6 +46,7 @@ function RoomCardCarousel({ className, items }: RoomCardCarouselProps) {
         : first.getBoundingClientRect().width;
       centerOffsetRef.current =
         (container.clientWidth - first.getBoundingClientRect().width) / 2;
+      firstOffsetRef.current = first.offsetLeft;
     };
 
     measure();
@@ -55,7 +59,10 @@ function RoomCardCarousel({ className, items }: RoomCardCarouselProps) {
     const container = containerRef.current;
     if (!container || !stepRef.current) return;
     const index = Math.round(
-      (container.scrollLeft + centerOffsetRef.current) / stepRef.current,
+      (container.scrollLeft +
+        centerOffsetRef.current -
+        firstOffsetRef.current) /
+        stepRef.current,
     );
     setCurrent(Math.min(Math.max(index, 0), items.length - 1));
   };
@@ -106,12 +113,17 @@ function RoomCardCarousel({ className, items }: RoomCardCarouselProps) {
       // 놓인 위치에서 가장 가까운 카드로 직접 스냅시켜준다.
       if (stepRef.current) {
         const index = Math.round(
-          (container.scrollLeft + centerOffsetRef.current) / stepRef.current,
+          (container.scrollLeft +
+            centerOffsetRef.current -
+            firstOffsetRef.current) /
+            stepRef.current,
         );
         const targetLeft = Math.max(
           0,
           Math.min(
-            index * stepRef.current - centerOffsetRef.current,
+            firstOffsetRef.current +
+              index * stepRef.current -
+              centerOffsetRef.current,
             container.scrollWidth - container.clientWidth,
           ),
         );
