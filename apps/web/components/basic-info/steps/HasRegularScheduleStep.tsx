@@ -6,7 +6,7 @@ import { cn } from '@/utils/cn';
 type HasRegularScheduleStepProps = {
   value: boolean | null;
   onNext: (hasRegularSchedule: boolean) => void;
-  onSkip: () => void;
+  onSkip?: () => void;
 };
 
 function HasRegularScheduleStep({
@@ -58,12 +58,14 @@ function HasRegularScheduleStep({
           </div>
         </button>
       </div>
-      <TextButton
-        text="건너뛰기"
-        onClick={onSkip}
-        className="mx-auto mt-auto w-fit p-4 mb-0.5"
-        icon={<></>}
-      />
+      {onSkip && (
+        <TextButton
+          text="건너뛰기"
+          onClick={onSkip}
+          className="mx-auto mt-auto w-fit p-4 mb-0.5"
+          icon={<></>}
+        />
+      )}
     </div>
   );
 }

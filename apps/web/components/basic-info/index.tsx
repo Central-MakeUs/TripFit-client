@@ -17,11 +17,13 @@ import HasRegularScheduleStep from './steps/HasRegularScheduleStep';
 type BasicInfoProps = {
   initialValue?: BasicInfoValue;
   onComplete: (value: BasicInfoValue) => void;
+  allowSkip?: boolean;
 };
 
 function BasicInfo({
   initialValue = DEFAULT_BASIC_INFO_VALUE,
   onComplete,
+  allowSkip = true,
 }: BasicInfoProps) {
   const router = useRouter();
   const [screenHistory, setScreenHistory] = useState<BasicInfoScreen[]>([
@@ -71,7 +73,7 @@ function BasicInfo({
           <HasRegularScheduleStep
             value={value.hasRegularSchedule}
             onNext={handleHasRegularScheduleNext}
-            onSkip={handleHasRegularScheduleSkip}
+            onSkip={allowSkip ? handleHasRegularScheduleSkip : undefined}
           />
         )}
         {/* TODO: 나머지 스텝 구현 예정 */}
