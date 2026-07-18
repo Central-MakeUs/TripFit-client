@@ -43,7 +43,7 @@ function Button({
     >
       {icon && iconPosition === 'left' && (
         <span
-          className="shrink-0"
+          className="shrink-0 [&>svg]:size-full"
           style={{ width: iconSize, height: iconSize }}
         >
           {icon}
@@ -52,7 +52,7 @@ function Button({
       <span>{text}</span>
       {icon && iconPosition === 'right' && (
         <span
-          className="shrink-0"
+          className="shrink-0 [&>svg]:size-full"
           style={{ width: iconSize, height: iconSize }}
         >
           {icon}
