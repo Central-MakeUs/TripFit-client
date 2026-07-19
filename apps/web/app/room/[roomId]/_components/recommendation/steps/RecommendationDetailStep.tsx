@@ -19,7 +19,7 @@ import RecommendationStatBox from './_components/RecommendationStatBox';
 type RecommendationDetailStepProps = {
   roomName: string;
   candidate: RecommendationCandidateDetailT;
-  onConfirm: () => void;
+  onConfirm: (candidate: RecommendationCandidateDetailT) => void;
 };
 
 type ParticipantSectionProps = {
@@ -105,9 +105,11 @@ function RecommendationDetailStep({
         />
       </div>
       <RecommendationStatBox
-        uncertainCount={candidate.uncertainCount}
-        partialCount={candidate.partialCount}
-        leaveCount={candidate.leaveCount}
+        stats={[
+          { label: '불확실 일정', value: candidate.uncertainCount },
+          { label: '부분 참여', value: candidate.partialCount },
+          { label: '연차 일수', value: candidate.leaveCount },
+        ]}
         theme="blue"
         className="mt-2"
       />
@@ -129,7 +131,7 @@ function RecommendationDetailStep({
       <CtaButtonGroup
         primaryText="일정 확정하기"
         primaryColor="secondary"
-        onPrimaryClick={onConfirm}
+        onPrimaryClick={() => onConfirm(candidate)}
         className="mt-auto px-0"
       />
     </div>
