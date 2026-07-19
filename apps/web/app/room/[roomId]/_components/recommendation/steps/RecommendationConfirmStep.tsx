@@ -3,9 +3,8 @@
 import { ReactNode, useRef, useState } from 'react';
 
 import ReplayIcon from '@/assets/icons/replay.svg';
-import Button from '@/components/button';
+import CtaButtonGroup from '@/components/cta-button-group';
 import Pagination from '@/components/pagination';
-import TextButton from '@/components/text-button';
 import {
   RecommendationCandidateDetailT,
   RecommendationTypeT,
@@ -105,16 +104,15 @@ function RecommendationConfirmStep({
         )}
       </div>
       <div className="w-full" style={{ flexGrow: 45 }} />
-      <div className="w-full py-2 space-y-2">
-        <Button text="일정 확정하기" onClick={onConfirm} className="w-full" />
-        <TextButton
-          text="다시 추천받기"
-          icon={<ReplayIcon className="size-5 text-grey-500" />}
-          onClick={onRetry}
-          size="L"
-          className="mx-auto"
-        />
-      </div>
+      <CtaButtonGroup
+        primaryText="일정 확정하기"
+        onPrimaryClick={onConfirm}
+        secondaryText="다시 추천받기"
+        secondaryVariant="text-link"
+        secondaryIcon={<ReplayIcon className="size-4 text-grey-500" />}
+        onSecondaryClick={onRetry}
+        className="px-0"
+      />
     </div>
   );
 }

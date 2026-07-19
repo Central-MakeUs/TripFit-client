@@ -1,4 +1,5 @@
 import Button from '@/components/button';
+import CtaButtonGroup from '@/components/cta-button-group';
 import RecommendationListItem from '@/components/recommendation-list-item';
 import { RecommendationTypeT } from '@/types/recommendation';
 
@@ -62,15 +63,12 @@ function RecommendationTypeStep({
         )}
       </div>
       <div className="w-full" style={{ flexGrow: 137 }} />
-      <div className="w-full pt-2 pb-0.5">
-        <Button
-          text="추천 일정 확인하기"
-          type="primary"
-          disabled={!value}
-          onClick={onNext}
-          className="w-full"
-        />
-      </div>
+      <CtaButtonGroup
+        primaryText="추천 일정 확인하기"
+        primaryDisabled={!value}
+        onPrimaryClick={onNext}
+        className="px-0"
+      />
     </div>
   );
 }

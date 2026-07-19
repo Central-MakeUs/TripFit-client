@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
-import Button from '@/components/button';
+import CtaButtonGroup from '@/components/cta-button-group';
 import Profile from '@/components/profile';
 import ProgressBar from '@/components/progress-bar';
 import {
@@ -126,14 +126,12 @@ function RecommendationDetailStep({
 
       <RecommendationFeedback />
 
-      <div className="mt-auto w-full pt-2 pb-0.5">
-        <Button
-          text="일정 확정하기"
-          type="secondary"
-          onClick={onConfirm}
-          className="w-full"
-        />
-      </div>
+      <CtaButtonGroup
+        primaryText="일정 확정하기"
+        primaryColor="secondary"
+        onPrimaryClick={onConfirm}
+        className="mt-auto px-0"
+      />
     </div>
   );
 }
