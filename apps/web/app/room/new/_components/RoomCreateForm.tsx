@@ -119,7 +119,7 @@ function RoomCreateForm() {
             onPrimaryClick={handleNext}
             primaryDisabled={isNextDisabled}
             secondaryText={
-              step === 3 || step === 5 ? '아직 못 정했어요' : undefined
+              step === 3 || step === 5 ? '아직 못정했어요' : undefined
             }
             secondaryVariant="text-link"
             secondaryIcon={false}
