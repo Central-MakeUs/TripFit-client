@@ -93,7 +93,11 @@ function Input({
         })}
         onClick={onClick}
       >
-        {prefixSlot && <span className="flex items-center">{prefixSlot}</span>}
+        {prefixSlot && (
+          <span className="flex items-center w-6 h-6 [&>svg]:size-full">
+            {prefixSlot}
+          </span>
+        )}
         <input
           ref={ref}
           id={inputId}

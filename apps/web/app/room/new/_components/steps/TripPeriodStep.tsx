@@ -89,7 +89,7 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
             placeholder="YY.MM.DD"
             readOnly
             value={formatDate(value.startDate)}
-            prefixSlot={<CalendarMonthIcon className="h-4 w-4 text-grey-500" />}
+            prefixSlot={<CalendarMonthIcon className="text-grey-200" />}
             onClick={handleOpenStartPicker}
           />
         </div>
@@ -99,7 +99,7 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
             placeholder="YY.MM.DD"
             readOnly
             value={formatDate(value.endDate)}
-            prefixSlot={<CalendarMonthIcon className="h-4 w-4 text-grey-500" />}
+            prefixSlot={<CalendarMonthIcon className="text-grey-200" />}
             onClick={handleOpenEndPicker}
           />
         </div>
