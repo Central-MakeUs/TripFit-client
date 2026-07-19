@@ -102,7 +102,7 @@ function RoomCreateForm() {
         </form>
         {step === 6 ? (
           <CtaButtonGroup
-            primaryText="참여자 초대하기"
+            primaryText="여행방 바로가기"
             primaryColor="secondary"
             onPrimaryClick={() => {
               /* TODO: 참여자 초대하기 플로우 연결 */
