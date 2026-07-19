@@ -42,6 +42,7 @@ function RecommendationConfirmedStep({
 
       <CtaButtonGroup
         primaryText="일정 공유하기"
+        primaryColor="secondary"
         onPrimaryClick={() => {
           /* TODO: 일정 공유하기 플로우 연결 */
         }}
