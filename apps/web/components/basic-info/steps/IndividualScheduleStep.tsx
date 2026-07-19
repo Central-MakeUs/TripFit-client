@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import ScheduleCalendar from '@/components/schedule-calendar';
 import { DayScheduleValueT } from '@/types/schedule';
 
@@ -14,19 +16,25 @@ function IndividualScheduleStep({
   value,
   onChange,
 }: IndividualScheduleStepProps) {
-  const today = new Date();
+  const [today, setToday] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setToday(new Date());
+  }, []);
 
   return (
     <div className="flex flex-col">
       <h2 className="text-body-01 mt-3 mb-13">
         날짜를 클릭해 스케줄을 입력해주세요
       </h2>
-      <ScheduleCalendar
-        year={today.getFullYear()}
-        month={today.getMonth() + 1}
-        value={value}
-        onChange={onChange}
-      />
+      {today && (
+        <ScheduleCalendar
+          year={today.getFullYear()}
+          month={today.getMonth() + 1}
+          value={value}
+          onChange={onChange}
+        />
+      )}
     </div>
   );
 }
