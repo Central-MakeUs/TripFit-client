@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
+import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
-import StepActions from './StepActions';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
 import ParticipantCountStep from './steps/ParticipantCountStep';
@@ -79,7 +79,7 @@ function RoomCreateForm() {
         </div>
       </div>
       <div className="flex w-full flex-1 flex-col px-5">
-        <form className="flex w-full flex-1 flex-col pb-15">
+        <form className="flex w-full flex-1 flex-col">
           {step === 1 && (
             <RoomNameStep value={roomName} onChange={setRoomName} />
           )}
@@ -111,22 +111,28 @@ function RoomCreateForm() {
           {step === 7 && <CompleteStep roomName={roomName} />}
         </form>
         {step === 7 ? (
-          <StepActions
-            primaryLabel="참여자 초대하기"
+          <CtaButtonGroup
+            primaryText="참여자 초대하기"
+            primaryColor="secondary"
             onPrimaryClick={() => {
               /* TODO: 참여자 초대하기 플로우 연결 */
             }}
-            secondaryLabel="나중에 할게요"
+            secondaryText="나중에 할게요"
+            secondaryVariant="text-link"
+            secondaryIcon={false}
             onSecondaryClick={() => router.push('/')}
           />
         ) : (
-          <StepActions
-            primaryLabel="다음"
+          <CtaButtonGroup
+            primaryText="다음"
+            primaryColor="secondary"
             onPrimaryClick={handleNext}
             primaryDisabled={isNextDisabled}
-            secondaryLabel={
+            secondaryText={
               step === 3 || step === 5 ? '아직 못 정했어요' : undefined
             }
+            secondaryVariant="text-link"
+            secondaryIcon={false}
             onSecondaryClick={handleNext}
           />
         )}
