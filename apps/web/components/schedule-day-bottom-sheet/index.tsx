@@ -52,7 +52,7 @@ function ScheduleDayBottomSheet({
   const handleToggleSegment = (key: (typeof TIME_SEGMENTS)[number]['key']) => {
     onChange({
       ...value,
-      [key]: value[key] === 'available' ? 'unavailable' : 'available',
+      [key]: value[key] === 'unavailable' ? 'available' : 'unavailable',
     });
   };
 
