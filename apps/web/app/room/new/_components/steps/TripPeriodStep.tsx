@@ -114,6 +114,7 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
           />
         }
         variant="non-modal"
+        dismissType="close-button"
       >
         <div className="px-5 pb-20">
           <DatePicker
