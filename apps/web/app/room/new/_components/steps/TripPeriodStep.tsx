@@ -129,11 +129,7 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
           <Button
             text="입력하기"
             type="secondary"
-            disabled={
-              activeField === 'start'
-                ? !draftValue.startDate
-                : !draftValue.startDate || !draftValue.endDate
-            }
+            disabled={!draftValue.startDate || !draftValue.endDate}
             onClick={handleSubmit}
             className="w-full"
           />
