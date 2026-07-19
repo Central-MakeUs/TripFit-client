@@ -11,9 +11,6 @@ import ProgressBar from '@/components/progress-bar';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
 import ParticipantCountStep from './steps/ParticipantCountStep';
-import PriorScheduleStep, {
-  PriorScheduleValue,
-} from './steps/PriorScheduleStep';
 import RoomNameStep from './steps/RoomNameStep';
 import TripDurationStep, {
   isTripDurationValid,
@@ -21,7 +18,7 @@ import TripDurationStep, {
 } from './steps/TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './steps/TripPeriodStep';
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 6;
 
 function RoomCreateForm() {
   const router = useRouter();
@@ -37,7 +34,6 @@ function RoomCreateForm() {
   });
   const [participantCount, setParticipantCount] = useState(0);
   const [destination, setDestination] = useState('');
-  const [priorSchedule, setPriorSchedule] = useState<PriorScheduleValue>({});
 
   const periodDays =
     tripPeriod.startDate && tripPeriod.endDate
@@ -66,7 +62,7 @@ function RoomCreateForm() {
               : false;
 
   const handleNext = () => {
-    // TODO: 6 → 7 전환 시 여행방 생성 API 호출 예정 (응답/요청 스키마 확정 후 연결)
+    // TODO: 5 → 6 전환 시 여행방 생성 API 호출 예정 (응답/요청 스키마 확정 후 연결)
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
@@ -102,15 +98,9 @@ function RoomCreateForm() {
           {step === 5 && (
             <DestinationStep value={destination} onChange={setDestination} />
           )}
-          {step === 6 && (
-            <PriorScheduleStep
-              value={priorSchedule}
-              onChange={setPriorSchedule}
-            />
-          )}
-          {step === 7 && <CompleteStep roomName={roomName} />}
+          {step === 6 && <CompleteStep roomName={roomName} />}
         </form>
-        {step === 7 ? (
+        {step === 6 ? (
           <CtaButtonGroup
             primaryText="참여자 초대하기"
             primaryColor="secondary"

@@ -3,14 +3,17 @@
 import ScheduleCalendar from '@/components/schedule-calendar';
 import { DayScheduleValueT } from '@/types/schedule';
 
-export type PriorScheduleValue = Record<string, DayScheduleValueT>;
+export type IndividualScheduleValue = Record<string, DayScheduleValueT>;
 
-type PriorScheduleStepProps = {
-  value: PriorScheduleValue;
-  onChange: (value: PriorScheduleValue) => void;
+type IndividualScheduleStepProps = {
+  value: IndividualScheduleValue;
+  onChange: (value: IndividualScheduleValue) => void;
 };
 
-function PriorScheduleStep({ value, onChange }: PriorScheduleStepProps) {
+function IndividualScheduleStep({
+  value,
+  onChange,
+}: IndividualScheduleStepProps) {
   const today = new Date();
 
   return (
@@ -28,4 +31,4 @@ function PriorScheduleStep({ value, onChange }: PriorScheduleStepProps) {
   );
 }
 
-export default PriorScheduleStep;
+export default IndividualScheduleStep;
