@@ -90,6 +90,7 @@ function RecommendationFeedback() {
   };
 
   const handleSaveFeedbackReason = () => {
+    // TODO: 피드백 저장 API 연동 예정 (연동 전까지는 새로고침/재진입 시 초기화됨)
     setIsFeedbackSheetOpen(false);
   };
 
