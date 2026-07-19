@@ -50,21 +50,22 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
   ),
 };
 
-type RecommendationConfirmStepProps = {
+type RecommendationResultStepProps = {
   type: RecommendationTypeT;
   onSelectCandidate: (candidate: RecommendationCandidateDetailT) => void;
-  onConfirm: () => void;
+  onConfirm: (candidate: RecommendationCandidateDetailT) => void;
   onRetry: () => void;
 };
 
-function RecommendationConfirmStep({
+function RecommendationResultStep({
   type,
   onSelectCandidate,
   onConfirm,
   onRetry,
-}: RecommendationConfirmStepProps) {
+}: RecommendationResultStepProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
+  const activeCandidate = MOCK_CANDIDATES[current] ?? MOCK_CANDIDATES[0];
 
   const handleScroll = () => {
     const container = containerRef.current;
@@ -106,7 +107,7 @@ function RecommendationConfirmStep({
       <div className="w-full" style={{ flexGrow: 45 }} />
       <CtaButtonGroup
         primaryText="일정 확정하기"
-        onPrimaryClick={onConfirm}
+        onPrimaryClick={() => activeCandidate && onConfirm(activeCandidate)}
         secondaryText="다시 추천받기"
         secondaryVariant="text-link"
         secondaryIcon={<ReplayIcon className="size-4 text-grey-500" />}
@@ -117,4 +118,4 @@ function RecommendationConfirmStep({
   );
 }
 
-export default RecommendationConfirmStep;
+export default RecommendationResultStep;
