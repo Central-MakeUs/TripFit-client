@@ -9,6 +9,7 @@ import ArrowLeftIcon from '@/assets/icons/arrow-left-200.svg';
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import LogoIcon from '@/assets/icons/logo.svg';
 import NotificationIcon from '@/assets/icons/notification.svg';
+import IconButton from '@/components/icon-button';
 
 type HeaderProps =
   | { variant: 'home' }
@@ -32,15 +33,21 @@ function Header(props: HeaderProps) {
           <LogoIcon className="h-6 w-20" />
         </Link>
         <div className="flex items-center gap-1">
-          <Link href="/my-schedule" aria-label="내 일정" className="p-2.5">
-            <CalendarMonthIcon className="h-6 w-6 text-grey-500" />
-          </Link>
-          <Link href="/notifications" aria-label="알림" className="p-2.5">
-            <NotificationIcon className="h-6 w-6 text-grey-500" />
-          </Link>
-          <Link href="/my-page" aria-label="마이페이지" className="p-2.5">
-            <AccountCircleIcon className="h-6 w-6 text-grey-500" />
-          </Link>
+          <IconButton
+            href="/my-schedule"
+            aria-label="내 일정"
+            icon={<CalendarMonthIcon className="text-grey-500" />}
+          />
+          <IconButton
+            href="/notifications"
+            aria-label="알림"
+            icon={<NotificationIcon className="text-grey-500" />}
+          />
+          <IconButton
+            href="/my-page"
+            aria-label="마이페이지"
+            icon={<AccountCircleIcon className="text-grey-500" />}
+          />
         </div>
       </div>
     );
@@ -56,14 +63,11 @@ function Header(props: HeaderProps) {
     };
 
     const backButton = (
-      <button
-        type="button"
+      <IconButton
         onClick={handleBack}
         aria-label="뒤로가기"
-        className="cursor-pointer p-2.5"
-      >
-        <ArrowLeftIcon className="h-6 w-6 text-grey-500" />
-      </button>
+        icon={<ArrowLeftIcon className="text-grey-500" />}
+      />
     );
     const rightSlotElement = rightSlot && (
       <div className="flex items-center">{rightSlot}</div>
