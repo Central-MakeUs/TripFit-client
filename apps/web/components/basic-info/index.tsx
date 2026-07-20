@@ -66,7 +66,7 @@ function BasicInfo({
 
   return (
     <div className="flex w-full flex-1 flex-col">
-      <Header variant="page" title="기본정보 입력" onBack={handleBack} />
+      <Header variant="page" title="일정 입력하기" onBack={handleBack} />
       <div className="px-5 py-1">
         <ProgressBar size="sm" value={progress} />
       </div>
