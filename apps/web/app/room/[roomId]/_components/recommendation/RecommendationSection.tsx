@@ -8,14 +8,14 @@ import {
   RecommendationTypeT,
 } from '@/types/recommendation';
 
-import RecommendationConfirmStep from './steps/RecommendationConfirmStep';
+import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
+import RecommendationResultStep from './steps/RecommendationResultStep';
 import RecommendationTypeStep from './steps/RecommendationTypeStep';
 
 type RecommendationSectionProps = {
   roomName: string;
   onExit: () => void;
-  onConfirm: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
 };
@@ -23,7 +23,6 @@ type RecommendationSectionProps = {
 function RecommendationSection({
   roomName,
   onExit,
-  onConfirm,
   respondedCount,
   onRequestResponse,
 }: RecommendationSectionProps) {
@@ -31,9 +30,11 @@ function RecommendationSection({
   const [type, setType] = useState<RecommendationTypeT | null>(null);
   const [selectedCandidate, setSelectedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
+  const [confirmedCandidate, setConfirmedCandidate] =
+    useState<RecommendationCandidateDetailT | null>(null);
 
   const handleBack = () => {
-    if (step === 1) {
+    if (step === 1 || step === 4) {
       onExit();
       return;
     }
@@ -50,6 +51,12 @@ function RecommendationSection({
     setStep(3);
   };
 
+  const handleConfirm = (candidate: RecommendationCandidateDetailT) => {
+    // TODO: 일정 확정 API 호출 예정 (응답/요청 스키마 확정 후 연결)
+    setConfirmedCandidate(candidate);
+    setStep(4);
+  };
+
   return (
     <div className="flex w-full flex-1 flex-col">
       <Header variant="page" title="추천 일정" onBack={handleBack} />
@@ -64,10 +71,10 @@ function RecommendationSection({
           />
         )}
         {step === 2 && type && (
-          <RecommendationConfirmStep
+          <RecommendationResultStep
             type={type}
             onSelectCandidate={handleSelectCandidate}
-            onConfirm={onConfirm}
+            onConfirm={handleConfirm}
             onRetry={() => setStep(1)}
           />
         )}
@@ -75,7 +82,13 @@ function RecommendationSection({
           <RecommendationDetailStep
             roomName={roomName}
             candidate={selectedCandidate}
-            onConfirm={onConfirm}
+            onConfirm={handleConfirm}
+          />
+        )}
+        {step === 4 && confirmedCandidate && (
+          <RecommendationConfirmedStep
+            candidate={confirmedCandidate}
+            onExit={onExit}
           />
         )}
       </div>

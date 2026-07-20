@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import BottomSheet from '@/components/bottom-sheet';
@@ -25,27 +25,55 @@ const formatDate = (date: Date | null) =>
 
 function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
   const [open, setOpen] = useState(false);
+  const [draftValue, setDraftValue] = useState<TripPeriodValue>(value);
+  const [activeField, setActiveField] = useState<'start' | 'end'>('start');
   const today = new Date();
 
-  const handleSelectDate = (date: Date) => {
-    const { startDate, endDate } = value;
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setDraftValue(value);
+    }
+    setOpen(nextOpen);
+  };
 
-    if (startDate && !endDate && isSameDay(date, startDate)) {
-      onChange({ startDate: null, endDate: null });
+  const handleOpenStartPicker = () => {
+    setActiveField('start');
+    handleOpenChange(true);
+  };
+
+  const handleOpenEndPicker = () => {
+    setActiveField('end');
+    handleOpenChange(true);
+  };
+
+  const handleSelectDate = (date: Date) => {
+    const { startDate, endDate } = draftValue;
+
+    if (activeField === 'end') {
+      if (startDate && date < startDate) {
+        setDraftValue({ startDate: date, endDate: startDate });
+      } else {
+        setDraftValue({ startDate: startDate ?? date, endDate: date });
+      }
       return;
     }
 
     if (!startDate || (startDate && endDate)) {
-      onChange({ startDate: date, endDate: null });
+      setDraftValue({ startDate: date, endDate: null });
       return;
     }
 
     if (date < startDate) {
-      onChange({ startDate: date, endDate: startDate });
+      setDraftValue({ startDate: date, endDate: startDate });
       return;
     }
 
-    onChange({ startDate, endDate: date });
+    setDraftValue({ startDate, endDate: date });
+  };
+
+  const handleSubmit = () => {
+    onChange(draftValue);
+    setOpen(false);
   };
 
   return (
@@ -61,8 +89,8 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
             placeholder="YY.MM.DD"
             readOnly
             value={formatDate(value.startDate)}
-            prefixSlot={<CalendarMonthIcon className="h-4 w-4 text-grey-500" />}
-            onClick={() => setOpen(true)}
+            prefixSlot={<CalendarMonthIcon className="text-grey-200" />}
+            onClick={handleOpenStartPicker}
           />
         </div>
         <div className="h-[1.5px] w-1.5 shrink-0 bg-grey-200" />
@@ -71,37 +99,38 @@ function TripPeriodStep({ value, onChange }: TripPeriodStepProps) {
             placeholder="YY.MM.DD"
             readOnly
             value={formatDate(value.endDate)}
-            prefixSlot={<CalendarMonthIcon className="h-4 w-4 text-grey-500" />}
-            onClick={() => setOpen(true)}
+            prefixSlot={<CalendarMonthIcon className="text-grey-200" />}
+            onClick={handleOpenEndPicker}
           />
         </div>
       </div>
       <BottomSheet
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={handleOpenChange}
         title={
           <DatePickerTitle
-            startDate={value.startDate}
-            endDate={value.endDate}
+            startDate={draftValue.startDate}
+            endDate={draftValue.endDate}
           />
         }
         variant="non-modal"
+        dismissType="close-button"
       >
-        <div className="px-4 pb-20">
+        <div className="px-5 pb-20">
           <DatePicker
             year={today.getFullYear()}
             month={today.getMonth() + 1}
-            startDate={value.startDate}
-            endDate={value.endDate}
+            startDate={draftValue.startDate}
+            endDate={draftValue.endDate}
             onSelectDate={handleSelectDate}
           />
         </div>
-        <div className="fixed inset-x-0 bottom-0 z-10 pt-2 pb-0.5 px-5">
+        <div className="fixed inset-x-0 bottom-0 z-10 px-5 pt-2 pb-0.5">
           <Button
             text="입력하기"
             type="secondary"
-            disabled={!value.startDate || !value.endDate}
-            onClick={() => setOpen(false)}
+            disabled={!draftValue.startDate || !draftValue.endDate}
+            onClick={handleSubmit}
             className="w-full"
           />
         </div>

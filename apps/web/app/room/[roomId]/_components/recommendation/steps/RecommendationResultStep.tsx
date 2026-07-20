@@ -3,9 +3,8 @@
 import { ReactNode, useRef, useState } from 'react';
 
 import ReplayIcon from '@/assets/icons/replay.svg';
-import Button from '@/components/button';
+import CtaButtonGroup from '@/components/cta-button-group';
 import Pagination from '@/components/pagination';
-import TextButton from '@/components/text-button';
 import {
   RecommendationCandidateDetailT,
   RecommendationTypeT,
@@ -51,21 +50,22 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
   ),
 };
 
-type RecommendationConfirmStepProps = {
+type RecommendationResultStepProps = {
   type: RecommendationTypeT;
   onSelectCandidate: (candidate: RecommendationCandidateDetailT) => void;
-  onConfirm: () => void;
+  onConfirm: (candidate: RecommendationCandidateDetailT) => void;
   onRetry: () => void;
 };
 
-function RecommendationConfirmStep({
+function RecommendationResultStep({
   type,
   onSelectCandidate,
   onConfirm,
   onRetry,
-}: RecommendationConfirmStepProps) {
+}: RecommendationResultStepProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
+  const activeCandidate = MOCK_CANDIDATES[current] ?? MOCK_CANDIDATES[0];
 
   const handleScroll = () => {
     const container = containerRef.current;
@@ -105,18 +105,17 @@ function RecommendationConfirmStep({
         )}
       </div>
       <div className="w-full" style={{ flexGrow: 45 }} />
-      <div className="w-full py-2 space-y-2">
-        <Button text="일정 확정하기" onClick={onConfirm} className="w-full" />
-        <TextButton
-          text="다시 추천받기"
-          icon={<ReplayIcon className="size-5 text-grey-500" />}
-          onClick={onRetry}
-          size="L"
-          className="mx-auto"
-        />
-      </div>
+      <CtaButtonGroup
+        primaryText="일정 확정하기"
+        onPrimaryClick={() => activeCandidate && onConfirm(activeCandidate)}
+        secondaryText="다시 추천받기"
+        secondaryVariant="text-link"
+        secondaryIcon={<ReplayIcon className="size-4 text-grey-500" />}
+        onSecondaryClick={onRetry}
+        className="px-0"
+      />
     </div>
   );
 }
 
-export default RecommendationConfirmStep;
+export default RecommendationResultStep;
