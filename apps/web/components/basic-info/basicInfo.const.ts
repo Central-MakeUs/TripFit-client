@@ -1,4 +1,4 @@
-import { RegularScheduleT } from '@/types/schedule';
+import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
 
 export type BasicInfoScreen =
   | 'hasRegularSchedule'
@@ -25,6 +25,7 @@ export type BasicInfoValue = {
   leaveNoticeDays: number | null;
   // TODO: 반차/공휴일 포함 데이터 구조 확정 필요
   includeHalfDayHoliday: boolean | null;
+  individualSchedule: IndividualScheduleValueT;
 };
 
 export const DEFAULT_BASIC_INFO_VALUE: BasicInfoValue = {
@@ -33,6 +34,7 @@ export const DEFAULT_BASIC_INFO_VALUE: BasicInfoValue = {
   annualLeaveCount: null,
   leaveNoticeDays: null,
   includeHalfDayHoliday: null,
+  individualSchedule: {},
 };
 
 export const LEAVE_NOTICE_DAYS_OPTIONS = [

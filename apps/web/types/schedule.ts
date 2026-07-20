@@ -13,3 +13,5 @@ export type RegularScheduleT = {
   startTime: string;
   endTime: string;
 };
+
+export type IndividualScheduleValueT = Record<string, DayScheduleValueT>;
