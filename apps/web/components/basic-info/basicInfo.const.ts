@@ -1,3 +1,5 @@
+import { RegularScheduleT } from '@/types/schedule';
+
 export type BasicInfoScreen =
   | 'hasRegularSchedule'
   | 'regularScheduleDetail'
@@ -17,8 +19,7 @@ export const BASIC_INFO_PROGRESS_STEPS: BasicInfoScreen[][] = [
 
 export type BasicInfoValue = {
   hasRegularSchedule: boolean | null;
-  // TODO: 정기 일정 상세 데이터 구조 확정 필요
-  regularSchedules: unknown[];
+  regularSchedules: RegularScheduleT[];
   annualLeaveCount: number | null;
   // 0 = 상관없음, 그 외에는 일 단위
   leaveNoticeDays: number | null;

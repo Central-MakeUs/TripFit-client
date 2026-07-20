@@ -13,6 +13,7 @@ import {
   DEFAULT_BASIC_INFO_VALUE,
 } from './basicInfo.const';
 import HasRegularScheduleStep from './steps/HasRegularScheduleStep';
+import RegularScheduleDetailStep from './steps/RegularScheduleDetailStep';
 
 type BasicInfoProps = {
   initialValue?: BasicInfoValue;
@@ -63,6 +64,10 @@ function BasicInfo({
     router.push('/');
   };
 
+  const handleRegularScheduleDetailNext = () => {
+    navigateTo('annualLeaveCount');
+  };
+
   return (
     <div className="flex w-full flex-1 flex-col">
       <Header variant="page" title="일정 입력하기" onBack={handleBack} />
@@ -74,6 +79,16 @@ function BasicInfo({
           <HasRegularScheduleStep
             value={value.hasRegularSchedule}
             onNext={handleHasRegularScheduleNext}
+            onSkip={allowSkip ? handleSkip : undefined}
+          />
+        )}
+        {screen === 'regularScheduleDetail' && (
+          <RegularScheduleDetailStep
+            value={value.regularSchedules}
+            onChange={(regularSchedules) =>
+              setValue((prev) => ({ ...prev, regularSchedules }))
+            }
+            onNext={handleRegularScheduleDetailNext}
             onSkip={allowSkip ? handleSkip : undefined}
           />
         )}

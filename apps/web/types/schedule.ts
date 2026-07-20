@@ -6,3 +6,10 @@ export type DayScheduleValueT = {
   afternoon: DaySegmentStatusT;
   evening: DaySegmentStatusT;
 };
+
+export type RegularScheduleT = {
+  id: string;
+  days: number[];
+  startTime: string;
+  endTime: string;
+};
