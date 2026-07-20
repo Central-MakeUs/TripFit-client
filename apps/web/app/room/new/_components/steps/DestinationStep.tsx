@@ -15,6 +15,7 @@ function DestinationStep({ value, onChange }: DestinationStepProps) {
       <Input
         label="여행지"
         placeholder="도시나 나라 이름을 입력해주세요"
+        maxLength={15}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />

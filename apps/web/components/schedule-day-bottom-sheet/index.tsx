@@ -7,6 +7,7 @@ import MorningIcon from '@/assets/icons/morning.svg';
 import TravelIcon from '@/assets/icons/travel.svg';
 import BottomSheet from '@/components/bottom-sheet';
 import Button from '@/components/button';
+import Toggle from '@/components/toggle';
 import { cn } from '@/utils/cn';
 import { DayScheduleValueT } from '@/types/schedule';
 
@@ -51,7 +52,7 @@ function ScheduleDayBottomSheet({
   const handleToggleSegment = (key: (typeof TIME_SEGMENTS)[number]['key']) => {
     onChange({
       ...value,
-      [key]: value[key] === 'available' ? 'unavailable' : 'available',
+      [key]: value[key] === 'unavailable' ? 'available' : 'unavailable',
     });
   };
 
@@ -66,16 +67,9 @@ function ScheduleDayBottomSheet({
         <span className="text-body-06 text-grey-600">
           이 날 일정이 변경될 수 있어요
         </span>
-        {/* TODO: Toggle 컴포넌트 연동 */}
-        <button
-          type="button"
-          onClick={() =>
-            onChange({ ...value, isUncertain: !value.isUncertain })
-          }
-          className={cn(
-            'h-6 w-10 rounded-full transition-colors',
-            value.isUncertain ? 'bg-blue-500' : 'bg-grey-200',
-          )}
+        <Toggle
+          checked={value.isUncertain}
+          onCheckedChange={(isUncertain) => onChange({ ...value, isUncertain })}
           aria-label="미정 상태 토글"
         />
       </div>
