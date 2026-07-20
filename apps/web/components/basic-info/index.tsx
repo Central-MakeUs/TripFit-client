@@ -59,9 +59,8 @@ function BasicInfo({
     );
   };
 
-  const handleHasRegularScheduleSkip = () => {
-    setValue((prev) => ({ ...prev, hasRegularSchedule: null }));
-    navigateTo('annualLeaveCount');
+  const handleSkip = () => {
+    router.push('/');
   };
 
   return (
@@ -75,7 +74,7 @@ function BasicInfo({
           <HasRegularScheduleStep
             value={value.hasRegularSchedule}
             onNext={handleHasRegularScheduleNext}
-            onSkip={allowSkip ? handleHasRegularScheduleSkip : undefined}
+            onSkip={allowSkip ? handleSkip : undefined}
           />
         )}
         {/* TODO: 나머지 스텝 구현 예정 */}
