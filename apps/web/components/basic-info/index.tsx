@@ -7,7 +7,7 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 
 import {
-  BASIC_INFO_SCREENS,
+  BASIC_INFO_PROGRESS_STEPS,
   BasicInfoScreen,
   BasicInfoValue,
   DEFAULT_BASIC_INFO_VALUE,
@@ -34,9 +34,11 @@ function BasicInfo({
   const screen =
     screenHistory[screenHistory.length - 1] ?? 'hasRegularSchedule';
 
+  const currentStepIndex = BASIC_INFO_PROGRESS_STEPS.findIndex((group) =>
+    group.includes(screen),
+  );
   const progress =
-    ((BASIC_INFO_SCREENS.indexOf(screen) + 1) / BASIC_INFO_SCREENS.length) *
-    100;
+    ((currentStepIndex + 1) / BASIC_INFO_PROGRESS_STEPS.length) * 100;
 
   const navigateTo = (nextScreen: BasicInfoScreen) => {
     setScreenHistory((prev) => [...prev, nextScreen]);
@@ -77,7 +79,7 @@ function BasicInfo({
           />
         )}
         {/* TODO: 나머지 스텝 구현 예정 */}
-        {screen === 'includeHalfDayHoliday' && (
+        {screen === 'complete' && (
           <button type="button" onClick={() => onComplete(value)}>
             임시: 완료
           </button>

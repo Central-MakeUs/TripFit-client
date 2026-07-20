@@ -3,14 +3,16 @@ export type BasicInfoScreen =
   | 'regularScheduleDetail'
   | 'annualLeaveCount'
   | 'leaveNoticeDays'
-  | 'includeHalfDayHoliday';
+  | 'includeHalfDayHoliday'
+  | 'individualSchedule'
+  | 'complete';
 
-export const BASIC_INFO_SCREENS: BasicInfoScreen[] = [
-  'hasRegularSchedule',
-  'regularScheduleDetail',
-  'annualLeaveCount',
-  'leaveNoticeDays',
-  'includeHalfDayHoliday',
+// 프로그래스바 표시 단위 — 여러 화면이 하나의 진행 단계로 묶임
+export const BASIC_INFO_PROGRESS_STEPS: BasicInfoScreen[][] = [
+  ['hasRegularSchedule', 'regularScheduleDetail'],
+  ['annualLeaveCount', 'leaveNoticeDays', 'includeHalfDayHoliday'],
+  ['individualSchedule'],
+  ['complete'],
 ];
 
 export type BasicInfoValue = {
