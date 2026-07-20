@@ -2,10 +2,9 @@ import { ReactNode } from 'react';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
-import Button from '@/components/button';
+import CtaButtonGroup from '@/components/cta-button-group';
 import Profile from '@/components/profile';
 import ProgressBar from '@/components/progress-bar';
-import Tag from '@/components/tag';
 import {
   RecommendationCandidateDetailT,
   RecommendationParticipantT,
@@ -20,7 +19,7 @@ import RecommendationStatBox from './_components/RecommendationStatBox';
 type RecommendationDetailStepProps = {
   roomName: string;
   candidate: RecommendationCandidateDetailT;
-  onConfirm: () => void;
+  onConfirm: (candidate: RecommendationCandidateDetailT) => void;
 };
 
 type ParticipantSectionProps = {
@@ -57,12 +56,14 @@ function ParticipantSection({
             />
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
+                {participant.isHost && (
+                  <span className="flex size-4 items-center justify-center rounded-md bg-grey-600 text-[8.5px] leading-4 font-bold tracking-[-0.17px] text-white">
+                    나
+                  </span>
+                )}
                 <span className="text-body-05 text-grey-800">
                   {participant.name}
                 </span>
-                {participant.isHost && (
-                  <Tag category="icon" color="blue" type="primary" />
-                )}
               </div>
               <span className="text-caption-03 text-grey-400">
                 {formatParticipantReason(participant.reason)}
@@ -104,9 +105,11 @@ function RecommendationDetailStep({
         />
       </div>
       <RecommendationStatBox
-        uncertainCount={candidate.uncertainCount}
-        partialCount={candidate.partialCount}
-        leaveCount={candidate.leaveCount}
+        stats={[
+          { label: '불확실 일정', value: candidate.uncertainCount },
+          { label: '부분 참여', value: candidate.partialCount },
+          { label: '연차 일수', value: candidate.leaveCount },
+        ]}
         theme="blue"
         className="mt-2"
       />
@@ -125,14 +128,12 @@ function RecommendationDetailStep({
 
       <RecommendationFeedback />
 
-      <div className="mt-auto w-full pt-2 pb-0.5">
-        <Button
-          text="일정 확정하기"
-          type="secondary"
-          onClick={onConfirm}
-          className="w-full"
-        />
-      </div>
+      <CtaButtonGroup
+        primaryText="일정 확정하기"
+        primaryColor="secondary"
+        onPrimaryClick={() => onConfirm(candidate)}
+        className="mt-auto px-0"
+      />
     </div>
   );
 }

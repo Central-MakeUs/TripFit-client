@@ -112,9 +112,11 @@ function RecommendationCandidateCard({
           <span>{attendanceRate}%</span>
         </p>
         <RecommendationStatBox
-          uncertainCount={uncertainCount}
-          partialCount={partialCount}
-          leaveCount={leaveCount}
+          stats={[
+            { label: '불확실 일정', value: uncertainCount },
+            { label: '부분 참여', value: partialCount },
+            { label: '연차 일수', value: leaveCount },
+          ]}
           theme={theme.statBoxTheme}
           className="mt-4"
         />

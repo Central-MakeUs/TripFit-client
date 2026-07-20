@@ -1,9 +1,7 @@
 import { cn } from '@/utils/cn';
 
 type RecommendationStatBoxProps = {
-  uncertainCount: number;
-  partialCount: number;
-  leaveCount: number;
+  stats: { label: string; value: number }[];
   theme?: 'blue' | 'grey';
   className?: string;
 };
@@ -22,9 +20,7 @@ const STAT_BOX_THEME = {
 };
 
 function RecommendationStatBox({
-  uncertainCount,
-  partialCount,
-  leaveCount,
+  stats,
   theme = 'grey',
   className,
 }: RecommendationStatBoxProps) {
@@ -33,12 +29,6 @@ function RecommendationStatBox({
   const statLabelClassName = 'text-caption-03 text-grey-400 whitespace-nowrap';
   const statValueClassName = cn('text-body-01', valueColor);
   const statBorderClassName = cn('border-r', borderColor);
-
-  const stats = [
-    { label: '불확실 일정', value: uncertainCount },
-    { label: '부분 참여', value: partialCount },
-    { label: '연차 일수', value: leaveCount },
-  ];
 
   return (
     <div
