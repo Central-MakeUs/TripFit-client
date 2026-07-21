@@ -10,7 +10,7 @@ type ProfileProps = {
   className?: string;
   color?: 'purple' | 'pink' | 'orange' | 'yellow' | 'green';
   disabled?: boolean;
-  size?: 'S' | 'M';
+  size?: 'S' | 'M' | 'L';
   text: string;
   tone?: 1 | 2;
 };
