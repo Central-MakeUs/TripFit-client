@@ -11,6 +11,7 @@ import IconButton from '@/components/icon-button';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
 
+import ShareSheet from '../../_common/_components/ShareSheet';
 import CalendarFabMenu from './_components/CalendarFabMenu';
 import CalendarFilterBottomSheet, {
   CalendarFilterT,
@@ -40,12 +41,9 @@ function GroupCalendarSection({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
+  const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
 
   const getDayStatus = (date: Date) => getMockDayAvailabilityStatus(date);
-
-  const handleRequestResponse = () => {
-    // TODO: 응답 요청 알림 발송 플로우 연결
-  };
 
   if (selectedDate) {
     return (
@@ -85,7 +83,7 @@ function GroupCalendarSection({
       <div className="flex w-full flex-col gap-4 px-5 pt-6 pb-4">
         <ParticipantSummaryRow
           participants={participants}
-          onRequestResponse={handleRequestResponse}
+          onRequestResponse={() => setIsRequestResponseOpen(true)}
         />
         <ResponseRateCard
           respondedCount={participants.length}
@@ -142,6 +140,18 @@ function GroupCalendarSection({
         participants={participants}
         value={filter}
         onChange={setFilter}
+      />
+
+      <ShareSheet
+        open={isRequestResponseOpen}
+        onOpenChange={setIsRequestResponseOpen}
+        title="응답 요청하기"
+        initialTitleValue={`${room.title} 일정 입력 요청`}
+        initialDescriptionValue="아직 일정 입력 안 한 사람들은 얼른 입력해줘!"
+        onShare={() => {
+          // TODO: 응답 요청 알림 발송 API/카카오톡 공유 연동
+          setIsRequestResponseOpen(false);
+        }}
       />
     </div>
   );
