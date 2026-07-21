@@ -38,8 +38,9 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
   const startDate = new Date(room.startDate);
   const endDate = new Date(room.endDate);
 
+  const isTitleValid = !!title.trim();
   const isDurationValid = isDurationUndecided || (!!nights && !!days);
-  const isDestinationValid = isDestinationUndecided || !!destination;
+  const isDestinationValid = isDestinationUndecided || !!destination.trim();
 
   const handleToggleDurationUndecided = (checked: boolean) => {
     setIsDurationUndecided(checked);
@@ -56,11 +57,11 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
 
   const handleSave = () => {
     onSave({
-      title,
+      title: title.trim(),
       nights,
       days,
       isDurationUndecided,
-      destination,
+      destination: isDestinationUndecided ? '' : destination.trim(),
       isDestinationUndecided,
     });
   };
@@ -154,7 +155,9 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
         <CtaButtonGroup
           primaryText="저장하기"
           primaryColor="secondary"
-          primaryDisabled={!title || !isDurationValid || !isDestinationValid}
+          primaryDisabled={
+            !isTitleValid || !isDurationValid || !isDestinationValid
+          }
           onPrimaryClick={handleSave}
         />
       </div>
