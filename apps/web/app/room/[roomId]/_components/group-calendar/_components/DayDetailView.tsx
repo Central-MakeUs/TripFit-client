@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
@@ -42,6 +42,11 @@ function DayDetailView({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [scheduleValue, setScheduleValue] = useState(INITIAL_SCHEDULE_VALUE);
   const { needsAttention, available } = MOCK_DAY_DETAIL;
+
+  useEffect(() => {
+    setIsEditOpen(false);
+    setScheduleValue(INITIAL_SCHEDULE_VALUE);
+  }, [selectedDate]);
 
   const isScheduleUnchanged =
     scheduleValue.isUncertain === INITIAL_SCHEDULE_VALUE.isUncertain &&
