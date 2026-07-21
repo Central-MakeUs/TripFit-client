@@ -1,12 +1,12 @@
 import { cva } from 'class-variance-authority';
 
 export const dayItemStyle = cva(
-  'flex h-[47px] flex-1 cursor-pointer items-center justify-center rounded-2xl p-2.5 text-body-06',
+  'flex h-12 flex-1 cursor-pointer items-center justify-center rounded-xl px-[1.6px] py-[1.2px] text-body-05',
   {
     variants: {
       selected: {
-        true: 'bg-[#5cc3ff] text-white',
-        false: 'bg-black/[0.02] text-black/80',
+        true: 'bg-blue-400 text-white',
+        false: 'bg-grey-20 text-grey-800',
       },
     },
     defaultVariants: {

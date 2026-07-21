@@ -3,13 +3,11 @@
 import { useEffect, useState } from 'react';
 
 import ScheduleCalendar from '@/components/schedule-calendar';
-import { DayScheduleValueT } from '@/types/schedule';
-
-export type IndividualScheduleValue = Record<string, DayScheduleValueT>;
+import { IndividualScheduleValueT } from '@/types/schedule';
 
 type IndividualScheduleStepProps = {
-  value: IndividualScheduleValue;
-  onChange: (value: IndividualScheduleValue) => void;
+  value: IndividualScheduleValueT;
+  onChange: (value: IndividualScheduleValueT) => void;
 };
 
 function IndividualScheduleStep({
