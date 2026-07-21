@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 import ExclamationMarkIcon from '@/assets/icons/exclamation-mark.svg';
 import WarningTriangleIcon from '@/assets/icons/warning-triangle.svg';
@@ -26,17 +26,32 @@ function AlertModal({
   secondaryText,
   onSecondaryClick,
 }: AlertModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onOpenChange]);
+
   if (!open) return null;
 
   return (
-    <div
-      aria-hidden
-      onClick={() => onOpenChange(false)}
-      className="fixed inset-x-0 top-0 bottom-0 z-50 mx-auto flex w-full items-center justify-center bg-black/25 px-5 sm:max-w-90"
-    >
+    <div className="fixed inset-x-0 top-0 bottom-0 z-50 mx-auto flex w-full items-center justify-center px-5 sm:max-w-90">
       <div
+        aria-hidden
+        onClick={() => onOpenChange(false)}
+        className="absolute inset-0 bg-black/25"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className="flex w-full max-w-80 flex-col items-center gap-7 rounded-4xl bg-white px-3 pt-7 pb-3 shadow-[0_16px_60px_0_rgba(0,0,0,0.12),0_12px_20px_0_rgba(0,0,0,0.08),0_2px_8px_0_rgba(0,0,0,0.12)]"
+        className="relative flex w-full max-w-80 flex-col items-center gap-7 rounded-4xl bg-white px-3 pt-7 pb-3 shadow-[0_16px_60px_0_rgba(0,0,0,0.12),0_12px_20px_0_rgba(0,0,0,0.08),0_2px_8px_0_rgba(0,0,0,0.12)]"
       >
         <div className="flex w-full flex-col items-center gap-4">
           {variant === 'danger' ? (
