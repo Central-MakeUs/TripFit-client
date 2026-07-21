@@ -106,7 +106,6 @@ function GroupCalendarSection({
             }
             onClickDay={(date) => setSelectedDate(date)}
             getIndicatorProps={(date) => ({
-              variant: 'solid',
               status: getDayStatus(date),
             })}
           />

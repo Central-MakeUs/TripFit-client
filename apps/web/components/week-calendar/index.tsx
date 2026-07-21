@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { TouchEvent, useRef } from 'react';
 import { addDays, isSameDay, subDays } from 'date-fns';
 
 import TriangleIcon from '@/assets/icons/triangle.svg';
@@ -10,8 +10,7 @@ import DayIndicator, {
 } from '@/components/calendar/DayIndicator';
 import { cn } from '@/utils/cn';
 
-const SIDE_RANGE_IN_DAYS = 15;
-const VISIBLE_DAYS_COUNT = 7;
+const SWIPE_THRESHOLD_PX = 40;
 
 type WeekCalendarProps = {
   selectedDate: Date;
@@ -26,33 +25,48 @@ function WeekCalendar({
   getIndicatorProps,
   isDateDisabled,
 }: WeekCalendarProps) {
-  const selectedItemRef = useRef<HTMLButtonElement>(null);
-
-  const days = Array.from({ length: SIDE_RANGE_IN_DAYS * 2 + 1 }, (_, index) =>
-    addDays(subDays(selectedDate, SIDE_RANGE_IN_DAYS), index),
+  const touchStartXRef = useRef<number | null>(null);
+  const rangeStart = subDays(selectedDate, 3);
+  const days = Array.from({ length: 7 }, (_, index) =>
+    addDays(rangeStart, index),
   );
-  const selectedDateKey = selectedDate.toDateString();
 
-  useEffect(() => {
-    selectedItemRef.current?.scrollIntoView({
-      behavior: 'instant',
-      inline: 'center',
-      block: 'nearest',
-    });
-  }, [selectedDateKey]);
+  const handleTouchStart = (event: TouchEvent) => {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleTouchEnd = (event: TouchEvent) => {
+    const startX = touchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX;
+    touchStartXRef.current = null;
+    if (startX === null || endX === undefined) return;
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
+
+    const nextDate = addDays(selectedDate, deltaX < 0 ? 1 : -1);
+    if (isDateDisabled?.(nextDate)) return;
+    onSelectDate(nextDate);
+  };
 
   return (
-    <div className="scrollbar-none flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth py-2">
+    <div
+      className="flex w-full items-start justify-between px-5 py-3"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {days.map((date) => {
         const isSelected = isSameDay(date, selectedDate);
         const isDisabled = isDateDisabled?.(date) ?? false;
         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
         return (
-          <div
+          <button
             key={date.toISOString()}
-            style={{ flex: `0 0 ${100 / VISIBLE_DAYS_COUNT}%` }}
-            className="flex snap-center flex-col items-center"
+            type="button"
+            disabled={isDisabled}
+            onClick={() => onSelectDate(date)}
+            className="flex cursor-pointer flex-col items-center gap-0.5 disabled:cursor-not-allowed"
           >
             <span
               className={cn(
@@ -62,16 +76,12 @@ function WeekCalendar({
             >
               {WEEKDAY_LABELS[date.getDay()]}
             </span>
-            <div className="w-3.25 h-3 pt-px flex justify-center">
+            <div className="flex h-3 w-3.25 justify-center pt-px">
               {isSelected && <TriangleIcon />}
             </div>
-            <button
-              type="button"
-              ref={isSelected ? selectedItemRef : undefined}
-              disabled={isDisabled}
-              onClick={() => onSelectDate(date)}
+            <div
               className={cn(
-                'flex cursor-pointer flex-col items-center gap-0.5 rounded-[99px] p-1 disabled:cursor-not-allowed',
+                'flex flex-col items-center gap-0.5 rounded-[99px] p-1',
                 isSelected && 'border border-grey-100',
               )}
             >
@@ -92,8 +102,8 @@ function WeekCalendar({
               <div className={cn(isDisabled && 'invisible')}>
                 <DayIndicator {...getIndicatorProps(date)} />
               </div>
-            </button>
-          </div>
+            </div>
+          </button>
         );
       })}
     </div>

@@ -72,7 +72,6 @@ function DayDetailView({
         onSelectDate={onSelectDate}
         isDateDisabled={(date) => date < minDate || date > maxDate}
         getIndicatorProps={(date) => ({
-          variant: 'solid',
           status: getDayStatus(date),
         })}
       />
