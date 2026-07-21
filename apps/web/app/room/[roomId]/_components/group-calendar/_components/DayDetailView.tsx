@@ -8,12 +8,12 @@ import WarningIcon from '@/assets/icons/warning.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
+import WeekCalendar from '@/components/week-calendar';
 import { DayScheduleValueT } from '@/types/schedule';
 
 import ParticipantStatusList from '../../../_common/_components/ParticipantStatusList';
 import { DayAvailabilityStatusT } from '../_consts/groupCalendar.const';
 import { MOCK_DAY_DETAIL } from '../_mocks/dayDetail';
-import WeekStrip from './WeekStrip';
 
 type DayDetailViewProps = {
   selectedDate: Date;
@@ -67,7 +67,7 @@ function DayDetailView({
         onBack={onBack}
       />
 
-      <WeekStrip
+      <WeekCalendar
         selectedDate={selectedDate}
         onSelectDate={onSelectDate}
         isDateDisabled={(date) => date < minDate || date > maxDate}
