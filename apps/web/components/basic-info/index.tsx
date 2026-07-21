@@ -19,12 +19,14 @@ type BasicInfoProps = {
   initialValue?: BasicInfoValue;
   onComplete: (value: BasicInfoValue) => void;
   allowSkip?: boolean;
+  onExit?: () => void;
 };
 
 function BasicInfo({
   initialValue = DEFAULT_BASIC_INFO_VALUE,
   onComplete,
   allowSkip = true,
+  onExit,
 }: BasicInfoProps) {
   const router = useRouter();
   const [screenHistory, setScreenHistory] = useState<BasicInfoScreen[]>([
@@ -47,6 +49,10 @@ function BasicInfo({
 
   const handleBack = () => {
     if (screenHistory.length === 1) {
+      if (onExit) {
+        onExit();
+        return;
+      }
       router.back();
       return;
     }
