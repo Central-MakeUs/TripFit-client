@@ -42,7 +42,10 @@ function WeekStrip({
 
     const deltaX = endX - startX;
     if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
-    onSelectDate(addDays(selectedDate, deltaX < 0 ? 1 : -1));
+
+    const nextDate = addDays(selectedDate, deltaX < 0 ? 1 : -1);
+    if (isDateDisabled?.(nextDate)) return;
+    onSelectDate(nextDate);
   };
 
   return (
