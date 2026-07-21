@@ -114,7 +114,7 @@ function GroupCalendarSection({
 
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 mx-auto h-20 w-full bg-linear-to-b from-white/0 to-white/40 backdrop-blur-[1px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black)] [mask-image:linear-gradient(to_bottom,transparent,black)] sm:max-w-90"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 mx-auto h-20 w-full bg-linear-to-b from-white/0 to-white/40 backdrop-blur-[1px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black)] mask-[linear-gradient(to_bottom,transparent,black)] sm:max-w-90"
       />
 
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full sm:max-w-90">

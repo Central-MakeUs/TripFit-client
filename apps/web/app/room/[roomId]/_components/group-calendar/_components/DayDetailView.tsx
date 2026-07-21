@@ -106,7 +106,7 @@ function DayDetailView({
           onPrimaryClick={() => setIsEditOpen(true)}
         />
       </div>
-      <div aria-hidden className="h-[58px] w-full shrink-0 bg-grey-20" />
+      <div aria-hidden className="h-14.5 w-full shrink-0 bg-grey-20" />
 
       <ScheduleDayBottomSheet
         open={isEditOpen}
