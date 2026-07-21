@@ -86,8 +86,8 @@ function Calendar({
           </button>
         </div>
       ) : (
-        <div className="flex items-center justify-start px-1 py-3">
-          <span className="text-body-05 text-grey-700">
+        <div className="flex items-center justify-start">
+          <span className="text-body-03 text-black">
             {format(currentMonth, titleFormat)}
           </span>
         </div>
@@ -97,7 +97,7 @@ function Calendar({
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="text-caption-06 text-grey-400 flex items-center justify-center py-2"
+            className="text-caption-03 text-grey-300 flex items-center justify-center mt-2 mb-4"
           >
             {label}
           </div>
@@ -113,12 +113,12 @@ function Calendar({
           const isDisabled = isDateDisabled?.(date) ?? false;
 
           const numberClassName = cn(
-            'text-caption-05',
+            'text-caption-03',
             isDisabled
-              ? 'text-grey-300'
+              ? 'text-grey-200'
               : isWeekend
                 ? 'text-red-300'
-                : 'text-grey-400',
+                : 'text-grey-500',
           );
 
           const cellContent = (

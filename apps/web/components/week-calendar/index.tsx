@@ -70,7 +70,7 @@ function WeekCalendar({
           >
             <span
               className={cn(
-                'text-caption-06',
+                'text-caption-03',
                 isSelected ? 'text-black' : 'text-grey-400',
               )}
             >
@@ -81,13 +81,13 @@ function WeekCalendar({
             </div>
             <div
               className={cn(
-                'flex flex-col items-center gap-0.5 rounded-[99px] p-1',
+                'flex flex-col items-center gap-0.5 rounded-xl p-1',
                 isSelected && 'border border-grey-100',
               )}
             >
               <span
                 className={cn(
-                  'text-caption-05',
+                  'text-caption-03',
                   isDisabled
                     ? 'text-grey-200'
                     : isSelected
