@@ -203,27 +203,25 @@ function RegularScheduleDetailStep({
         className="mt-auto px-0"
       />
 
-      {hasSchedules && (
-        <BottomSheet
-          open={isAddSheetOpen}
-          onOpenChange={setIsAddSheetOpen}
-          title={
-            <span className="text-body-01 block p-4">기본 일정 추가하기</span>
-          }
-          variant="non-modal"
-        >
-          <div className="p-5">{draftForm}</div>
-          <div className="px-5 pt-2 pb-4">
-            <CtaButtonGroup
-              primaryText="추가하기"
-              primaryColor="secondary"
-              primaryDisabled={isAddDisabled}
-              onPrimaryClick={handleAddSchedule}
-              className="px-0"
-            />
-          </div>
-        </BottomSheet>
-      )}
+      <BottomSheet
+        open={isAddSheetOpen}
+        onOpenChange={setIsAddSheetOpen}
+        title={
+          <span className="text-body-01 block p-4">기본 일정 추가하기</span>
+        }
+        variant="non-modal"
+      >
+        <div className="p-5">{draftForm}</div>
+        <div className="px-5 pt-2 pb-4">
+          <CtaButtonGroup
+            primaryText="추가하기"
+            primaryColor="secondary"
+            primaryDisabled={isAddDisabled}
+            onPrimaryClick={handleAddSchedule}
+            className="px-0"
+          />
+        </div>
+      </BottomSheet>
 
       <BottomSheet
         open={activeTimeField !== null}
