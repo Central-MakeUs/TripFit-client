@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
@@ -70,7 +70,9 @@ function DayDetailView({
       <WeekCalendar
         selectedDate={selectedDate}
         onSelectDate={onSelectDate}
-        isDateDisabled={(date) => date < minDate || date > maxDate}
+        isDateDisabled={(date) =>
+          !isWithinInterval(date, { start: minDate, end: maxDate })
+        }
         getIndicatorProps={(date) => ({
           status: getDayStatus(date),
         })}
