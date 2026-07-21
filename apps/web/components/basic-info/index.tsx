@@ -54,7 +54,11 @@ function BasicInfo({
   };
 
   const handleHasRegularScheduleNext = (hasRegularSchedule: boolean) => {
-    setValue((prev) => ({ ...prev, hasRegularSchedule }));
+    setValue((prev) => ({
+      ...prev,
+      hasRegularSchedule,
+      regularSchedules: hasRegularSchedule ? prev.regularSchedules : [],
+    }));
     navigateTo(
       hasRegularSchedule ? 'regularScheduleDetail' : 'annualLeaveCount',
     );
