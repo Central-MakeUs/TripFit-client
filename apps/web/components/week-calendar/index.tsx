@@ -6,9 +6,8 @@ import Link from 'next/link';
 
 import TriangleIcon from '@/assets/icons/triangle.svg';
 import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
-import DayIndicator, {
-  DayIndicatorProps,
-} from '@/components/calendar/DayIndicator';
+import DayPill from '@/components/calendar/DayPill';
+import { DayIndicatorProps } from '@/components/calendar/DayIndicator';
 import { cn } from '@/utils/cn';
 
 const SIDE_RANGE_IN_DAYS = 15;
@@ -44,7 +43,6 @@ function WeekCalendar({
     <div className="scrollbar-none flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth py-2">
       {days.map((date) => {
         const isSelected = date.toDateString() === selectedDate.toDateString();
-        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
         return (
           <div
@@ -66,24 +64,12 @@ function WeekCalendar({
             <Link
               href={getHref(date)}
               ref={isSelected ? selectedItemRef : undefined}
-              className={cn(
-                'flex flex-col items-center gap-0.5 rounded-[99px] p-1',
-                isSelected && 'border border-grey-100',
-              )}
             >
-              <span
-                className={cn(
-                  'text-caption-05',
-                  isSelected
-                    ? 'text-black'
-                    : isWeekend
-                      ? 'text-red-300'
-                      : 'text-grey-400',
-                )}
-              >
-                {date.getDate()}
-              </span>
-              <DayIndicator {...getIndicatorProps(date)} />
+              <DayPill
+                date={date}
+                isSelected={isSelected}
+                indicatorProps={getIndicatorProps(date)}
+              />
             </Link>
           </div>
         );
