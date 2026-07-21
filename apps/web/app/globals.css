@@ -273,3 +273,28 @@ body::-webkit-scrollbar {
     display: none;
   }
 }
+
+/* 캘린더 연동 완료 화면의 체크마크 등장 애니메이션(원 팝인 → 체크 드로잉) */
+@keyframes calendar-connect-circle-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes calendar-connect-check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@utility animate-calendar-connect-circle-pop {
+  animation: calendar-connect-circle-pop 0.2s ease-out both;
+}
+@utility animate-calendar-connect-check-draw {
+  animation: calendar-connect-check-draw 0.25s
+    cubic-bezier(0.988, 0.363, 0.23, 0.624) 0.2s both;
+}
