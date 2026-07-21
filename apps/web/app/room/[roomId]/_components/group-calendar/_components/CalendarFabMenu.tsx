@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import CloseIcon from '@/assets/icons/close.svg';
-import EditCalendarIcon from '@/assets/icons/edit-calendar.svg';
+import EditCalendarIcon from '@/assets/icons/edit-calendar-line.svg';
 import ModifyIcon from '@/assets/icons/modify.svg';
 import RepeatIcon from '@/assets/icons/repeat.svg';
 import FloatingButton from '@/components/floating-button';
