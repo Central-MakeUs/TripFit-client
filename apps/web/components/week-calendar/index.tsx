@@ -4,10 +4,10 @@ import { TouchEvent, useRef } from 'react';
 import { addDays, isSameDay, subDays } from 'date-fns';
 
 import TriangleIcon from '@/assets/icons/triangle.svg';
-import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
 import DayIndicator, {
   DayIndicatorProps,
 } from '@/components/calendar/DayIndicator';
+import { WEEKDAY_LABELS } from '@/consts/date';
 import { cn } from '@/utils/cn';
 
 const SWIPE_THRESHOLD_PX = 40;

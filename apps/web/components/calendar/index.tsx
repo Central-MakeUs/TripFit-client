@@ -6,10 +6,10 @@ import Link from 'next/link';
 
 import ArrowLeftIcon from '@/assets/icons/arrow-left-300.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import { WEEKDAY_LABELS } from '@/consts/date';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
 import { cn } from '@/utils/cn';
 
-import { WEEKDAY_LABELS } from './calendar.const';
 import DayIndicator, { DayIndicatorProps } from './DayIndicator';
 
 type CalendarHeaderRenderParams = {

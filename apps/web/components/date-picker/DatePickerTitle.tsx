@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 
-import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
+import { WEEKDAY_LABELS } from '@/consts/date';
 
 type DatePickerTitleProps = {
   startDate: Date | null;
