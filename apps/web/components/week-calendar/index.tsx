@@ -51,7 +51,7 @@ function WeekCalendar({
 
   return (
     <div
-      className="flex w-full items-start justify-between px-5 py-3"
+      className="flex w-full touch-pan-y items-start justify-between px-5 py-3"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
