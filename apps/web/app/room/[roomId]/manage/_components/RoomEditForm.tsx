@@ -38,6 +38,9 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
   const startDate = new Date(room.startDate);
   const endDate = new Date(room.endDate);
 
+  const isDurationValid = isDurationUndecided || (!!nights && !!days);
+  const isDestinationValid = isDestinationUndecided || !!destination;
+
   const handleToggleDurationUndecided = (checked: boolean) => {
     setIsDurationUndecided(checked);
     if (checked) {
@@ -151,7 +154,7 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
         <CtaButtonGroup
           primaryText="저장하기"
           primaryColor="secondary"
-          primaryDisabled={!title}
+          primaryDisabled={!title || !isDurationValid || !isDestinationValid}
           onPrimaryClick={handleSave}
         />
       </div>
