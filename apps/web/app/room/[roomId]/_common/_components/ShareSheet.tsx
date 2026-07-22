@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 import shareSheetBanner from '@/assets/images/share-sheet-banner.png';
@@ -30,6 +30,13 @@ function ShareSheet({
   const [descriptionValue, setDescriptionValue] = useState(
     initialDescriptionValue,
   );
+
+  useEffect(() => {
+    if (open) {
+      setTitleValue(initialTitleValue);
+      setDescriptionValue(initialDescriptionValue);
+    }
+  }, [open, initialTitleValue, initialDescriptionValue]);
 
   const handleShare = () => {
     onShare({ title: titleValue, description: descriptionValue });
