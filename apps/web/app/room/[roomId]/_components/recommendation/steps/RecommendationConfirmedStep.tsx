@@ -1,19 +1,26 @@
+import { useState } from 'react';
+
 import CheckCircleIcon from '@/assets/icons/check-circle.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 import { RecommendationCandidateDetailT } from '@/types/recommendation';
 
+import ShareSheet from '../../../_common/_components/ShareSheet';
 import { formatDateLabel } from '../_utils/formatDateLabel';
 import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationConfirmedStepProps = {
+  roomName: string;
   candidate: RecommendationCandidateDetailT;
   onExit: () => void;
 };
 
 function RecommendationConfirmedStep({
+  roomName,
   candidate,
   onExit,
 }: RecommendationConfirmedStepProps) {
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center justify-center">
@@ -43,14 +50,24 @@ function RecommendationConfirmedStep({
       <CtaButtonGroup
         primaryText="일정 공유하기"
         primaryColor="secondary"
-        onPrimaryClick={() => {
-          /* TODO: 일정 공유하기 플로우 연결 */
-        }}
+        onPrimaryClick={() => setIsShareOpen(true)}
         secondaryText="취소하기"
         secondaryVariant="text-link"
         secondaryIcon={false}
         onSecondaryClick={onExit}
         className="px-0"
+      />
+
+      <ShareSheet
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        title="확정 일정 공유하기"
+        initialTitleValue={`${roomName} 날짜 확정됐어!`}
+        initialDescriptionValue={`${formatDateLabel(candidate.startDate)} ~ ${formatDateLabel(candidate.endDate)} 이 날짜 비워둬!`}
+        onShare={() => {
+          // TODO: 확정 일정 공유 API/카카오톡 공유 연동
+          setIsShareOpen(false);
+        }}
       />
     </div>
   );
