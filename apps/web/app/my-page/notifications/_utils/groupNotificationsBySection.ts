@@ -1,4 +1,9 @@
-import { isToday, isYesterday, parseISO } from 'date-fns';
+import {
+  differenceInCalendarDays,
+  isToday,
+  isYesterday,
+  parseISO,
+} from 'date-fns';
 
 import { NotificationT } from '@/types/notification';
 
@@ -21,7 +26,10 @@ export const groupNotificationsBySection = (
     } else if (isYesterday(createdAt)) {
       yesterday.push(notification);
     } else {
-      recent7Days.push(notification);
+      const daysAgo = differenceInCalendarDays(new Date(), createdAt);
+      if (daysAgo >= 2 && daysAgo <= 7) {
+        recent7Days.push(notification);
+      }
     }
   });
 
