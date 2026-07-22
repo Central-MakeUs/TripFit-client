@@ -1,19 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
+import WeekCalendar from '@/components/week-calendar';
 import { DayScheduleValueT } from '@/types/schedule';
 
 import ParticipantStatusList from '../../../_common/_components/ParticipantStatusList';
 import { DayAvailabilityStatusT } from '../_consts/groupCalendar.const';
 import { MOCK_DAY_DETAIL } from '../_mocks/dayDetail';
-import WeekStrip from './WeekStrip';
 
 type DayDetailViewProps = {
   selectedDate: Date;
@@ -67,12 +67,13 @@ function DayDetailView({
         onBack={onBack}
       />
 
-      <WeekStrip
+      <WeekCalendar
         selectedDate={selectedDate}
         onSelectDate={onSelectDate}
-        isDateDisabled={(date) => date < minDate || date > maxDate}
+        isDateDisabled={(date) =>
+          !isWithinInterval(date, { start: minDate, end: maxDate })
+        }
         getIndicatorProps={(date) => ({
-          variant: 'solid',
           status: getDayStatus(date),
         })}
       />
@@ -107,7 +108,7 @@ function DayDetailView({
           onPrimaryClick={() => setIsEditOpen(true)}
         />
       </div>
-      <div aria-hidden className="h-[58px] w-full shrink-0 bg-grey-20" />
+      <div aria-hidden className="h-14.5 w-full shrink-0 bg-grey-20" />
 
       <ScheduleDayBottomSheet
         open={isEditOpen}
