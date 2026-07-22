@@ -1,43 +1,28 @@
-import { VariantProps } from 'class-variance-authority';
+import TravelIcon from '@/assets/icons/travel.svg';
+import { cn } from '@/utils/cn';
 
-import UncertainIcon from '@/assets/icons/schedule-status-uncertain.svg';
+import { dayIndicatorStyle } from './dayIndicator.style';
 
-import {
-  DaySegmentStatus,
-  getSegmentKey,
-  SEGMENT_ICON_MAP,
-} from './dayIndicator.const';
-import { daySolidIndicatorStyle } from './dayIndicator.style';
+export type DayIndicatorProps = {
+  status: 'available' | 'partial' | 'unavailable';
+};
 
-export type DayIndicatorProps =
-  | ({ variant: 'solid' } & VariantProps<typeof daySolidIndicatorStyle>)
-  | { variant: 'segmented'; status: 'uncertain' }
-  | {
-      variant: 'segmented';
-      status: 'responded';
-      morning: DaySegmentStatus;
-      afternoon: DaySegmentStatus;
-      evening: DaySegmentStatus;
-    };
+const ICON_COLOR_CLASS_NAME: Record<DayIndicatorProps['status'], string> = {
+  available: 'text-blue-400',
+  partial: 'text-blue-20',
+  unavailable: '',
+};
 
-function DayIndicator(props: DayIndicatorProps) {
-  if (props.variant === 'solid') {
-    return <div className={daySolidIndicatorStyle({ status: props.status })} />;
-  }
-
-  if (props.status === 'uncertain') {
-    return <UncertainIcon className="h-8 w-8" />;
-  }
-
-  const { morning, afternoon, evening } = props;
-  const segmentKey = getSegmentKey(morning, afternoon, evening);
-  const Icon = SEGMENT_ICON_MAP[segmentKey];
-
-  if (!Icon) {
-    return <div className="h-8 w-8 rounded-[99px] bg-grey-50" />;
-  }
-
-  return <Icon className="h-8 w-8" />;
+function DayIndicator({ status }: DayIndicatorProps) {
+  return (
+    <div className={dayIndicatorStyle({ status })}>
+      {status !== 'unavailable' && (
+        <TravelIcon
+          className={cn('size-full', ICON_COLOR_CLASS_NAME[status])}
+        />
+      )}
+    </div>
+  );
 }
 
 export default DayIndicator;

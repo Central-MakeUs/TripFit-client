@@ -1,14 +1,14 @@
-export type DayAvailabilityStatusT = 'full' | 'light' | 'empty';
+export type DayAvailabilityStatusT = 'available' | 'partial' | 'unavailable';
 
 export const AVAILABILITY_LEGEND_ITEMS: {
   status: DayAvailabilityStatusT;
   label: string;
   dotClassName: string;
 }[] = [
-  { status: 'full', label: '모두 가능', dotClassName: 'bg-blue-500' },
-  { status: 'light', label: '부분 가능', dotClassName: 'bg-blue-50' },
+  { status: 'available', label: '모두 가능', dotClassName: 'bg-blue-500' },
+  { status: 'partial', label: '부분 가능', dotClassName: 'bg-blue-50' },
   {
-    status: 'empty',
+    status: 'unavailable',
     label: '완전 불가',
     dotClassName: 'bg-grey-20 ring-1 ring-inset ring-grey-100',
   },
@@ -18,6 +18,10 @@ export const AVAILABILITY_LEGEND_ITEMS: {
 export const getMockDayAvailabilityStatus = (
   date: Date,
 ): DayAvailabilityStatusT => {
-  const pattern: DayAvailabilityStatusT[] = ['full', 'light', 'empty'];
-  return pattern[date.getDate() % pattern.length] ?? 'empty';
+  const pattern: DayAvailabilityStatusT[] = [
+    'available',
+    'partial',
+    'unavailable',
+  ];
+  return pattern[date.getDate() % pattern.length] ?? 'unavailable';
 };

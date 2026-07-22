@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 
-import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
+import { WEEKDAY_LABELS } from '@/consts/date';
 
 export const formatDateLabel = (isoDate: string) => {
   const date = parseISO(isoDate);

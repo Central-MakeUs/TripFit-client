@@ -1,6 +1,6 @@
 import { format, isBefore, startOfToday } from 'date-fns';
 
-import { WEEKDAY_LABELS } from '@/components/calendar/calendar.const';
+import { WEEKDAY_LABELS } from '@/consts/date';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
 import { DayScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';

@@ -31,7 +31,7 @@ function CalendarFabMenu({
       )}
       {open && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 mx-auto w-full sm:max-w-90">
-          <div className="pointer-events-auto absolute right-5 bottom-[138px]">
+          <div className="pointer-events-auto absolute right-5 bottom-34.5">
             <Modal
               items={[
                 {
@@ -66,7 +66,7 @@ function CalendarFabMenu({
             <ModifyIcon className="size-8 text-white" />
           )
         }
-        className="bottom-[66px]"
+        className="bottom-16.5"
       />
     </>
   );
