@@ -13,6 +13,7 @@ type CtaButtonGroupProps = {
   primaryColor?: 'primary' | 'secondary';
   primaryDisabled?: boolean;
   primaryText: string;
+  secondaryColor?: 'primary' | 'secondary';
   secondaryIcon?: ReactNode;
   secondaryText?: string;
   secondaryVariant?: 'button-horizontal' | 'button-vertical' | 'text-link';
@@ -25,6 +26,7 @@ function CtaButtonGroup({
   primaryColor = 'primary',
   primaryDisabled = false,
   primaryText,
+  secondaryColor = 'primary',
   secondaryIcon = null,
   secondaryText,
   secondaryVariant = 'button-horizontal',
@@ -83,6 +85,7 @@ function CtaButtonGroup({
         <Button
           text={secondaryText}
           style="weak"
+          type={secondaryColor}
           onClick={onSecondaryClick}
           className="w-full"
         />
@@ -100,6 +103,7 @@ function CtaButtonGroup({
       <Button
         text={secondaryText}
         style="weak"
+        type={secondaryColor}
         onClick={onSecondaryClick}
         className="flex-1"
       />

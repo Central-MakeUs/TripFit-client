@@ -9,6 +9,13 @@ import ArrowLeftIcon from '@/assets/icons/arrow-left-200.svg';
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import LogoIcon from '@/assets/icons/logo.svg';
 import NotificationIcon from '@/assets/icons/notification.svg';
+import IconButton from '@/components/icon-button';
+import { cn } from '@/utils/cn';
+
+const HEADER_BACKGROUND_CLASS = {
+  white: 'bg-white',
+  'grey-20': 'bg-grey-20',
+} as const;
 
 type HeaderProps =
   | { variant: 'home' }
@@ -18,12 +25,17 @@ type HeaderProps =
       titleAlign?: 'center' | 'left';
       onBack?: () => void;
       rightSlot?: ReactNode;
+      background?: keyof typeof HEADER_BACKGROUND_CLASS;
     };
 
 function Header(props: HeaderProps) {
   const router = useRouter();
 
   let content: ReactNode;
+  const backgroundClass =
+    props.variant === 'page'
+      ? HEADER_BACKGROUND_CLASS[props.background ?? 'white']
+      : HEADER_BACKGROUND_CLASS.white;
 
   if (props.variant === 'home') {
     content = (
@@ -32,15 +44,21 @@ function Header(props: HeaderProps) {
           <LogoIcon className="h-6 w-20" />
         </Link>
         <div className="flex items-center gap-1">
-          <Link href="/my-schedule" aria-label="내 일정" className="p-2.5">
-            <CalendarMonthIcon className="h-6 w-6 text-grey-500" />
-          </Link>
-          <Link href="/notifications" aria-label="알림" className="p-2.5">
-            <NotificationIcon className="h-6 w-6 text-grey-500" />
-          </Link>
-          <Link href="/my-page" aria-label="마이페이지" className="p-2.5">
-            <AccountCircleIcon className="h-6 w-6 text-grey-500" />
-          </Link>
+          <IconButton
+            href="/my-schedule"
+            aria-label="내 일정"
+            icon={<CalendarMonthIcon className="text-grey-500" />}
+          />
+          <IconButton
+            href="/my-page/notifications"
+            aria-label="알림"
+            icon={<NotificationIcon className="text-grey-500" />}
+          />
+          <IconButton
+            href="/my-page"
+            aria-label="마이페이지"
+            icon={<AccountCircleIcon className="text-grey-500" />}
+          />
         </div>
       </div>
     );
@@ -56,14 +74,11 @@ function Header(props: HeaderProps) {
     };
 
     const backButton = (
-      <button
-        type="button"
+      <IconButton
         onClick={handleBack}
         aria-label="뒤로가기"
-        className="cursor-pointer p-2.5"
-      >
-        <ArrowLeftIcon className="h-6 w-6 text-grey-500" />
-      </button>
+        icon={<ArrowLeftIcon className="text-grey-500" />}
+      />
     );
     const rightSlotElement = rightSlot && (
       <div className="flex items-center">{rightSlot}</div>
@@ -100,7 +115,12 @@ function Header(props: HeaderProps) {
         헤더가 튀거나 풀리는 것처럼 보이므로, 뷰포트 기준 fixed로 고정해
         body가 무엇을 하든 영향받지 않게 한다.
       */}
-      <header className="fixed inset-x-0 top-0 z-20 mx-auto flex h-11 w-full items-center bg-white sm:max-w-90">
+      <header
+        className={cn(
+          'fixed inset-x-0 top-0 z-20 mx-auto flex h-11 w-full items-center sm:max-w-90',
+          backgroundClass,
+        )}
+      >
         {content}
       </header>
       <div aria-hidden className="h-11 w-full shrink-0" />

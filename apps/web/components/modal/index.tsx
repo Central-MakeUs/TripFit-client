@@ -1,9 +1,12 @@
+import { ReactNode } from 'react';
+
 import { cn } from '@/utils/cn';
 
 import { modalItemStyle, modalStyle } from './modal.style';
 
 type ModalItemT = {
   label: string;
+  icon?: ReactNode;
   onClick?: () => void;
   variant?: 'default' | 'destructive';
 };
@@ -23,9 +26,20 @@ function Modal({ className, items }: ModalProps) {
           onClick={item.onClick}
           className={cn(
             modalItemStyle,
-            item.variant === 'destructive' ? 'text-red-300' : 'text-black/80',
+            'flex items-center gap-2',
+            item.variant === 'destructive' ? 'text-red-300' : 'text-grey-800',
           )}
         >
+          {item.icon && (
+            <span
+              className={cn(
+                'flex size-6 shrink-0 [&>svg]:size-full',
+                item.variant !== 'destructive' && 'text-grey-400',
+              )}
+            >
+              {item.icon}
+            </span>
+          )}
           {item.label}
         </button>
       ))}

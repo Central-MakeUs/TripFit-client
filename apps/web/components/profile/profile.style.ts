@@ -1,12 +1,13 @@
 import { cva } from 'class-variance-authority';
 
 export const profileStyle = cva(
-  'flex shrink-0 items-center justify-center rounded-full pt-0.5 text-caption-06',
+  'flex shrink-0 items-center justify-center rounded-full pt-0.5',
   {
     variants: {
       size: {
-        S: 'size-7',
-        M: 'size-9',
+        S: 'size-7 text-caption-06',
+        M: 'size-9 text-caption-06',
+        L: 'size-12 text-body-06',
       },
     },
     defaultVariants: {

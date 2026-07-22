@@ -39,6 +39,8 @@ type ScheduleDayBottomSheetProps = {
   value: DayScheduleValueT;
   onChange: (value: DayScheduleValueT) => void;
   onSubmit: () => void;
+  submitLabel?: string;
+  submitDisabled?: boolean;
 };
 
 function ScheduleDayBottomSheet({
@@ -48,6 +50,8 @@ function ScheduleDayBottomSheet({
   value,
   onChange,
   onSubmit,
+  submitLabel = '입력하기',
+  submitDisabled = false,
 }: ScheduleDayBottomSheetProps) {
   const handleToggleSegment = (key: (typeof TIME_SEGMENTS)[number]['key']) => {
     onChange({
@@ -63,13 +67,15 @@ function ScheduleDayBottomSheet({
       title={title}
       variant="non-modal"
     >
-      <div className="flex items-center justify-between px-5 py-2.5">
+      <div className="flex items-center justify-between px-5 py-3">
         <span className="text-body-06 text-grey-600">
           이 날 일정이 변경될 수 있어요
         </span>
         <Toggle
           checked={value.isUncertain}
-          onCheckedChange={(isUncertain) => onChange({ ...value, isUncertain })}
+          onCheckedChange={(checked) =>
+            onChange({ ...value, isUncertain: checked })
+          }
           aria-label="미정 상태 토글"
         />
       </div>
@@ -87,7 +93,7 @@ function ScheduleDayBottomSheet({
                 disabled={value.isUncertain}
                 onClick={() => handleToggleSegment(key)}
                 className={cn(
-                  'flex flex-1 items-center justify-center gap-2 rounded-2xl p-3 cursor-pointer',
+                  'flex h-15 flex-1 items-center justify-center gap-2 rounded-2xl p-3 cursor-pointer',
                   isUnavailable
                     ? 'bg-red-300 text-red-20'
                     : 'bg-grey-50 text-grey-400',
@@ -115,8 +121,9 @@ function ScheduleDayBottomSheet({
       </div>
       <div className="px-5 py-4">
         <Button
-          text="입력하기"
+          text={submitLabel}
           type="secondary"
+          disabled={submitDisabled}
           onClick={onSubmit}
           className="w-full"
         />

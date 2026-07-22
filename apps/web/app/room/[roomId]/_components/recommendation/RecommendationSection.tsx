@@ -87,6 +87,7 @@ function RecommendationSection({
         )}
         {step === 4 && confirmedCandidate && (
           <RecommendationConfirmedStep
+            roomName={roomName}
             candidate={confirmedCandidate}
             onExit={onExit}
           />
