@@ -441,7 +441,22 @@ main ← dev ← {type}/{issue-number}-{description}
 1. **성공/실패는 HTTP Status Code로만 판단** — Body에 `status`/`success` 필드 없음 (헤더와 중복·모순 방지)
 2. **HTTP Status는 REST 의미대로 사용** (200, 201, 400, 401, 403, 404, 409, 500)
 3. **Body envelope**: `data` / `message` / `code` 조합
-4. **`fetch`는 4xx/5xx에서 자동 throw 안 함** → 반드시 `response.ok` 확인
+4. **HTTP 클라이언트는 axios** — 4xx/5xx는 axios가 자동으로 reject하므로 `try/catch` +
+   `axios.isAxiosError`로 `error.response.data`를 꺼내 에러 메시지로 변환 (`response.ok` 체크 불필요)
+5. **경로 prefix**: 모든 API는 `/api/v1/...`
+6. **필드명**: 요청/응답 body JSON은 `camelCase`
+
+### Base URL
+
+| 환경 | URL                          |
+| ---- | ---------------------------- |
+| 운영 | `https://api.tripfit.online` |
+| 로컬 | `http://localhost:8080`      |
+
+- 환경변수 `NEXT_PUBLIC_API_BASE_URL`로 주입 (로컬 개발자는 각자 `.env.local`에 설정, gitignore 대상),
+  `apis/request.ts`의 `apiClient` 생성에만 쓰는 내부 상수 — 다른 곳에서 쓰는 곳이 없어 `export`하지 않고
+  별도 `consts/api.ts`도 두지 않음
+- 개별 엔드포인트 경로 상수는 실제로 호출하는 API 함수를 만들 때 `consts/api.ts`에 추가 (미리 만들어두지 않음)
 
 ### 응답 구조
 
@@ -485,24 +500,36 @@ main ← dev ← {type}/{issue-number}-{description}
 }
 ```
 
-### 프론트엔드 fetch 처리 표준
+### 프론트엔드 API 클라이언트 표준
+
+HTTP 클라이언트는 **axios**. 공통 유틸은 `apis/request.ts`. axios는 4xx/5xx를 자동으로 reject하므로
+성공 경로는 `response.data.data` 반환, 실패 경로는 `catch`에서 `error.response.data.message`를 꺼내
+평범한 `Error`로 던진다.
 
 ```ts
-export async function request(url: string, options?: RequestInit) {
-  const response = await fetch(url, options);
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
 
-  let body;
+export async function request<T>(
+  path: string,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   try {
-    body = await response.json();
-  } catch {
+    const response = await apiClient.request<{ data: T }>({
+      url: path,
+      ...config,
+    });
+    return response.data.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const body = error.response.data as { message?: string };
+      throw new Error(body.message || '요청 처리 중 오류가 발생했습니다.');
+    }
     throw new Error('서버 응답을 해석할 수 없습니다.');
   }
-
-  if (response.ok) {
-    return body.data;
-  }
-
-  throw new Error(body.message || '요청 처리 중 오류가 발생했습니다.');
 }
 ```
 
@@ -561,7 +588,8 @@ export async function request(url: string, options?: RequestInit) {
 
 ### API 관련 코드 생성 시
 
-- HTTP status 기반 분기 (`response.ok`)
+- HTTP 클라이언트는 axios — `apis/request.ts`의 `request()` 공통 유틸 사용, `fetch` 직접 호출 금지
+- 성공/실패 분기는 `try/catch` (axios가 4xx/5xx에서 자동 reject) — `response.ok` 체크 아님
 - body 구조: `{ data, message, code }` 가정 (`status` 필드 없음)
 
 ### 의심스러울 때
