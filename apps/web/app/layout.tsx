@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 
+import QueryProvider from './providers';
+
 const pretendardNumerals = localFont({
   src: '../assets/fonts/google-sans-flex-digits.woff2',
   variable: '--font-numerals',
@@ -25,9 +27,11 @@ export default function RootLayout({
     // 크로미움이 중첩 var()를 제대로 재평가하지 못한다. html(=:root)에 붙여야 한다.
     <html lang="ko" className={pretendardNumerals.variable}>
       <body>
-        <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
-          {children}
-        </div>
+        <QueryProvider>
+          <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
+            {children}
+          </div>
+        </QueryProvider>
       </body>
     </html>
   );
