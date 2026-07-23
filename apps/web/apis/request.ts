@@ -10,20 +10,29 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+type RequestConfig = Omit<
+  AxiosRequestConfig,
+  'url' | 'baseURL' | 'validateStatus'
+>;
+
 export async function request<T>(
   path: string,
-  config?: AxiosRequestConfig,
+  config?: RequestConfig,
 ): Promise<T> {
   try {
     const response = await apiClient.request<{ data: T }>({
-      url: path,
       ...config,
+      url: path,
     });
     return response.data.data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
-      const body = error.response.data as { message?: string };
-      throw new Error(body.message || '요청 처리 중 오류가 발생했습니다.');
+      const body = error.response.data;
+      const message =
+        typeof body === 'object' && body !== null
+          ? (body as { message?: string }).message
+          : undefined;
+      throw new Error(message || '요청 처리 중 오류가 발생했습니다.');
     }
     throw new Error('서버 응답을 해석할 수 없습니다.');
   }
