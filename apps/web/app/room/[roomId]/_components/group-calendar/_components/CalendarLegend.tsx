@@ -16,6 +16,7 @@ function CalendarLegend({ onClickFilter }: CalendarLegendProps) {
         size="S"
         icon={<ArrowDownIcon className="size-4" />}
         onClick={onClickFilter}
+        className="px-0"
       />
       <div className="flex items-center gap-2">
         {AVAILABILITY_LEGEND_ITEMS.map((item) => (
