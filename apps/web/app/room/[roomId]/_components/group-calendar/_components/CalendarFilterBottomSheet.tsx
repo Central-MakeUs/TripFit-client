@@ -3,7 +3,7 @@ import BottomSheetListItem from '@/components/bottom-sheet-list-item';
 import Profile from '@/components/profile';
 import { ParticipantT } from '@/types/participant';
 
-export type CalendarFilterT = number | 'all';
+export type CalendarFilterT = string | 'all';
 
 type CalendarFilterBottomSheetProps = {
   open: boolean;

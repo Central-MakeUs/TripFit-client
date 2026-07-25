@@ -1,10 +1,11 @@
 export type RoomT = {
-  id: number;
+  id: string;
   title: string;
   startDate: string;
   endDate: string;
   nights: number;
   days: number;
   destination: string;
-  hostId: number;
+  memberCount: number;
+  inviteCode: string;
 };

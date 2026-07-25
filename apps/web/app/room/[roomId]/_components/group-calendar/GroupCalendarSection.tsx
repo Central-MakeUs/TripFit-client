@@ -8,6 +8,7 @@ import Calendar from '@/components/calendar';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
+import Spinner from '@/components/spinner';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
 
@@ -20,7 +21,8 @@ import CalendarLegend from './_components/CalendarLegend';
 import DayDetailView from './_components/DayDetailView';
 import ParticipantSummaryRow from './_components/ParticipantSummaryRow';
 import ResponseRateCard from './_components/ResponseRateCard';
-import { getMockDayAvailabilityStatus } from './_consts/groupCalendar.const';
+import { useGetRoomScheduleCalendar } from './_hooks/useGetRoomScheduleCalendar';
+import { getDayAvailabilityStatus } from './_utils/getDayAvailabilityStatus';
 
 type GroupCalendarSectionProps = {
   room: RoomT;
@@ -42,8 +44,24 @@ function GroupCalendarSection({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
+  const { roomScheduleCalendarData, isGetRoomScheduleCalendarLoading } =
+    useGetRoomScheduleCalendar(room.id);
 
-  const getDayStatus = (date: Date) => getMockDayAvailabilityStatus(date);
+  const getDayStatus = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
+      : 'unavailable';
+
+  if (isGetRoomScheduleCalendarLoading || !roomScheduleCalendarData) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title={room.title} />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
 
   if (selectedDate) {
     return (

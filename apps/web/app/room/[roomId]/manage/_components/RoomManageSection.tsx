@@ -22,7 +22,7 @@ type ModeT = 'view' | 'edit';
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const [mode, setMode] = useState<ModeT>('view');
   // TODO: 실제 API 연동 전까지 roomId 기반 mock 데이터 사용
-  const room = { ...MOCK_ROOM, id: Number(roomId) || MOCK_ROOM.id };
+  const room = { ...MOCK_ROOM, id: roomId };
   const participants = MOCK_PARTICIPANTS;
   const isHost = participants.find((p) => p.isMe)?.isHost ?? false;
 

@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
+import Header from '@/components/header';
+import Spinner from '@/components/spinner';
+
 import ShareSheet from '../_common/_components/ShareSheet';
-import {
-  MOCK_PARTICIPANTS,
-  MOCK_ROOM,
-  MOCK_ROOM_CAPACITY,
-} from '../_common/_mocks/room';
+import { useGetRoom } from '../_common/_hooks/useGetRoom';
+import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
 import RecommendationSection from './recommendation/RecommendationSection';
 
@@ -20,9 +20,41 @@ type SectionT = 'calendar' | 'recommendation';
 function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
-  // TODO: 실제 API 연동 전까지 roomId 기반 mock 데이터 사용
-  const room = { ...MOCK_ROOM, id: Number(roomId) || MOCK_ROOM.id };
-  const participants = MOCK_PARTICIPANTS;
+  const { roomData, isGetRoomLoading, isGetRoomError } = useGetRoom(roomId);
+  const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
+    useGetRoomMembers(roomId);
+
+  if (isGetRoomLoading || isGetRoomMembersLoading) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    isGetRoomError ||
+    isGetRoomMembersError ||
+    !roomData ||
+    !roomMembersData
+  ) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <span className="text-body-03 text-grey-500">
+            여행방 정보를 불러오지 못했어요
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const room = roomData;
+  const participants = roomMembersData;
 
   if (section === 'recommendation') {
     return (
@@ -52,7 +84,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     <GroupCalendarSection
       room={room}
       participants={participants}
-      capacity={MOCK_ROOM_CAPACITY}
+      capacity={room.memberCount}
       onShowRecommendation={() => setSection('recommendation')}
     />
   );

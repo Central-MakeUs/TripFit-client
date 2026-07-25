@@ -1,5 +1,5 @@
 export type ParticipantT = {
-  id: number;
+  id: string;
   name: string;
   color: 'purple' | 'pink' | 'orange' | 'yellow' | 'green';
   tone?: 1 | 2;
