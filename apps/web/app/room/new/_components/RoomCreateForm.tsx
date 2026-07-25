@@ -47,6 +47,10 @@ function RoomCreateForm() {
       : null;
 
   const handleBack = () => {
+    if (step === TOTAL_STEPS) {
+      router.push('/');
+      return;
+    }
     if (step === 1) {
       router.back();
       return;
