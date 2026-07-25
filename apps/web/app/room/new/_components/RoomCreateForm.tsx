@@ -58,18 +58,22 @@ function RoomCreateForm() {
     setStep((prev) => prev - 1);
   };
 
-  const isNextDisabled =
-    step === 1
-      ? !roomName
-      : step === 2
-        ? !tripPeriod.startDate || !tripPeriod.endDate
-        : step === 3
-          ? !isTripDurationValid(tripDuration, periodDays)
-          : step === 4
-            ? participantCount === 0
-            : step === 5
-              ? !destination
-              : false;
+  const isNextDisabled = (() => {
+    switch (step) {
+      case 1:
+        return !roomName;
+      case 2:
+        return !tripPeriod.startDate || !tripPeriod.endDate;
+      case 3:
+        return !isTripDurationValid(tripDuration, periodDays);
+      case 4:
+        return participantCount === 0;
+      case 5:
+        return !destination;
+      default:
+        return false;
+    }
+  })();
 
   const handleCreateRoom = () => {
     const isDurationValid = isTripDurationValid(tripDuration, periodDays);
@@ -104,6 +108,16 @@ function RoomCreateForm() {
     if (step === 5) {
       handleCreateRoom();
       return;
+    }
+    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+  };
+
+  const handleSkip = () => {
+    if (step === 3) {
+      setTripDuration({ nights: '', days: '' });
+    }
+    if (step === 5) {
+      setDestination('');
     }
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
@@ -166,7 +180,7 @@ function RoomCreateForm() {
             }
             secondaryVariant="text-link"
             secondaryIcon={false}
-            onSecondaryClick={handleNext}
+            onSecondaryClick={handleSkip}
           />
         )}
       </div>
