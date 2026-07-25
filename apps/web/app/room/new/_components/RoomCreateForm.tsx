@@ -75,7 +75,9 @@ function RoomCreateForm() {
     }
   })();
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = (
+    destinationOverride: string | null = destination,
+  ) => {
     const isDurationValid = isTripDurationValid(tripDuration, periodDays);
 
     postRoomMutation(
@@ -90,7 +92,7 @@ function RoomCreateForm() {
         nights: isDurationValid ? Number(tripDuration.nights) : null,
         days: isDurationValid ? Number(tripDuration.days) : null,
         participantCount,
-        destination: destination.trim() ? destination : null,
+        destination: destinationOverride?.trim() ? destinationOverride : null,
       },
       {
         onSuccess: (data) => {
@@ -115,9 +117,13 @@ function RoomCreateForm() {
   const handleSkip = () => {
     if (step === 3) {
       setTripDuration({ nights: '', days: '' });
+      setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+      return;
     }
     if (step === 5) {
       setDestination('');
+      handleCreateRoom(null);
+      return;
     }
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
