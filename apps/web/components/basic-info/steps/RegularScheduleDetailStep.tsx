@@ -134,6 +134,11 @@ function RegularScheduleDetailStep({
     setPendingTime(draftTimeByField[field] || DEFAULT_TIME);
     setActiveTimeField(field);
     setIsSheetOpen(true);
+    // 일정이 없어 인라인 폼으로 진입한 경우, 이전 추가/수정 시트 세션에서
+    // 남아있을 수 있는 isAddSheetOpen 잔여값을 명시적으로 정리한다
+    if (!hasSchedules) {
+      setIsAddSheetOpen(false);
+    }
   };
 
   // isAddSheetOpen/activeTimeField(어떤 화면을 보여줄지)는 여기서 건드리지 않는다 —
