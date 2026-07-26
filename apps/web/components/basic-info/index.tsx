@@ -233,11 +233,8 @@ function BasicInfo({
         onSecondaryClick={
           completeSecondaryText ? handleCompleteSecondaryClick : undefined
         }
-        onBack={
-          completeSecondaryText
-            ? handleCompleteSecondaryClick
-            : handleCompletePrimaryClick
-        }
+        showHeader
+        onBack={handleBack}
       />
     );
   }

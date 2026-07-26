@@ -39,7 +39,9 @@ function CheckCircleMotion({ className }: CheckCircleMotionProps) {
 
 type CheckCompleteStepProps = {
   title?: string;
-  /** 지정하면 헤더+프로그레스바를 함께 보여줌 — 미지정 시 체크마크와 CTA만 있는 화면 */
+  /** true면 헤더+프로그레스바를 함께 보여줌 — 미지정 시 체크마크와 CTA만 있는 화면 */
+  showHeader?: boolean;
+  /** 헤더의 뒤로가기 버튼 동작 — showHeader와 무관하게 순수 뒤로가기 핸들러로만 쓰인다 */
   onBack?: () => void;
   heading: ReactNode;
   description?: ReactNode;
@@ -52,6 +54,7 @@ type CheckCompleteStepProps = {
 
 function CheckCompleteStep({
   title = '기본 정보 입력',
+  showHeader = false,
   onBack,
   heading,
   description,
@@ -63,7 +66,7 @@ function CheckCompleteStep({
 }: CheckCompleteStepProps) {
   return (
     <div className="flex w-full flex-1 flex-col">
-      {onBack && (
+      {showHeader && (
         <>
           <Header variant="page" title={title} onBack={onBack} />
           <div className="px-5 py-1">
