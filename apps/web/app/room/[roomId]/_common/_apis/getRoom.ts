@@ -1,5 +1,5 @@
 import { request } from '@/apis/request';
-import { RoomT } from '@/types/room';
+import { RoomStatusT, RoomT } from '@/types/room';
 
 export type GetRoomResponseT = RoomT;
 
@@ -13,6 +13,7 @@ type TripDetailResponse = {
   durationNights: number | null;
   memberCount: number;
   inviteCode: string;
+  status: RoomStatusT;
 };
 
 export const getRoom = async (
@@ -33,5 +34,6 @@ export const getRoom = async (
     days: tripResponse.durationDays ?? 0,
     memberCount: tripResponse.memberCount,
     inviteCode: tripResponse.inviteCode,
+    status: tripResponse.status,
   };
 };

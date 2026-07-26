@@ -55,6 +55,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   const room = roomData;
   const participants = roomMembersData;
+  const isHost =
+    participants.find((participant) => participant.isMe)?.isHost ?? false;
+  const isConfirmed = room.status === 'CONFIRMED';
 
   if (section === 'recommendation') {
     return (
@@ -64,6 +67,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           onExit={() => setSection('calendar')}
           respondedCount={participants.length}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
+          isConfirmed={isConfirmed}
         />
         <ShareSheet
           open={isRequestResponseOpen}
@@ -85,6 +89,8 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       room={room}
       participants={participants}
       capacity={room.memberCount}
+      isHost={isHost}
+      isConfirmed={isConfirmed}
       onShowRecommendation={() => setSection('recommendation')}
     />
   );

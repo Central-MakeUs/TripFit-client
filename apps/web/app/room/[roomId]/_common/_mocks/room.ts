@@ -12,6 +12,7 @@ export const MOCK_ROOM: RoomT = {
   destination: '',
   memberCount: 5,
   inviteCode: 'MOCK1234',
+  status: 'ONGOING',
 };
 
 export const MOCK_ROOM_CAPACITY = 5;

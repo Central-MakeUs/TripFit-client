@@ -1,3 +1,5 @@
+export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'CANCELED' | 'TERMINATED';
+
 export type RoomT = {
   id: string;
   title: string;
@@ -8,4 +10,5 @@ export type RoomT = {
   destination: string;
   memberCount: number;
   inviteCode: string;
+  status: RoomStatusT;
 };

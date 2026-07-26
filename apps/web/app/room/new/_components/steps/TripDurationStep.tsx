@@ -50,11 +50,32 @@ function TripDurationStep({
       onChange({ ...value, nights: '' });
       return;
     }
-    onChange({ nights, days: String(Number(nights) + 1) });
+    const nightsNum = Number(nights);
+    const daysNum = value.days === '' ? null : Number(value.days);
+    const isDaysStillValid =
+      daysNum !== null && daysNum >= nightsNum + 1 && daysNum <= nightsNum + 2;
+    onChange({
+      nights,
+      days: isDaysStillValid ? value.days : String(nightsNum + 1),
+    });
   };
 
   const handleDaysChange = (raw: string) => {
-    onChange({ ...value, days: toDigitsOnly(raw) });
+    const days = toDigitsOnly(raw);
+    if (days === '') {
+      onChange({ ...value, days: '' });
+      return;
+    }
+    const daysNum = Number(days);
+    const nightsNum = value.nights === '' ? null : Number(value.nights);
+    const isNightsStillValid =
+      nightsNum !== null &&
+      daysNum >= nightsNum + 1 &&
+      daysNum <= nightsNum + 2;
+    onChange({
+      days,
+      nights: isNightsStillValid ? value.nights : String(daysNum - 1),
+    });
   };
 
   const hasBothValues = value.nights !== '' && value.days !== '';
