@@ -19,16 +19,22 @@ const to24Hour = (period: string, hour12: string, minute: string) => {
   return `${String(hour24).padStart(2, '0')}:${minute}`;
 };
 
+const MINUTES_PER_DAY = 24 * 60;
+
 const from24Hour = (value: string) => {
   const [hourPart = '9', minutePart = '0'] = value.split(':');
-  const hour24 = Number(hourPart);
-  const minute = Number(minutePart);
+  // 분을 10분 단위로 반올림할 때 60을 넘기면 시(그리고 필요하면 오전/오후)까지 함께 넘어가야 하므로,
+  // 하루 전체를 분 단위로 환산해 반올림한 뒤 다시 시/분으로 쪼갠다 (자정 넘어가는 경우도 24시간으로 순환)
+  const totalMinutes = Number(hourPart) * 60 + Number(minutePart);
+  const roundedTotalMinutes =
+    (((Math.round(totalMinutes / 10) * 10) % MINUTES_PER_DAY) +
+      MINUTES_PER_DAY) %
+    MINUTES_PER_DAY;
+  const hour24 = Math.floor(roundedTotalMinutes / 60);
+  const minute = roundedTotalMinutes % 60;
   const period = hour24 < 12 ? '오전' : '오후';
   const hour12 = String(hour24 % 12 === 0 ? 12 : hour24 % 12).padStart(2, '0');
-  const roundedMinute = String((Math.round(minute / 10) * 10) % 60).padStart(
-    2,
-    '0',
-  );
+  const roundedMinute = String(minute).padStart(2, '0');
   return { period, hour12, minute: roundedMinute };
 };
 
