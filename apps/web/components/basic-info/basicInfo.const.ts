@@ -7,7 +7,9 @@ export type BasicInfoScreen =
   | 'leaveNoticeDays'
   | 'includeHalfDayHoliday'
   | 'individualSchedule'
-  | 'complete';
+  | 'complete'
+  | 'calendarConnectIntro'
+  | 'calendarConnectComplete';
 
 // 프로그래스바 표시 단위 — 여러 화면이 하나의 진행 단계로 묶임
 export const BASIC_INFO_PROGRESS_STEPS: BasicInfoScreen[][] = [
@@ -17,14 +19,18 @@ export const BASIC_INFO_PROGRESS_STEPS: BasicInfoScreen[][] = [
   ['complete'],
 ];
 
+export type IncludeHalfDayHolidayValueT = {
+  halfDay: boolean;
+  holiday: boolean;
+};
+
 export type BasicInfoValue = {
   hasRegularSchedule: boolean | null;
   regularSchedules: RegularScheduleT[];
   annualLeaveCount: number | null;
   // 0 = 상관없음, 그 외에는 일 단위
   leaveNoticeDays: number | null;
-  // TODO: 반차/공휴일 포함 데이터 구조 확정 필요
-  includeHalfDayHoliday: boolean | null;
+  includeHalfDayHoliday: IncludeHalfDayHolidayValueT;
   individualSchedule: IndividualScheduleValueT;
 };
 
@@ -33,7 +39,7 @@ export const DEFAULT_BASIC_INFO_VALUE: BasicInfoValue = {
   regularSchedules: [],
   annualLeaveCount: null,
   leaveNoticeDays: null,
-  includeHalfDayHoliday: null,
+  includeHalfDayHoliday: { halfDay: false, holiday: false },
   individualSchedule: {},
 };
 
