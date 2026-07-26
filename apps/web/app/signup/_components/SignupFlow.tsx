@@ -29,9 +29,13 @@ function SignupFlow() {
     return (
       <BasicInfo
         allowSkip={false}
+        initialScreen="calendarConnectIntro"
+        calendarConnectTitle="기본 정보 입력"
+        calendarConnectProgress={PROFILE_STEP_PROGRESS}
+        calendarConnectContinuesToSchedule
         onExit={() => setStep('profile')}
         onComplete={() => {
-          // TODO: 회원가입 완료(근무 일정 저장) API 연동
+          // TODO: 회원가입 완료(근무 일정/캘린더 연동 저장) API 연동
           router.push('/');
         }}
       />

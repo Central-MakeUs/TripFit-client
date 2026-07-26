@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { addDays, isBefore, startOfToday, subDays } from 'date-fns';
 
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
@@ -11,14 +11,18 @@ import { DayScheduleValueT } from '@/types/schedule';
 import ScheduleMonthSection from './ScheduleMonthSection';
 import { getDateKey } from './scheduleCalendar.const';
 
-const SCROLL_BUFFER_PX = 100;
-
 const DEFAULT_DAY_VALUE: DayScheduleValueT = {
   isUncertain: false,
   morning: 'available',
   afternoon: 'available',
   evening: 'available',
 };
+
+const isDefaultDayValue = (dayValue: DayScheduleValueT) =>
+  !dayValue.isUncertain &&
+  dayValue.morning === 'available' &&
+  dayValue.afternoon === 'available' &&
+  dayValue.evening === 'available';
 
 type ScheduleCalendarProps = {
   year: number;
@@ -41,32 +45,7 @@ function ScheduleCalendar({
   const selectedValue = selectedDateKey
     ? (value[selectedDateKey] ?? DEFAULT_DAY_VALUE)
     : DEFAULT_DAY_VALUE;
-
-  useEffect(() => {
-    if (!isSheetOpen || !selectedDate) return;
-
-    const frame = requestAnimationFrame(() => {
-      const dateKey = getDateKey(selectedDate);
-      const cell = document.querySelector<HTMLElement>(
-        `[data-date-key="${dateKey}"]`,
-      );
-      const sheet = document.querySelector<HTMLElement>('[data-vaul-drawer]');
-      if (!cell || !sheet) return;
-
-      const cellRect = cell.getBoundingClientRect();
-      const sheetTop = window.innerHeight - sheet.offsetHeight;
-      const hiddenBottomHeight = cellRect.bottom - sheetTop + SCROLL_BUFFER_PX;
-      const hiddenTopHeight = SCROLL_BUFFER_PX - cellRect.top;
-
-      if (hiddenBottomHeight > 0) {
-        window.scrollBy({ top: hiddenBottomHeight, behavior: 'smooth' });
-      } else if (hiddenTopHeight > 0) {
-        window.scrollBy({ top: -hiddenTopHeight, behavior: 'smooth' });
-      }
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [isSheetOpen, selectedDate]);
+  const isSelectedValueEmpty = isDefaultDayValue(selectedValue);
 
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date);
@@ -75,6 +54,14 @@ function ScheduleCalendar({
 
   const handleChangeSelectedValue = (nextValue: DayScheduleValueT) => {
     if (!selectedDateKey) return;
+
+    if (isDefaultDayValue(nextValue)) {
+      const nextRecord = { ...value };
+      delete nextRecord[selectedDateKey];
+      onChange(nextRecord);
+      return;
+    }
+
     onChange({ ...value, [selectedDateKey]: nextValue });
   };
 
@@ -121,6 +108,7 @@ function ScheduleCalendar({
           }
           value={selectedValue}
           onChange={handleChangeSelectedValue}
+          submitDisabled={isSelectedValueEmpty}
           onSubmit={() => setIsSheetOpen(false)}
         />
       )}

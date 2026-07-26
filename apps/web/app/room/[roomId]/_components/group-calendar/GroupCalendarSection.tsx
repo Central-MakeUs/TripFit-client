@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { eachMonthOfInterval, format, isWithinInterval } from 'date-fns';
 
 import SettingsIcon from '@/assets/icons/settings.svg';
+import BasicInfo from '@/components/basic-info';
+import { DEFAULT_BASIC_INFO_VALUE } from '@/components/basic-info/basicInfo.const';
 import Calendar from '@/components/calendar';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
+import IndividualScheduleInput from '@/components/individual-schedule-input';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
+import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
 
 import ShareSheet from '../../_common/_components/ShareSheet';
 import CalendarFabMenu from './_components/CalendarFabMenu';
@@ -31,6 +35,17 @@ type GroupCalendarSectionProps = {
   onShowRecommendation: () => void;
 };
 
+// TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
+const MOCK_OTHER_TRIPS = [
+  { id: -1, title: '나트랑 여행' },
+  { id: -2, title: '전주 여행' },
+];
+
+// TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
+const MOCK_SAVED_REGULAR_SCHEDULES: RegularScheduleT[] = [
+  { id: 'mock-1', days: [1, 2, 3], startTime: '09:30', endTime: '18:00' },
+];
+
 function GroupCalendarSection({
   room,
   participants,
@@ -46,6 +61,15 @@ function GroupCalendarSection({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
+  const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
+  const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
+    useState(false);
+  const [individualScheduleByTrip, setIndividualScheduleByTrip] = useState<
+    Record<number, IndividualScheduleValueT>
+  >({});
+  const [selectedTripId, setSelectedTripId] = useState(room.id);
+
+  const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
 
   const getDayStatus = (date: Date) => getMockDayAvailabilityStatus(date);
 
@@ -58,6 +82,47 @@ function GroupCalendarSection({
         minDate={minDate}
         maxDate={maxDate}
         getDayStatus={getDayStatus}
+      />
+    );
+  }
+
+  if (isRepeatScheduleOpen) {
+    return (
+      <BasicInfo
+        allowSkip={false}
+        initialScreen="regularScheduleDetail"
+        initialValue={{
+          ...DEFAULT_BASIC_INFO_VALUE,
+          hasRegularSchedule: true,
+          regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
+        }}
+        onExit={() => setIsRepeatScheduleOpen(false)}
+        onComplete={() => {
+          // TODO: 근무 일정 저장 API 연동
+          setIsRepeatScheduleOpen(false);
+        }}
+      />
+    );
+  }
+
+  if (isIndividualScheduleOpen) {
+    return (
+      <IndividualScheduleInput
+        tripOptions={tripOptions}
+        selectedTripId={selectedTripId}
+        onSelectTrip={setSelectedTripId}
+        value={individualScheduleByTrip[selectedTripId] ?? {}}
+        onChange={(nextValue) =>
+          setIndividualScheduleByTrip((prev) => ({
+            ...prev,
+            [selectedTripId]: nextValue,
+          }))
+        }
+        onBack={() => setIsIndividualScheduleOpen(false)}
+        onNext={() => {
+          // TODO: 개별 일정 저장 API 연동
+          setIsIndividualScheduleOpen(false);
+        }}
       />
     );
   }
@@ -135,12 +200,8 @@ function GroupCalendarSection({
       )}
 
       <CalendarFabMenu
-        onSelectRepeatSchedule={() => {
-          // TODO: 반복 일정 수정 플로우 연결 (근무 일정 관리)
-        }}
-        onSelectIndividualSchedule={() => {
-          // TODO: 개별 일정 수정 플로우 연결
-        }}
+        onSelectRepeatSchedule={() => setIsRepeatScheduleOpen(true)}
+        onSelectIndividualSchedule={() => setIsIndividualScheduleOpen(true)}
       />
 
       <CalendarFilterBottomSheet
