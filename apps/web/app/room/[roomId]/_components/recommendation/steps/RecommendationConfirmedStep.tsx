@@ -12,12 +12,14 @@ type RecommendationConfirmedStepProps = {
   roomName: string;
   candidate: RecommendationCandidateDetailT;
   onExit: () => void;
+  readOnly?: boolean;
 };
 
 function RecommendationConfirmedStep({
   roomName,
   candidate,
   onExit,
+  readOnly = false,
 }: RecommendationConfirmedStepProps) {
   const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -47,16 +49,18 @@ function RecommendationConfirmedStep({
         </div>
       </div>
 
-      <CtaButtonGroup
-        primaryText="일정 공유하기"
-        primaryColor="secondary"
-        onPrimaryClick={() => setIsShareOpen(true)}
-        secondaryText="취소하기"
-        secondaryVariant="text-link"
-        secondaryIcon={false}
-        onSecondaryClick={onExit}
-        className="px-0"
-      />
+      {!readOnly && (
+        <CtaButtonGroup
+          primaryText="일정 공유하기"
+          primaryColor="secondary"
+          onPrimaryClick={() => setIsShareOpen(true)}
+          secondaryText="취소하기"
+          secondaryVariant="text-link"
+          secondaryIcon={false}
+          onSecondaryClick={onExit}
+          className="px-0"
+        />
+      )}
 
       <ShareSheet
         open={isShareOpen}

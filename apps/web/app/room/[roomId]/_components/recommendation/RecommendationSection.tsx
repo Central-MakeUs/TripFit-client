@@ -8,6 +8,7 @@ import {
   RecommendationTypeT,
 } from '@/types/recommendation';
 
+import { MOCK_CANDIDATES } from './_mocks/candidates';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
 import RecommendationResultStep from './steps/RecommendationResultStep';
@@ -18,6 +19,7 @@ type RecommendationSectionProps = {
   onExit: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
+  isConfirmed: boolean;
 };
 
 function RecommendationSection({
@@ -25,6 +27,7 @@ function RecommendationSection({
   onExit,
   respondedCount,
   onRequestResponse,
+  isConfirmed,
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationTypeT | null>(null);
@@ -32,6 +35,27 @@ function RecommendationSection({
     useState<RecommendationCandidateDetailT | null>(null);
   const [confirmedCandidate, setConfirmedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
+
+  if (isConfirmed) {
+    // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
+    const mockConfirmedCandidate = MOCK_CANDIDATES[0];
+
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="추천 일정" onBack={onExit} />
+        <div className="flex w-full flex-1 flex-col px-5">
+          {mockConfirmedCandidate && (
+            <RecommendationConfirmedStep
+              roomName={roomName}
+              candidate={mockConfirmedCandidate}
+              onExit={onExit}
+              readOnly
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const handleBack = () => {
     if (step === 1 || step === 4) {

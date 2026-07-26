@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
@@ -16,6 +16,7 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 import { RegularScheduleT } from '@/types/schedule';
 
+import { usePostRoom } from '../_hooks/usePostRoom';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
 import ParticipantCountStep from './steps/ParticipantCountStep';
@@ -56,6 +57,10 @@ function RoomCreateForm() {
   });
   const [participantCount, setParticipantCount] = useState(0);
   const [destination, setDestination] = useState('');
+  const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+  const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
+
+  const { postRoomMutation, isPostRoomPending } = usePostRoom();
 
   const periodDays =
     tripPeriod.startDate && tripPeriod.endDate
@@ -63,6 +68,10 @@ function RoomCreateForm() {
       : null;
 
   const handleBack = () => {
+    if (step === TOTAL_STEPS) {
+      router.push('/');
+      return;
+    }
     if (step === 1) {
       router.back();
       return;
@@ -70,21 +79,73 @@ function RoomCreateForm() {
     setStep((prev) => prev - 1);
   };
 
-  const isNextDisabled =
-    step === 1
-      ? !roomName
-      : step === 2
-        ? !tripPeriod.startDate || !tripPeriod.endDate
-        : step === 3
-          ? !isTripDurationValid(tripDuration, periodDays)
-          : step === 4
-            ? participantCount === 0
-            : step === 5
-              ? !destination
-              : false;
+  const isNextDisabled = (() => {
+    switch (step) {
+      case 1:
+        return !roomName;
+      case 2:
+        return !tripPeriod.startDate || !tripPeriod.endDate;
+      case 3:
+        return !isTripDurationValid(tripDuration, periodDays);
+      case 4:
+        return participantCount === 0;
+      case 5:
+        return !destination;
+      default:
+        return false;
+    }
+  })();
+
+  const handleCreateRoom = (
+    destinationOverride: string | null = destination,
+  ) => {
+    const isDurationValid = isTripDurationValid(tripDuration, periodDays);
+
+    postRoomMutation(
+      {
+        title: roomName,
+        startDate: tripPeriod.startDate
+          ? format(tripPeriod.startDate, 'yyyy-MM-dd')
+          : '',
+        endDate: tripPeriod.endDate
+          ? format(tripPeriod.endDate, 'yyyy-MM-dd')
+          : '',
+        nights: isDurationValid ? Number(tripDuration.nights) : null,
+        days: isDurationValid ? Number(tripDuration.days) : null,
+        participantCount,
+        destination: destinationOverride?.trim() ? destinationOverride : null,
+      },
+      {
+        onSuccess: (data) => {
+          setCreatedRoomId(data.roomId);
+          setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+        },
+        onError: () => {
+          setIsErrorAlertOpen(true);
+        },
+      },
+    );
+  };
 
   const handleNext = () => {
-    // TODO: 5 → 6 전환 시 여행방 생성 API 호출 예정 (응답/요청 스키마 확정 후 연결)
+    if (step === 5) {
+      handleCreateRoom();
+      return;
+    }
+    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+  };
+
+  const handleSkip = () => {
+    if (step === 3) {
+      setTripDuration({ nights: '', days: '' });
+      setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+      return;
+    }
+    if (step === 5) {
+      setDestination('');
+      handleCreateRoom(null);
+      return;
+    }
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
@@ -121,10 +182,13 @@ function RoomCreateForm() {
         completeDescription="일정 입력이 완료되었어요!"
         completePrimaryText="참여자 초대하기"
         onCompletePrimaryClick={() => {
-          /* TODO: 참여자 초대하기 플로우 연결 */
+          // TODO: 참여자 초대하기 플로우 연결 예정 — 우선 방으로 바로 이동
+          if (createdRoomId) router.push(`/room/${createdRoomId}`);
         }}
         completeSecondaryText="나중에 할게요"
-        onCompleteSecondaryClick={() => router.push('/')}
+        onCompleteSecondaryClick={() => {
+          if (createdRoomId) router.push(`/room/${createdRoomId}`);
+        }}
       />
     );
   }
@@ -178,13 +242,13 @@ function RoomCreateForm() {
             primaryText="다음"
             primaryColor="secondary"
             onPrimaryClick={handleNext}
-            primaryDisabled={isNextDisabled}
+            primaryDisabled={isNextDisabled || isPostRoomPending}
             secondaryText={
               step === 3 || step === 5 ? '아직 못정했어요' : undefined
             }
             secondaryVariant="text-link"
             secondaryIcon={false}
-            onSecondaryClick={handleNext}
+            onSecondaryClick={handleSkip}
           />
         )}
       </div>
@@ -220,6 +284,15 @@ function RoomCreateForm() {
         primaryText="수정하기"
         primaryColor="primary"
         onPrimaryClick={() => handleStartBasicInfo('regularScheduleDetail')}
+      />
+      <AlertModal
+        open={isErrorAlertOpen}
+        onOpenChange={setIsErrorAlertOpen}
+        variant="danger"
+        title="여행방을 만들지 못했어요"
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setIsErrorAlertOpen(false)}
       />
     </div>
   );
