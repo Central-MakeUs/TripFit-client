@@ -10,6 +10,18 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+// TODO: 로그인 유저 전역 상태 도입 후 실제 토큰으로 교체
+// NODE_ENV 분기는 프로덕션 빌드 시 정적으로 제거되어, 토큰 참조를 포함한 이 블록 전체가 번들에 포함되지 않는다
+if (process.env.NODE_ENV !== 'production') {
+  apiClient.interceptors.request.use((config) => {
+    const tempJwt = process.env.NEXT_PUBLIC_TEMP_JWT;
+    if (tempJwt) {
+      config.headers.Authorization = `Bearer ${tempJwt}`;
+    }
+    return config;
+  });
+}
+
 type RequestConfig = Omit<
   AxiosRequestConfig,
   'url' | 'baseURL' | 'validateStatus'
