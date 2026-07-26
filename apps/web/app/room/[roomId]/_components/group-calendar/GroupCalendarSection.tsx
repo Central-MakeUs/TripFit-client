@@ -64,8 +64,9 @@ function GroupCalendarSection({
   const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
-  const [individualScheduleValue, setIndividualScheduleValue] =
-    useState<IndividualScheduleValueT>({});
+  const [individualScheduleByTrip, setIndividualScheduleByTrip] = useState<
+    Record<number, IndividualScheduleValueT>
+  >({});
   const [selectedTripId, setSelectedTripId] = useState(room.id);
 
   const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
@@ -109,8 +110,13 @@ function GroupCalendarSection({
         tripOptions={tripOptions}
         selectedTripId={selectedTripId}
         onSelectTrip={setSelectedTripId}
-        value={individualScheduleValue}
-        onChange={setIndividualScheduleValue}
+        value={individualScheduleByTrip[selectedTripId] ?? {}}
+        onChange={(nextValue) =>
+          setIndividualScheduleByTrip((prev) => ({
+            ...prev,
+            [selectedTripId]: nextValue,
+          }))
+        }
         onBack={() => setIsIndividualScheduleOpen(false)}
         onNext={() => {
           // TODO: 개별 일정 저장 API 연동
