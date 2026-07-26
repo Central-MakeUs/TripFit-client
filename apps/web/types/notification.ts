@@ -6,12 +6,20 @@ export type NotificationTypeT =
   | 'SCHEDULE_UPDATE_REMINDER'
   | 'SCHEDULE_CONFIRM_CANCELED';
 
-export type NotificationT = {
+type NotificationBaseT = {
   id: string;
-  type: NotificationTypeT;
   roomName: string;
-  roomId: string | null;
   message: string;
   createdAt: string;
   isRead: boolean;
 };
+
+export type NotificationT =
+  | (NotificationBaseT & {
+      type: Exclude<NotificationTypeT, 'SCHEDULE_UPDATE_REMINDER'>;
+      roomId: string;
+    })
+  | (NotificationBaseT & {
+      type: 'SCHEDULE_UPDATE_REMINDER';
+      roomId: null;
+    });
