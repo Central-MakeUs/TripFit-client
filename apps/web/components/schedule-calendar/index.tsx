@@ -18,6 +18,12 @@ const DEFAULT_DAY_VALUE: DayScheduleValueT = {
   evening: 'available',
 };
 
+const isDefaultDayValue = (dayValue: DayScheduleValueT) =>
+  !dayValue.isUncertain &&
+  dayValue.morning === 'available' &&
+  dayValue.afternoon === 'available' &&
+  dayValue.evening === 'available';
+
 type ScheduleCalendarProps = {
   year: number;
   month: number;
@@ -39,11 +45,7 @@ function ScheduleCalendar({
   const selectedValue = selectedDateKey
     ? (value[selectedDateKey] ?? DEFAULT_DAY_VALUE)
     : DEFAULT_DAY_VALUE;
-  const isSelectedValueEmpty =
-    !selectedValue.isUncertain &&
-    selectedValue.morning === 'available' &&
-    selectedValue.afternoon === 'available' &&
-    selectedValue.evening === 'available';
+  const isSelectedValueEmpty = isDefaultDayValue(selectedValue);
 
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date);
@@ -52,6 +54,14 @@ function ScheduleCalendar({
 
   const handleChangeSelectedValue = (nextValue: DayScheduleValueT) => {
     if (!selectedDateKey) return;
+
+    if (isDefaultDayValue(nextValue)) {
+      const nextRecord = { ...value };
+      delete nextRecord[selectedDateKey];
+      onChange(nextRecord);
+      return;
+    }
+
     onChange({ ...value, [selectedDateKey]: nextValue });
   };
 
