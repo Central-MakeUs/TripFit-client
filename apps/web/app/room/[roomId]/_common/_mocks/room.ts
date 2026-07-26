@@ -11,6 +11,7 @@ export const MOCK_ROOM: RoomT = {
   days: 3,
   destination: '',
   hostId: 1,
+  status: 'ONGOING',
 };
 
 export const MOCK_ROOM_CAPACITY = 5;
