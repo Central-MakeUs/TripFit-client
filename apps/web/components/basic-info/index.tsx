@@ -294,11 +294,11 @@ function BasicInfo({
             }
             onNext={handleIncludeHalfDayHolidayNext}
             onSkip={
-              endsAtIncludeHalfDayHoliday
-                ? handleIncludeHalfDayHolidayNext
-                : allowSkip
-                  ? handleSkip
-                  : undefined
+              allowSkip
+                ? endsAtIncludeHalfDayHoliday
+                  ? handleIncludeHalfDayHolidayNext
+                  : handleSkip
+                : undefined
             }
             primaryText={endsAtIncludeHalfDayHoliday ? '등록 완료하기' : '다음'}
           />
