@@ -15,6 +15,8 @@ import { rouletteItemOpacity } from './roulette.style';
 type RouletteProps = {
   centerFontSize?: number;
   className?: string;
+  /** true면 3D 회전(rotateX) 없이 평평하게 위아래로만 움직이는 리스트로 렌더링 */
+  flat?: boolean;
   fontSize?: number;
   itemHeight?: number;
   onChange: (value: string) => void;
@@ -50,6 +52,7 @@ const clamp = (value: number, min: number, max: number) =>
 function Roulette({
   centerFontSize = 64,
   className,
+  flat = false,
   fontSize = 38,
   itemHeight = 62,
   onChange,
@@ -60,7 +63,9 @@ function Roulette({
   const maxIndex = values.length - 1;
   const paddingCount = Math.floor(visibleCount / 2);
   const maxAngleRad = (paddingCount * ANGLE_PER_ITEM * Math.PI) / 180;
-  const viewportHeight = RADIUS * Math.sin(maxAngleRad) * 2 + itemHeight;
+  const viewportHeight = flat
+    ? itemHeight * visibleCount
+    : RADIUS * Math.sin(maxAngleRad) * 2 + itemHeight;
 
   const offsetRef = useRef(clamp(values.indexOf(value), 0, maxIndex));
   const [offset, setOffset] = useState(offsetRef.current);
@@ -194,7 +199,10 @@ function Roulette({
         'relative w-full touch-none cursor-grab overflow-hidden select-none active:cursor-grabbing',
         className,
       )}
-      style={{ height: viewportHeight, perspective: PERSPECTIVE }}
+      style={{
+        height: viewportHeight,
+        ...(flat ? {} : { perspective: PERSPECTIVE }),
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -204,6 +212,29 @@ function Roulette({
       {values.map((item, index) => {
         const signedDistance = index - offset;
         const distance = Math.abs(signedDistance);
+
+        if (flat) {
+          const isSelected = distance < 0.5;
+          return (
+            <div
+              key={item}
+              className={cn(
+                'pointer-events-none absolute inset-x-0 flex items-center justify-center font-medium whitespace-nowrap',
+                isSelected ? 'text-black' : 'text-grey-200',
+              )}
+              style={{
+                top: '50%',
+                height: itemHeight,
+                marginTop: -itemHeight / 2,
+                fontSize: isSelected ? centerFontSize : fontSize,
+                transform: `translateY(${signedDistance * itemHeight}px)`,
+              }}
+            >
+              {item}
+            </div>
+          );
+        }
+
         // fontSize를 프레임마다 바꾸면 매번 레이아웃(reflow)이 다시 계산돼 버벅임의
         // 원인이 된다. fontSize는 centerFontSize로 고정해두고, 중심 칸만 살짝 더 커
         // 보이게 하는 정도는 transform(scale)로만 표현한다 — 크기 차이의 대부분은
@@ -214,7 +245,7 @@ function Roulette({
         return (
           <div
             key={item}
-            className="pointer-events-none absolute inset-x-0 flex items-center justify-center font-semibold"
+            className="pointer-events-none absolute inset-x-0 flex items-center justify-center font-semibold whitespace-nowrap"
             style={{
               top: '50%',
               height: itemHeight,
