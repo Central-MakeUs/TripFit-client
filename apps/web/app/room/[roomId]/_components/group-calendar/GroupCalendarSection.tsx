@@ -89,6 +89,7 @@ function GroupCalendarSection({
   if (isRepeatScheduleOpen) {
     return (
       <BasicInfo
+        allowSkip={false}
         initialScreen="regularScheduleDetail"
         initialValue={{
           ...DEFAULT_BASIC_INFO_VALUE,
