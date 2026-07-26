@@ -1,4 +1,5 @@
 import { request } from '@/apis/request';
+import { RoomStatusT } from '@/types/room';
 
 export type PostRoomRequestT = {
   title: string;
@@ -12,7 +13,7 @@ export type PostRoomRequestT = {
 
 export type PostRoomResponseT = {
   roomId: string;
-  status: 'ONGOING' | 'CONFIRMED' | 'CANCELED' | 'TERMINATED';
+  status: RoomStatusT;
   myMemberStatus: 'JOINED' | 'RESPONDED';
   needsScheduleConfirm: boolean;
 };

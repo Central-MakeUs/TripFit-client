@@ -1,4 +1,4 @@
-export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'CANCELED' | 'TERMINATED';
+export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'EXPIRED';
 
 export type RoomT = {
   id: string;
