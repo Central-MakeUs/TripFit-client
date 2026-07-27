@@ -458,6 +458,25 @@ main ← dev ← {type}/{issue-number}-{description}
   별도 `consts/api.ts`도 두지 않음
 - 개별 엔드포인트 경로 상수는 실제로 호출하는 API 함수를 만들 때 `consts/api.ts`에 추가 (미리 만들어두지 않음)
 
+### 소셜 로그인 환경변수
+
+로컬 개발자는 각자 `.env.local`에 설정 (gitignore 대상):
+
+| 변수                           | 용도                                             |
+| ------------------------------ | ------------------------------------------------ |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Identity Services (`utils/googleAuth.ts`) |
+| `NEXT_PUBLIC_KAKAO_JS_KEY`     | 카카오 JS SDK (`utils/kakaoAuth.ts`)             |
+| `NEXT_PUBLIC_APPLE_CLIENT_ID`  | Sign in with Apple JS (`utils/appleAuth.ts`)     |
+
+### apps/app WebView 대상 URL
+
+`apps/app`이 감쌀 `apps/web` 주소는 `utils/webViewUrl.ts`에 상수로 고정한다 (환경변수 아님).
+`__DEV__`(RN 내장 플래그)로 로컬 개발(`http://localhost:3000`)과 배포 빌드를 자동 분기하고,
+Android 에뮬레이터는 `localhost`를 `10.0.2.2`로 자동 치환한다.
+
+- 배포 도메인이 아직 정해지지 않아 `PRODUCTION_WEB_URL`은 `REPLACE_WITH_PRODUCTION_WEB_DOMAIN` placeholder로 남겨둠 —
+  배포 도메인 확정되면 `webViewUrl.ts`에서 반드시 실제 주소로 교체할 것
+
 ### 응답 구조
 
 성공 — 단순 조회 (메시지 불필요 시 `data`만):

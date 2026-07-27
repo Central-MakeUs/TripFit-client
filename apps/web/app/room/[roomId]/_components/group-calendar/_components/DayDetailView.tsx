@@ -43,16 +43,16 @@ function DayDetailView({
   const [scheduleValue, setScheduleValue] = useState(INITIAL_SCHEDULE_VALUE);
   const { needsAttention, available } = MOCK_DAY_DETAIL;
 
+  const isScheduleEmpty =
+    !scheduleValue.isUncertain &&
+    scheduleValue.morning === 'available' &&
+    scheduleValue.afternoon === 'available' &&
+    scheduleValue.evening === 'available';
+
   useEffect(() => {
     setIsEditOpen(false);
     setScheduleValue(INITIAL_SCHEDULE_VALUE);
   }, [selectedDate]);
-
-  const isScheduleUnchanged =
-    scheduleValue.isUncertain === INITIAL_SCHEDULE_VALUE.isUncertain &&
-    scheduleValue.morning === INITIAL_SCHEDULE_VALUE.morning &&
-    scheduleValue.afternoon === INITIAL_SCHEDULE_VALUE.afternoon &&
-    scheduleValue.evening === INITIAL_SCHEDULE_VALUE.evening;
 
   return (
     <div className="flex w-full flex-1 flex-col">
@@ -119,7 +119,7 @@ function DayDetailView({
         value={scheduleValue}
         onChange={setScheduleValue}
         submitLabel="저장하기"
-        submitDisabled={isScheduleUnchanged}
+        submitDisabled={isScheduleEmpty}
         onSubmit={() => {
           // TODO: 날짜별 일정 수정 API 연동
           setIsEditOpen(false);

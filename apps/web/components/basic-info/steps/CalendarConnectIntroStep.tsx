@@ -1,20 +1,30 @@
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
+import ProgressBar from '@/components/progress-bar';
 
 type CalendarConnectIntroStepProps = {
   onBack: () => void;
   onConnect: () => void;
   onSkip: () => void;
+  title?: string;
+  progress?: number;
 };
 
 function CalendarConnectIntroStep({
   onBack,
   onConnect,
   onSkip,
+  title = '캘린더 연동하기',
+  progress,
 }: CalendarConnectIntroStepProps) {
   return (
     <div className="flex w-full flex-1 flex-col">
-      <Header variant="page" title="캘린더 연동하기" onBack={onBack} />
+      <Header variant="page" title={title} onBack={onBack} />
+      {progress !== undefined && (
+        <div className="px-5 py-1">
+          <ProgressBar size="sm" value={progress} />
+        </div>
+      )}
       <div className="flex w-full flex-1 flex-col px-5">
         <p className="pt-3 pb-13 text-body-01 text-black">
           기존 일정을 불러와

@@ -4,10 +4,23 @@ import { useState } from 'react';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import BasicInfo from '@/components/basic-info';
+import { DEFAULT_BASIC_INFO_VALUE } from '@/components/basic-info/basicInfo.const';
 import Header from '@/components/header';
+import IndividualScheduleInput from '@/components/individual-schedule-input';
+import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
 
-import CalendarConnectFlow from './calendar-connect';
+// TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
+const MOCK_TRIP_OPTIONS = [
+  { id: '1', title: '제주도 여행' },
+  { id: '2', title: '나트랑 여행' },
+  { id: '3', title: '전주 여행' },
+];
+
+// TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
+const MOCK_SAVED_REGULAR_SCHEDULES: RegularScheduleT[] = [
+  { id: 'mock-1', days: [1, 2, 3], startTime: '09:30', endTime: '18:00' },
+];
 
 const MENU_ITEMS = [
   {
@@ -30,10 +43,36 @@ const MENU_ITEMS = [
 function MyScheduleSection() {
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(false);
+  const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
+    useState(false);
+  const [individualScheduleValue, setIndividualScheduleValue] =
+    useState<IndividualScheduleValueT>({});
+  const [selectedTripId, setSelectedTripId] = useState('1');
 
   if (isCalendarConnectOpen) {
     return (
-      <CalendarConnectFlow onExit={() => setIsCalendarConnectOpen(false)} />
+      <BasicInfo
+        initialScreen="calendarConnectIntro"
+        onExit={() => setIsCalendarConnectOpen(false)}
+        onComplete={() => setIsCalendarConnectOpen(false)}
+      />
+    );
+  }
+
+  if (isIndividualScheduleOpen) {
+    return (
+      <IndividualScheduleInput
+        tripOptions={MOCK_TRIP_OPTIONS}
+        selectedTripId={selectedTripId}
+        onSelectTrip={setSelectedTripId}
+        value={individualScheduleValue}
+        onChange={setIndividualScheduleValue}
+        onBack={() => setIsIndividualScheduleOpen(false)}
+        onNext={() => {
+          // TODO: 개별 일정 저장 API 연동
+          setIsIndividualScheduleOpen(false);
+        }}
+      />
     );
   }
 
@@ -41,6 +80,14 @@ function MyScheduleSection() {
     return (
       <BasicInfo
         allowSkip={false}
+        title="기본 정보 관리"
+        initialScreen="regularScheduleDetail"
+        initialValue={{
+          ...DEFAULT_BASIC_INFO_VALUE,
+          hasRegularSchedule: true,
+          regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
+        }}
+        endsAtIncludeHalfDayHoliday
         onExit={() => setIsBasicInfoOpen(false)}
         onComplete={() => {
           // TODO: 기본 정보(정기 일정/연차 조건) 저장 API 연동
@@ -59,7 +106,10 @@ function MyScheduleSection() {
       setIsCalendarConnectOpen(true);
       return;
     }
-    // TODO: 내 일정 입력하기 플로우 연결
+    if (key === 'schedule') {
+      setIsIndividualScheduleOpen(true);
+      return;
+    }
   };
 
   return (
