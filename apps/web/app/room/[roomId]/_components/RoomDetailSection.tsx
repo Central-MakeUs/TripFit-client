@@ -48,7 +48,11 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     );
   }
 
-  if (getRoomError?.code === 'SCHEDULE_CONFIRM_REQUIRED') {
+  const needsScheduleConfirm =
+    getRoomError?.code === 'SCHEDULE_CONFIRM_REQUIRED';
+  const needsScheduleEntry = getRoomError?.code === 'SCHEDULE_ENTRY_REQUIRED';
+
+  if (needsScheduleConfirm || needsScheduleEntry) {
     if (isBasicInfoOpen) {
       return (
         <>
@@ -59,15 +63,20 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             completeDescription="일정 입력이 완료되었어요!"
             completePrimaryText="여행방 입장하기"
             onCompletePrimaryClick={() => {
-              postScheduleConfirmMutation(roomId, {
-                onSuccess: () => {
-                  setIsBasicInfoOpen(false);
-                  refetchRoom();
-                },
-                onError: () => {
-                  setIsConfirmErrorOpen(true);
-                },
-              });
+              if (needsScheduleConfirm) {
+                postScheduleConfirmMutation(roomId, {
+                  onSuccess: () => {
+                    setIsBasicInfoOpen(false);
+                    refetchRoom();
+                  },
+                  onError: () => {
+                    setIsConfirmErrorOpen(true);
+                  },
+                });
+                return;
+              }
+              setIsBasicInfoOpen(false);
+              refetchRoom();
             }}
           />
           <AlertModal
