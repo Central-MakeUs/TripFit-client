@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 
+import AlertModal from '@/components/alert-modal';
+import BasicInfo from '@/components/basic-info';
 import Header from '@/components/header';
 import Spinner from '@/components/spinner';
 
+import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
+import { usePostScheduleConfirm } from '../../_common/_hooks/usePostScheduleConfirm';
 import ShareSheet from '../_common/_components/ShareSheet';
 import { useGetRoom } from '../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
@@ -20,9 +24,18 @@ type SectionT = 'calendar' | 'recommendation';
 function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
-  const { roomData, isGetRoomLoading, isGetRoomError } = useGetRoom(roomId);
+  const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
+  const [isConfirmErrorOpen, setIsConfirmErrorOpen] = useState(false);
+  const {
+    roomData,
+    isGetRoomLoading,
+    isGetRoomError,
+    getRoomError,
+    refetchRoom,
+  } = useGetRoom(roomId);
   const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
     useGetRoomMembers(roomId);
+  const { postScheduleConfirmMutation } = usePostScheduleConfirm();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -31,6 +44,53 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         <div className="flex w-full flex-1 items-center justify-center">
           <Spinner />
         </div>
+      </div>
+    );
+  }
+
+  if (getRoomError?.code === 'SCHEDULE_CONFIRM_REQUIRED') {
+    if (isBasicInfoOpen) {
+      return (
+        <>
+          <BasicInfo
+            allowSkip={false}
+            onComplete={() => {}}
+            completeTitle="일정 입력하기"
+            completeDescription="일정 입력이 완료되었어요!"
+            completePrimaryText="여행방 입장하기"
+            onCompletePrimaryClick={() => {
+              postScheduleConfirmMutation(roomId, {
+                onSuccess: () => {
+                  setIsBasicInfoOpen(false);
+                  refetchRoom();
+                },
+                onError: () => {
+                  setIsConfirmErrorOpen(true);
+                },
+              });
+            }}
+          />
+          <AlertModal
+            open={isConfirmErrorOpen}
+            onOpenChange={setIsConfirmErrorOpen}
+            variant="danger"
+            title="일정 확인을 완료하지 못했어요"
+            description="잠시 후 다시 시도해주세요"
+            primaryText="확인"
+            onPrimaryClick={() => setIsConfirmErrorOpen(false)}
+          />
+        </>
+      );
+    }
+
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <PreScheduleRequiredModal
+          open
+          onOpenChange={() => {}}
+          onConfirm={() => setIsBasicInfoOpen(true)}
+        />
       </div>
     );
   }

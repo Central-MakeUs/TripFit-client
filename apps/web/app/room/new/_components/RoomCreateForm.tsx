@@ -16,6 +16,7 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 import { RegularScheduleT } from '@/types/schedule';
 
+import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
 import { usePostRoom } from '../_hooks/usePostRoom';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
@@ -252,20 +253,10 @@ function RoomCreateForm() {
           />
         )}
       </div>
-      <AlertModal
+      <PreScheduleRequiredModal
         open={scheduleModal === 'preSchedule'}
         onOpenChange={(open) => !open && setScheduleModal('none')}
-        title="사전 일정 입력이 필요해요"
-        description={
-          <>
-            여행방에 입장하려면
-            <br />
-            본인 일정을 먼저 입력해주세요.
-          </>
-        }
-        primaryText="확인"
-        primaryColor="primary"
-        onPrimaryClick={() => handleStartBasicInfo('hasRegularSchedule')}
+        onConfirm={() => handleStartBasicInfo('hasRegularSchedule')}
       />
       <AlertModal
         open={scheduleModal === 'confirmSchedule'}

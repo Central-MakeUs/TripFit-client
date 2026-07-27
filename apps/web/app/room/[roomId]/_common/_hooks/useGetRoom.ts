@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getRoom } from '../_apis/getRoom';
+import { ApiError } from '@/apis/request';
+
+import { getRoom, GetRoomResponseT } from '../_apis/getRoom';
 
 const TEMP_USER_ID = process.env.NEXT_PUBLIC_TEMP_USER_ID ?? '';
 
@@ -13,10 +15,18 @@ export const useGetRoom = (roomId: string) => {
     data: roomData,
     isLoading: isGetRoomLoading,
     isError: isGetRoomError,
-  } = useQuery({
+    error: getRoomError,
+    refetch: refetchRoom,
+  } = useQuery<GetRoomResponseT, ApiError>({
     queryKey: ['room', roomId],
     queryFn: () => getRoom(roomId, userId),
   });
 
-  return { roomData, isGetRoomLoading, isGetRoomError };
+  return {
+    roomData,
+    isGetRoomLoading,
+    isGetRoomError,
+    getRoomError,
+    refetchRoom,
+  };
 };

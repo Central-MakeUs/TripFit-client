@@ -1,5 +1,5 @@
 import { request } from '@/apis/request';
-import { RoomStatusT } from '@/types/room';
+import { RoomMemberStatusT, RoomStatusT } from '@/types/room';
 
 export type PostRoomRequestT = {
   title: string;
@@ -14,7 +14,7 @@ export type PostRoomRequestT = {
 export type PostRoomResponseT = {
   roomId: string;
   status: RoomStatusT;
-  myMemberStatus: 'JOINED' | 'RESPONDED';
+  myMemberStatus: RoomMemberStatusT;
   needsScheduleConfirm: boolean;
 };
 
