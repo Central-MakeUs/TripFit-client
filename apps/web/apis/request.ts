@@ -29,12 +29,10 @@ type RequestConfig = Omit<
 
 export class ApiError extends Error {
   code?: string;
-  status?: number;
 
-  constructor(message: string, code?: string, status?: number) {
+  constructor(message: string, code?: string) {
     super(message);
     this.code = code;
-    this.status = status;
   }
 }
 
@@ -55,11 +53,7 @@ export async function request<T>(
         typeof body === 'object' && body !== null
           ? (body as { message?: string; code?: string })
           : { message: undefined, code: undefined };
-      throw new ApiError(
-        message || '요청 처리 중 오류가 발생했습니다.',
-        code,
-        error.response.status,
-      );
+      throw new ApiError(message || '요청 처리 중 오류가 발생했습니다.', code);
     }
     throw new ApiError('서버 응답을 해석할 수 없습니다.');
   }
