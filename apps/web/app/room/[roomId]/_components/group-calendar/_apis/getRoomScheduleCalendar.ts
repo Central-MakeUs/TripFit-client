@@ -1,4 +1,5 @@
 import { request } from '@/apis/request';
+import { RoomMemberStatusT } from '@/types/room';
 
 export type ScheduleSlotStatusT = 'POSSIBLE' | 'IMPOSSIBLE';
 
@@ -29,7 +30,7 @@ type ScheduleCalendarMemberResponse = {
   userId: string;
   displayName: string;
   role: 'OWNER' | 'MEMBER';
-  memberStatus: 'JOINED' | 'RESPONDED';
+  memberStatus: RoomMemberStatusT;
   days: {
     date: string;
     morningStatus: ScheduleSlotStatusT;

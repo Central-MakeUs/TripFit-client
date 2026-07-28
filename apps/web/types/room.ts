@@ -1,5 +1,5 @@
 export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'EXPIRED';
-export type RoomMemberStatusT = 'JOINED' | 'RESPONDED';
+export type RoomMemberStatusT = 'SCHEDULE_PENDING' | 'ACTIVE';
 
 export type RoomT = {
   id: string;

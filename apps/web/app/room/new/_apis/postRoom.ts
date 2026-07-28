@@ -15,7 +15,6 @@ export type PostRoomResponseT = {
   roomId: string;
   status: RoomStatusT;
   myMemberStatus: RoomMemberStatusT;
-  needsScheduleConfirm: boolean;
 };
 
 type CreateTripRequest = {
@@ -58,6 +57,5 @@ export const postRoom = async (
     roomId: tripResponse.tripId,
     status: tripResponse.status,
     myMemberStatus: tripResponse.myMemberStatus,
-    needsScheduleConfirm: tripResponse.needsScheduleConfirm,
   };
 };

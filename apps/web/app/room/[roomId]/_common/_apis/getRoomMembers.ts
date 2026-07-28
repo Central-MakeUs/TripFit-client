@@ -1,5 +1,6 @@
 import { request } from '@/apis/request';
 import { ParticipantT } from '@/types/participant';
+import { RoomMemberStatusT } from '@/types/room';
 
 const PARTICIPANT_COLORS: ParticipantT['color'][] = [
   'pink',
@@ -15,7 +16,7 @@ type TripMemberItem = {
   userId: string;
   displayName: string;
   role: 'OWNER' | 'MEMBER';
-  status: 'JOINED' | 'RESPONDED';
+  status: RoomMemberStatusT;
 };
 
 type TripMembersResponse = {
