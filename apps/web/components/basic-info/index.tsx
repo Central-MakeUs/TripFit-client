@@ -25,7 +25,12 @@ import RegularScheduleDetailStep from './steps/RegularScheduleDetailStep';
 type BasicInfoProps = {
   initialValue?: BasicInfoValue;
   initialScreen?: BasicInfoScreen;
+  /** 완료 화면 기본/보조 버튼 클릭 시 호출됨 — 저장은 이미 끝난 뒤라, 여기선 오버레이 닫기 등 화면 전환용 동작만 처리 */
   onComplete: (value: BasicInfoValue) => void;
+  /** 반차/공휴일 포함 여부 스텝(정기 일정 섹션의 마지막 스텝) "다음"에서, 다음 화면(개별 일정 또는 완료 화면)으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 정기 일정 저장에 사용 */
+  onRegularScheduleNext?: (value: BasicInfoValue) => void | Promise<void>;
+  /** 개별 일정 입력 마지막 "다음"에서, 완료 화면으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 개별 일정 저장, 여행방 confirm처럼 완료 화면 도달 전에 처리해야 하는 동작에 사용 */
+  onBeforeComplete?: (value: BasicInfoValue) => void | Promise<void>;
   allowSkip?: boolean;
   onExit?: () => void;
   /** 위저드 메인 화면의 헤더 타이틀 — 미지정 시 "일정 입력하기" */
@@ -58,6 +63,8 @@ function BasicInfo({
   initialValue = DEFAULT_BASIC_INFO_VALUE,
   initialScreen = 'hasRegularSchedule',
   onComplete,
+  onRegularScheduleNext,
+  onBeforeComplete,
   allowSkip = true,
   onExit,
   title = '일정 입력하기',
@@ -139,11 +146,13 @@ function BasicInfo({
     navigateTo('includeHalfDayHoliday');
   };
 
-  const handleIncludeHalfDayHolidayNext = () => {
+  const handleIncludeHalfDayHolidayNext = async () => {
+    await onRegularScheduleNext?.(value);
     navigateTo(endsAtIncludeHalfDayHoliday ? 'complete' : 'individualSchedule');
   };
 
-  const handleIndividualScheduleNext = () => {
+  const handleIndividualScheduleNext = async () => {
+    await onBeforeComplete?.(value);
     navigateTo('complete');
   };
 

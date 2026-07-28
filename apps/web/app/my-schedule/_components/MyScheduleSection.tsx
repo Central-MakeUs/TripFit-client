@@ -89,10 +89,10 @@ function MyScheduleSection() {
         }}
         endsAtIncludeHalfDayHoliday
         onExit={() => setIsBasicInfoOpen(false)}
-        onComplete={() => {
+        onRegularScheduleNext={() => {
           // TODO: 기본 정보(정기 일정/연차 조건) 저장 API 연동
-          setIsBasicInfoOpen(false);
         }}
+        onComplete={() => setIsBasicInfoOpen(false)}
       />
     );
   }

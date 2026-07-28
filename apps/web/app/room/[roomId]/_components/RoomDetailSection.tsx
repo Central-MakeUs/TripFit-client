@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 
-import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import Header from '@/components/header';
 import Spinner from '@/components/spinner';
 
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
-import { usePostScheduleConfirm } from '../../_common/_hooks/usePostScheduleConfirm';
+import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import ShareSheet from '../_common/_components/ShareSheet';
 import { useGetRoom } from '../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
@@ -25,7 +24,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
-  const [isConfirmErrorOpen, setIsConfirmErrorOpen] = useState(false);
+  const [isReadyToEnter, setIsReadyToEnter] = useState(false);
   const {
     roomData,
     isGetRoomLoading,
@@ -35,7 +34,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   } = useGetRoom(roomId);
   const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
     useGetRoomMembers(roomId);
-  const { postScheduleConfirmMutation } = usePostScheduleConfirm();
+  const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -58,36 +57,29 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         <>
           <BasicInfo
             allowSkip={false}
-            onComplete={() => {}}
+            onComplete={() => {
+              if (isReadyToEnter) {
+                setIsBasicInfoOpen(false);
+                refetchRoom();
+              }
+            }}
+            onRegularScheduleNext={() => {
+              // TODO: 정기 일정 저장 API 연동
+            }}
+            onBeforeComplete={async () => {
+              // TODO: 개별 일정 저장 API 연동 (confirm 호출 전에 완료되어야 함)
+              if (needsScheduleConfirm) {
+                const isConfirmed = await confirmSchedule(roomId);
+                if (isConfirmed) setIsReadyToEnter(true);
+                return;
+              }
+              setIsReadyToEnter(true);
+            }}
             completeTitle="일정 입력하기"
             completeDescription="일정 입력이 완료되었어요!"
             completePrimaryText="여행방 입장하기"
-            onCompletePrimaryClick={() => {
-              if (needsScheduleConfirm) {
-                postScheduleConfirmMutation(roomId, {
-                  onSuccess: () => {
-                    setIsBasicInfoOpen(false);
-                    refetchRoom();
-                  },
-                  onError: () => {
-                    setIsConfirmErrorOpen(true);
-                  },
-                });
-                return;
-              }
-              setIsBasicInfoOpen(false);
-              refetchRoom();
-            }}
           />
-          <AlertModal
-            open={isConfirmErrorOpen}
-            onOpenChange={setIsConfirmErrorOpen}
-            variant="danger"
-            title="일정 확인을 완료하지 못했어요"
-            description="잠시 후 다시 시도해주세요"
-            primaryText="확인"
-            onPrimaryClick={() => setIsConfirmErrorOpen(false)}
-          />
+          {confirmErrorModal}
         </>
       );
     }
@@ -98,7 +90,10 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         <PreScheduleRequiredModal
           open
           onOpenChange={() => {}}
-          onConfirm={() => setIsBasicInfoOpen(true)}
+          onConfirm={() => {
+            setIsReadyToEnter(false);
+            setIsBasicInfoOpen(true);
+          }}
         />
       </div>
     );

@@ -10,11 +10,11 @@ export const usePostScheduleConfirm = () => {
   // const userId = useUserStore((state) => state.userId);
 
   const {
-    mutate: postScheduleConfirmMutation,
+    mutateAsync: postScheduleConfirmMutationAsync,
     isPending: isPostScheduleConfirmPending,
   } = useMutation({
     mutationFn: (roomId: string) => postScheduleConfirm(roomId, userId),
   });
 
-  return { postScheduleConfirmMutation, isPostScheduleConfirmPending };
+  return { postScheduleConfirmMutationAsync, isPostScheduleConfirmPending };
 };
