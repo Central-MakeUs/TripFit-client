@@ -9,6 +9,7 @@ import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import Spinner from '@/components/spinner';
 
+import ShareSheet from '../../_common/_components/ShareSheet';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
 import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
@@ -27,6 +28,7 @@ type ModeT = 'view' | 'edit';
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const router = useRouter();
   const [mode, setMode] = useState<ModeT>('view');
+  const [isInviteSheetOpen, setIsInviteSheetOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
     useGetRoom(roomId);
@@ -100,9 +102,7 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
           capacity={room.memberCount}
           isHost={isHost}
           onEdit={() => setMode('edit')}
-          onInvite={() => {
-            // TODO: 초대 링크 공유 플로우 연결
-          }}
+          onInvite={() => setIsInviteSheetOpen(true)}
           onRemoveParticipant={(participant) => {
             deleteRoomMemberMutation(
               { roomId, targetUserId: participant.id },
@@ -154,6 +154,18 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
           }}
         />
       )}
+
+      <ShareSheet
+        open={isInviteSheetOpen}
+        onOpenChange={setIsInviteSheetOpen}
+        title="응답 요청하기"
+        initialTitleValue={`${room.title} 초대`}
+        initialDescriptionValue={`초대코드 ${room.inviteCode}로 참여해줘!`}
+        onShare={() => {
+          // TODO: 카카오톡 공유 연동
+          setIsInviteSheetOpen(false);
+        }}
+      />
 
       <AlertModal
         open={errorMessage !== null}
