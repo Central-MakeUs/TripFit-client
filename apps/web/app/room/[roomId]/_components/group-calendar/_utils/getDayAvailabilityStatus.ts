@@ -6,9 +6,13 @@ import {
 } from '../_apis/getRoomScheduleCalendar';
 import { DayAvailabilityStatusT } from '../_consts/groupCalendar.const';
 
-type MemberDateStatusT = 'possible' | 'partial' | 'impossible' | 'uncertain';
+export type MemberDateStatusT =
+  | 'possible'
+  | 'partial'
+  | 'impossible'
+  | 'uncertain';
 
-const getMemberDateStatus = (
+export const getMemberDateStatus = (
   member: RoomScheduleMemberT,
   dateKey: string,
 ): MemberDateStatusT => {

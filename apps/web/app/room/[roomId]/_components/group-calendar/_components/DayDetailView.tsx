@@ -12,8 +12,8 @@ import WeekCalendar from '@/components/week-calendar';
 import { DayScheduleValueT } from '@/types/schedule';
 
 import ParticipantStatusList from '../../../_common/_components/ParticipantStatusList';
+import { ParticipantStatusT } from '../../../_common/_types/participantStatus';
 import { DayAvailabilityStatusT } from '../_consts/groupCalendar.const';
-import { MOCK_DAY_DETAIL } from '../_mocks/dayDetail';
 
 type DayDetailViewProps = {
   selectedDate: Date;
@@ -22,6 +22,10 @@ type DayDetailViewProps = {
   minDate: Date;
   maxDate: Date;
   getDayStatus: (date: Date) => DayAvailabilityStatusT;
+  getDayParticipants: (date: Date) => {
+    needsAttention: ParticipantStatusT[];
+    available: ParticipantStatusT[];
+  };
 };
 
 const INITIAL_SCHEDULE_VALUE: DayScheduleValueT = {
@@ -38,10 +42,11 @@ function DayDetailView({
   minDate,
   maxDate,
   getDayStatus,
+  getDayParticipants,
 }: DayDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [scheduleValue, setScheduleValue] = useState(INITIAL_SCHEDULE_VALUE);
-  const { needsAttention, available } = MOCK_DAY_DETAIL;
+  const { needsAttention, available } = getDayParticipants(selectedDate);
 
   const isScheduleEmpty =
     !scheduleValue.isUncertain &&

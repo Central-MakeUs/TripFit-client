@@ -27,6 +27,7 @@ import ParticipantSummaryRow from './_components/ParticipantSummaryRow';
 import ResponseRateCard from './_components/ResponseRateCard';
 import { useGetRoomScheduleCalendar } from './_hooks/useGetRoomScheduleCalendar';
 import { getDayAvailabilityStatus } from './_utils/getDayAvailabilityStatus';
+import { getDayDetailParticipants } from './_utils/getDayDetailParticipants';
 
 type GroupCalendarSectionProps = {
   room: RoomT;
@@ -80,6 +81,11 @@ function GroupCalendarSection({
       ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
       : 'unavailable';
 
+  const getDayParticipants = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
+      : { needsAttention: [], available: [] };
+
   if (isGetRoomScheduleCalendarLoading || !roomScheduleCalendarData) {
     return (
       <div className="flex w-full flex-1 flex-col">
@@ -100,6 +106,7 @@ function GroupCalendarSection({
         minDate={minDate}
         maxDate={maxDate}
         getDayStatus={getDayStatus}
+        getDayParticipants={getDayParticipants}
       />
     );
   }
