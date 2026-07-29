@@ -71,6 +71,7 @@ function GroupCalendarSection({
   const {
     roomScheduleCalendarData,
     isGetRoomScheduleCalendarLoading,
+    isGetRoomScheduleCalendarError,
     refetchRoomScheduleCalendar,
   } = useGetRoomScheduleCalendar(room.id);
   const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
@@ -98,12 +99,25 @@ function GroupCalendarSection({
       ? getMyDaySchedule(roomScheduleCalendarData, date)
       : DEFAULT_DAY_SCHEDULE_VALUE;
 
-  if (isGetRoomScheduleCalendarLoading || !roomScheduleCalendarData) {
+  if (isGetRoomScheduleCalendarLoading) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title={room.title} />
         <div className="flex w-full flex-1 items-center justify-center">
           <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (isGetRoomScheduleCalendarError || !roomScheduleCalendarData) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title={room.title} />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <span className="text-body-03 text-grey-500">
+            일정 정보를 불러오지 못했어요
+          </span>
         </div>
       </div>
     );
