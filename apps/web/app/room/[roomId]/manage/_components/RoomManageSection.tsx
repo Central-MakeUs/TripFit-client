@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
 import AlertModal from '@/components/alert-modal';
@@ -10,6 +11,7 @@ import Spinner from '@/components/spinner';
 
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
+import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
 import { usePatchRoom } from '../_hooks/usePatchRoom';
 import RoomEditForm from './RoomEditForm';
 import RoomInfoView from './RoomInfoView';
@@ -21,13 +23,15 @@ type RoomManageSectionProps = {
 type ModeT = 'view' | 'edit';
 
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<ModeT>('view');
-  const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
     useGetRoom(roomId);
   const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
     useGetRoomMembers(roomId);
   const { patchRoomMutation } = usePatchRoom();
+  const { deleteMyRoomMemberMutation } = useDeleteMyRoomMember();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -98,7 +102,10 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
             // TODO: 여행방 삭제 확인 모달 및 API 연동
           }}
           onLeaveRoom={() => {
-            // TODO: 여행방 나가기 확인 모달 및 API 연동
+            deleteMyRoomMemberMutation(roomId, {
+              onSuccess: () => router.push('/'),
+              onError: () => setErrorMessage('여행방을 나가지 못했어요'),
+            });
           }}
         />
       ) : (
@@ -123,7 +130,8 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
                   refetchRoom();
                   setMode('view');
                 },
-                onError: () => setIsErrorAlertOpen(true),
+                onError: () =>
+                  setErrorMessage('여행방 정보를 저장하지 못했어요'),
               },
             );
           }}
@@ -131,13 +139,13 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
       )}
 
       <AlertModal
-        open={isErrorAlertOpen}
-        onOpenChange={setIsErrorAlertOpen}
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
         variant="danger"
-        title="여행방 정보를 저장하지 못했어요"
+        title={errorMessage ?? ''}
         description="잠시 후 다시 시도해주세요"
         primaryText="확인"
-        onPrimaryClick={() => setIsErrorAlertOpen(false)}
+        onPrimaryClick={() => setErrorMessage(null)}
       />
     </div>
   );

@@ -37,6 +37,7 @@ function RoomInfoView({
   onLeaveRoom,
 }: RoomInfoViewProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] =
     useState<ParticipantT | null>(null);
   const [inviteBlockedReason, setInviteBlockedReason] =
@@ -65,6 +66,11 @@ function RoomInfoView({
   const handleConfirmDelete = () => {
     onDeleteRoom();
     setIsDeleteConfirmOpen(false);
+  };
+
+  const handleConfirmLeave = () => {
+    onLeaveRoom();
+    setIsLeaveConfirmOpen(false);
   };
 
   return (
@@ -132,7 +138,7 @@ function RoomInfoView({
         ) : (
           <button
             type="button"
-            onClick={onLeaveRoom}
+            onClick={() => setIsLeaveConfirmOpen(true)}
             className="w-full cursor-pointer rounded-2xl bg-red-20 px-4 py-3 text-left text-body-06 text-red-300"
           >
             여행방 나가기
@@ -173,6 +179,24 @@ function RoomInfoView({
         onSecondaryClick={() => setIsDeleteConfirmOpen(false)}
         primaryText="삭제하기"
         onPrimaryClick={handleConfirmDelete}
+      />
+
+      <AlertModal
+        open={isLeaveConfirmOpen}
+        onOpenChange={setIsLeaveConfirmOpen}
+        variant="danger"
+        title="여행방을 나갈까요?"
+        description={
+          <>
+            나가면 이 여행방에서의 일정과
+            <br />
+            참여 정보가 함께 삭제돼요.
+          </>
+        }
+        secondaryText="취소"
+        onSecondaryClick={() => setIsLeaveConfirmOpen(false)}
+        primaryText="나가기"
+        onPrimaryClick={handleConfirmLeave}
       />
 
       <AlertModal
