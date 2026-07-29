@@ -12,6 +12,7 @@ import Spinner from '@/components/spinner';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
 import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
+import { useDeleteRoom } from '../_hooks/useDeleteRoom';
 import { useDeleteRoomMember } from '../_hooks/useDeleteRoomMember';
 import { usePatchRoom } from '../_hooks/usePatchRoom';
 import RoomEditForm from './RoomEditForm';
@@ -38,6 +39,7 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const { patchRoomMutation } = usePatchRoom();
   const { deleteMyRoomMemberMutation } = useDeleteMyRoomMember();
   const { deleteRoomMemberMutation } = useDeleteRoomMember();
+  const { deleteRoomMutation } = useDeleteRoom();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -111,7 +113,10 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
             );
           }}
           onDeleteRoom={() => {
-            // TODO: 여행방 삭제 확인 모달 및 API 연동
+            deleteRoomMutation(roomId, {
+              onSuccess: () => router.push('/'),
+              onError: () => setErrorMessage('여행방을 삭제하지 못했어요'),
+            });
           }}
           onLeaveRoom={() => {
             deleteMyRoomMemberMutation(roomId, {
