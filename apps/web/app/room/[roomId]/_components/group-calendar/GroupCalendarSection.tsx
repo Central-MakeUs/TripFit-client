@@ -28,6 +28,10 @@ import ResponseRateCard from './_components/ResponseRateCard';
 import { useGetRoomScheduleCalendar } from './_hooks/useGetRoomScheduleCalendar';
 import { getDayAvailabilityStatus } from './_utils/getDayAvailabilityStatus';
 import { getDayDetailParticipants } from './_utils/getDayDetailParticipants';
+import {
+  DEFAULT_DAY_SCHEDULE_VALUE,
+  getMyDaySchedule,
+} from './_utils/getMyDaySchedule';
 
 type GroupCalendarSectionProps = {
   room: RoomT;
@@ -64,8 +68,11 @@ function GroupCalendarSection({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
-  const { roomScheduleCalendarData, isGetRoomScheduleCalendarLoading } =
-    useGetRoomScheduleCalendar(room.id);
+  const {
+    roomScheduleCalendarData,
+    isGetRoomScheduleCalendarLoading,
+    refetchRoomScheduleCalendar,
+  } = useGetRoomScheduleCalendar(room.id);
   const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
@@ -85,6 +92,11 @@ function GroupCalendarSection({
     roomScheduleCalendarData
       ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
       : { needsAttention: [], available: [] };
+
+  const getMyDayScheduleValue = (date: Date) =>
+    roomScheduleCalendarData
+      ? getMyDaySchedule(roomScheduleCalendarData, date)
+      : DEFAULT_DAY_SCHEDULE_VALUE;
 
   if (isGetRoomScheduleCalendarLoading || !roomScheduleCalendarData) {
     return (
@@ -107,6 +119,8 @@ function GroupCalendarSection({
         maxDate={maxDate}
         getDayStatus={getDayStatus}
         getDayParticipants={getDayParticipants}
+        getMyDaySchedule={getMyDayScheduleValue}
+        onScheduleUpdated={refetchRoomScheduleCalendar}
       />
     );
   }

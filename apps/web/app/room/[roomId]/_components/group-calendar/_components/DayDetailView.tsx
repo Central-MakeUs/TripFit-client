@@ -5,6 +5,7 @@ import { format, isWithinInterval } from 'date-fns';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
+import AlertModal from '@/components/alert-modal';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ScheduleDayBottomSheet from '@/components/schedule-day-bottom-sheet';
@@ -14,6 +15,7 @@ import { DayScheduleValueT } from '@/types/schedule';
 import ParticipantStatusList from '../../../_common/_components/ParticipantStatusList';
 import { ParticipantStatusT } from '../../../_common/_types/participantStatus';
 import { DayAvailabilityStatusT } from '../_consts/groupCalendar.const';
+import { usePatchPersonalSchedule } from '../_hooks/usePatchPersonalSchedule';
 
 type DayDetailViewProps = {
   selectedDate: Date;
@@ -26,13 +28,8 @@ type DayDetailViewProps = {
     needsAttention: ParticipantStatusT[];
     available: ParticipantStatusT[];
   };
-};
-
-const INITIAL_SCHEDULE_VALUE: DayScheduleValueT = {
-  isUncertain: false,
-  morning: 'available',
-  afternoon: 'available',
-  evening: 'available',
+  getMyDaySchedule: (date: Date) => DayScheduleValueT;
+  onScheduleUpdated: () => void;
 };
 
 function DayDetailView({
@@ -43,20 +40,33 @@ function DayDetailView({
   maxDate,
   getDayStatus,
   getDayParticipants,
+  getMyDaySchedule,
+  onScheduleUpdated,
 }: DayDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [scheduleValue, setScheduleValue] = useState(INITIAL_SCHEDULE_VALUE);
+  const [isSubmitErrorOpen, setIsSubmitErrorOpen] = useState(false);
+  const [scheduleValue, setScheduleValue] = useState(() =>
+    getMyDaySchedule(selectedDate),
+  );
+  const [initialScheduleValue, setInitialScheduleValue] = useState(() =>
+    getMyDaySchedule(selectedDate),
+  );
   const { needsAttention, available } = getDayParticipants(selectedDate);
+  const { patchPersonalScheduleMutation, isPatchPersonalSchedulePending } =
+    usePatchPersonalSchedule();
 
-  const isScheduleEmpty =
-    !scheduleValue.isUncertain &&
-    scheduleValue.morning === 'available' &&
-    scheduleValue.afternoon === 'available' &&
-    scheduleValue.evening === 'available';
+  const isScheduleUnchanged =
+    scheduleValue.isUncertain === initialScheduleValue.isUncertain &&
+    scheduleValue.morning === initialScheduleValue.morning &&
+    scheduleValue.afternoon === initialScheduleValue.afternoon &&
+    scheduleValue.evening === initialScheduleValue.evening;
 
   useEffect(() => {
     setIsEditOpen(false);
-    setScheduleValue(INITIAL_SCHEDULE_VALUE);
+    const myDaySchedule = getMyDaySchedule(selectedDate);
+    setScheduleValue(myDaySchedule);
+    setInitialScheduleValue(myDaySchedule);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
   return (
@@ -124,11 +134,29 @@ function DayDetailView({
         value={scheduleValue}
         onChange={setScheduleValue}
         submitLabel="저장하기"
-        submitDisabled={isScheduleEmpty}
+        submitDisabled={isScheduleUnchanged || isPatchPersonalSchedulePending}
         onSubmit={() => {
-          // TODO: 날짜별 일정 수정 API 연동
-          setIsEditOpen(false);
+          patchPersonalScheduleMutation(
+            { date: format(selectedDate, 'yyyy-MM-dd'), value: scheduleValue },
+            {
+              onSuccess: () => {
+                setIsEditOpen(false);
+                onScheduleUpdated();
+              },
+              onError: () => setIsSubmitErrorOpen(true),
+            },
+          );
         }}
+      />
+
+      <AlertModal
+        open={isSubmitErrorOpen}
+        onOpenChange={setIsSubmitErrorOpen}
+        variant="danger"
+        title="일정을 저장하지 못했어요"
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setIsSubmitErrorOpen(false)}
       />
     </div>
   );

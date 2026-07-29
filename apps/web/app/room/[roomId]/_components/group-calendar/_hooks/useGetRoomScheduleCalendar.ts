@@ -13,6 +13,7 @@ export const useGetRoomScheduleCalendar = (roomId: string) => {
     data: roomScheduleCalendarData,
     isLoading: isGetRoomScheduleCalendarLoading,
     isError: isGetRoomScheduleCalendarError,
+    refetch: refetchRoomScheduleCalendar,
   } = useQuery({
     queryKey: ['room-schedule-calendar', roomId],
     queryFn: () => getRoomScheduleCalendar(roomId, userId),
@@ -22,5 +23,6 @@ export const useGetRoomScheduleCalendar = (roomId: string) => {
     roomScheduleCalendarData,
     isGetRoomScheduleCalendarLoading,
     isGetRoomScheduleCalendarError,
+    refetchRoomScheduleCalendar,
   };
 };
