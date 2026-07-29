@@ -13,10 +13,16 @@ export const useGetRoomMembers = (roomId: string) => {
     data: roomMembersData,
     isLoading: isGetRoomMembersLoading,
     isError: isGetRoomMembersError,
+    refetch: refetchRoomMembers,
   } = useQuery({
     queryKey: ['room-members', roomId],
     queryFn: () => getRoomMembers(roomId, userId),
   });
 
-  return { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError };
+  return {
+    roomMembersData,
+    isGetRoomMembersLoading,
+    isGetRoomMembersError,
+    refetchRoomMembers,
+  };
 };

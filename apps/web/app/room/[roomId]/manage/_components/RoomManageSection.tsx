@@ -5,11 +5,10 @@ import { useState } from 'react';
 import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
-import {
-  MOCK_PARTICIPANTS,
-  MOCK_ROOM,
-  MOCK_ROOM_CAPACITY,
-} from '../../_common/_mocks/room';
+import Spinner from '@/components/spinner';
+
+import { useGetRoom } from '../../_common/_hooks/useGetRoom';
+import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
 import RoomEditForm from './RoomEditForm';
 import RoomInfoView from './RoomInfoView';
 
@@ -21,9 +20,41 @@ type ModeT = 'view' | 'edit';
 
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const [mode, setMode] = useState<ModeT>('view');
-  // TODO: 실제 API 연동 전까지 roomId 기반 mock 데이터 사용
-  const room = { ...MOCK_ROOM, id: roomId };
-  const participants = MOCK_PARTICIPANTS;
+  const { roomData, isGetRoomLoading, isGetRoomError } = useGetRoom(roomId);
+  const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
+    useGetRoomMembers(roomId);
+
+  if (isGetRoomLoading || isGetRoomMembersLoading) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    isGetRoomError ||
+    isGetRoomMembersError ||
+    !roomData ||
+    !roomMembersData
+  ) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <span className="text-body-03 text-grey-500">
+            여행방 정보를 불러오지 못했어요
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const room = roomData;
+  const participants = roomMembersData;
   const isHost = participants.find((p) => p.isMe)?.isHost ?? false;
 
   return (
@@ -49,7 +80,7 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
         <RoomInfoView
           room={room}
           participants={participants}
-          capacity={MOCK_ROOM_CAPACITY}
+          capacity={room.memberCount}
           isHost={isHost}
           onEdit={() => setMode('edit')}
           onInvite={() => {
