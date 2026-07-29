@@ -67,13 +67,17 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
               // TODO: 정기 일정 저장 API 연동
             }}
             onBeforeComplete={async () => {
-              // TODO: 개별 일정 저장 API 연동 (confirm 호출 전에 완료되어야 함)
+              // TODO: 개별 일정 저장 API 연동 (confirm/재조회 전에 완료되어야 함)
               if (needsScheduleConfirm) {
                 const isConfirmed = await confirmSchedule(roomId);
                 if (isConfirmed) setIsReadyToEnter(true);
                 return;
               }
-              setIsReadyToEnter(true);
+              // needsScheduleEntry: 개별 일정 저장 API가 붙기 전까지는
+              // 실제로 저장된 게 없으므로 isReadyToEnter를 세우지 않는다.
+              // 저장 API 연동 후에는 아래처럼 성공 시에만 호출하도록 채울 것:
+              //   const isSaved = await saveIndividualSchedule(...);
+              //   if (isSaved) setIsReadyToEnter(true);
             }}
             completeTitle="일정 입력하기"
             completeDescription="일정 입력이 완료되었어요!"
