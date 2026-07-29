@@ -11,7 +11,7 @@ type QueryProviderProps = {
 
 // 재시도해도 결과가 달라지지 않는(다시 시도해도 동일하게 거부되는) 것으로 확인된 코드만 명시
 const NON_RETRYABLE_ERROR_CODES = [
-  'SCHEDULE_CONFIRM_REQUIRED',
+  'SCHEDULE_ACTIVATION_REQUIRED',
   'SCHEDULE_ENTRY_REQUIRED',
 ];
 

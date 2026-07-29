@@ -47,7 +47,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   }
 
   const needsScheduleConfirm =
-    getRoomError?.code === 'SCHEDULE_CONFIRM_REQUIRED';
+    getRoomError?.code === 'SCHEDULE_ACTIVATION_REQUIRED';
   const needsScheduleEntry = getRoomError?.code === 'SCHEDULE_ENTRY_REQUIRED';
 
   if (needsScheduleConfirm || needsScheduleEntry) {
