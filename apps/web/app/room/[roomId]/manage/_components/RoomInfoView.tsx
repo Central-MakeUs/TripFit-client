@@ -115,6 +115,7 @@ function RoomInfoView({
       <ParticipantManageList
         participants={participants}
         capacity={capacity}
+        isHost={isHost}
         onInvite={handleInviteClick}
         onRemove={setParticipantToRemove}
       />

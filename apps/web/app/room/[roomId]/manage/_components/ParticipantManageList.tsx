@@ -7,6 +7,7 @@ import { ParticipantT } from '@/types/participant';
 type ParticipantManageListProps = {
   participants: ParticipantT[];
   capacity: number;
+  isHost: boolean;
   onInvite: () => void;
   onRemove: (participant: ParticipantT) => void;
 };
@@ -14,6 +15,7 @@ type ParticipantManageListProps = {
 function ParticipantManageList({
   participants,
   capacity,
+  isHost,
   onInvite,
   onRemove,
 }: ParticipantManageListProps) {
@@ -59,7 +61,7 @@ function ParticipantManageList({
                 )}
               </div>
             </div>
-            {!participant.isHost && (
+            {isHost && !participant.isHost && (
               <Button
                 text="내보내기"
                 size="M"
