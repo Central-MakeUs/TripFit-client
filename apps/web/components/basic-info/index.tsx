@@ -27,10 +27,14 @@ type BasicInfoProps = {
   initialScreen?: BasicInfoScreen;
   /** 완료 화면 기본/보조 버튼 클릭 시 호출됨 — 저장은 이미 끝난 뒤라, 여기선 오버레이 닫기 등 화면 전환용 동작만 처리 */
   onComplete: (value: BasicInfoValue) => void;
-  /** 반차/공휴일 포함 여부 스텝(정기 일정 섹션의 마지막 스텝) "다음"에서, 다음 화면(개별 일정 또는 완료 화면)으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 정기 일정 저장에 사용 */
-  onRegularScheduleNext?: (value: BasicInfoValue) => void | Promise<void>;
-  /** 개별 일정 입력 마지막 "다음"에서, 완료 화면으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 개별 일정 저장, 여행방 confirm처럼 완료 화면 도달 전에 처리해야 하는 동작에 사용 */
-  onBeforeComplete?: (value: BasicInfoValue) => void | Promise<void>;
+  /** 반차/공휴일 포함 여부 스텝(정기 일정 섹션의 마지막 스텝) "다음"에서, 다음 화면(개별 일정 또는 완료 화면)으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 정기 일정 저장에 사용. false를 반환하면 다음 화면으로 넘어가지 않고 현재 화면에 머무름 (반환값 없으면 true로 간주) */
+  onRegularScheduleNext?: (
+    value: BasicInfoValue,
+  ) => boolean | void | Promise<boolean | void>;
+  /** 개별 일정 입력 마지막 "다음"에서, 완료 화면으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 개별 일정 저장, 여행방 confirm처럼 완료 화면 도달 전에 처리해야 하는 동작에 사용. false를 반환하면 완료 화면으로 넘어가지 않음 (반환값 없으면 true로 간주) */
+  onBeforeComplete?: (
+    value: BasicInfoValue,
+  ) => boolean | void | Promise<boolean | void>;
   allowSkip?: boolean;
   onExit?: () => void;
   /** 위저드 메인 화면의 헤더 타이틀 — 미지정 시 "일정 입력하기" */
@@ -147,12 +151,14 @@ function BasicInfo({
   };
 
   const handleIncludeHalfDayHolidayNext = async () => {
-    await onRegularScheduleNext?.(value);
+    const canProceed = (await onRegularScheduleNext?.(value)) ?? true;
+    if (!canProceed) return;
     navigateTo(endsAtIncludeHalfDayHoliday ? 'complete' : 'individualSchedule');
   };
 
   const handleIndividualScheduleNext = async () => {
-    await onBeforeComplete?.(value);
+    const canProceed = (await onBeforeComplete?.(value)) ?? true;
+    if (!canProceed) return;
     navigateTo('complete');
   };
 

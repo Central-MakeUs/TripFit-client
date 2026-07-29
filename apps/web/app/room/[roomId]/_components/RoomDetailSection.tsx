@@ -24,7 +24,6 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
-  const [isReadyToEnter, setIsReadyToEnter] = useState(false);
   const {
     roomData,
     isGetRoomLoading,
@@ -58,10 +57,8 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           <BasicInfo
             allowSkip={false}
             onComplete={() => {
-              if (isReadyToEnter) {
-                setIsBasicInfoOpen(false);
-                refetchRoom();
-              }
+              setIsBasicInfoOpen(false);
+              refetchRoom();
             }}
             onRegularScheduleNext={() => {
               // TODO: 정기 일정 저장 API 연동
@@ -69,15 +66,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             onBeforeComplete={async () => {
               // TODO: 개별 일정 저장 API 연동 (confirm/재조회 전에 완료되어야 함)
               if (needsScheduleConfirm) {
-                const isConfirmed = await confirmSchedule(roomId);
-                if (isConfirmed) setIsReadyToEnter(true);
-                return;
+                return confirmSchedule(roomId);
               }
-              // needsScheduleEntry: 개별 일정 저장 API가 붙기 전까지는
-              // 실제로 저장된 게 없으므로 isReadyToEnter를 세우지 않는다.
-              // 저장 API 연동 후에는 아래처럼 성공 시에만 호출하도록 채울 것:
-              //   const isSaved = await saveIndividualSchedule(...);
-              //   if (isSaved) setIsReadyToEnter(true);
+              // needsScheduleEntry: 개별 일정 저장 API가 붙기 전까지는 실제로
+              // 저장된 게 없으므로 완료 화면으로 넘어가지 않는다. 저장 API
+              // 연동 후에는 저장 성공 시에만 true를 반환하도록 채울 것.
+              return false;
             }}
             completeTitle="일정 입력하기"
             completeDescription="일정 입력이 완료되었어요!"
@@ -94,10 +88,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         <PreScheduleRequiredModal
           open
           onOpenChange={() => {}}
-          onConfirm={() => {
-            setIsReadyToEnter(false);
-            setIsBasicInfoOpen(true);
-          }}
+          onConfirm={() => setIsBasicInfoOpen(true)}
         />
       </div>
     );

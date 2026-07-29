@@ -61,7 +61,6 @@ function RoomCreateForm() {
   const [destination, setDestination] = useState('');
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
   const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
-  const [isReadyToEnter, setIsReadyToEnter] = useState(false);
 
   const { postRoomMutation, isPostRoomPending } = usePostRoom();
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
@@ -160,7 +159,6 @@ function RoomCreateForm() {
   const handleStartBasicInfo = (initialScreen: BasicInfoScreen) => {
     setScheduleModal('none');
     setBasicInfoInitialScreen(initialScreen);
-    setIsReadyToEnter(false);
     setIsBasicInfoOpen(true);
   };
 
@@ -184,10 +182,8 @@ function RoomCreateForm() {
           }}
           onBeforeComplete={async () => {
             // TODO: 개별 일정 저장 API 연동 (confirm 호출 전에 완료되어야 함)
-            if (createdRoomId) {
-              const isConfirmed = await confirmSchedule(createdRoomId);
-              if (isConfirmed) setIsReadyToEnter(true);
-            }
+            if (!createdRoomId) return false;
+            return confirmSchedule(createdRoomId);
           }}
           onComplete={() => {}}
           completeTitle="일정 입력하기"
@@ -196,13 +192,11 @@ function RoomCreateForm() {
           completePrimaryText="참여자 초대하기"
           onCompletePrimaryClick={() => {
             // TODO: 참여자 초대하기 플로우 연결 예정 — 우선 방으로 바로 이동
-            if (isReadyToEnter && createdRoomId)
-              router.push(`/room/${createdRoomId}`);
+            if (createdRoomId) router.push(`/room/${createdRoomId}`);
           }}
           completeSecondaryText="나중에 할게요"
           onCompleteSecondaryClick={() => {
-            if (isReadyToEnter && createdRoomId)
-              router.push(`/room/${createdRoomId}`);
+            if (createdRoomId) router.push(`/room/${createdRoomId}`);
           }}
         />
         {confirmErrorModal}
