@@ -12,6 +12,7 @@ import Spinner from '@/components/spinner';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
 import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
+import { useDeleteRoomMember } from '../_hooks/useDeleteRoomMember';
 import { usePatchRoom } from '../_hooks/usePatchRoom';
 import RoomEditForm from './RoomEditForm';
 import RoomInfoView from './RoomInfoView';
@@ -28,10 +29,15 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
     useGetRoom(roomId);
-  const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
-    useGetRoomMembers(roomId);
+  const {
+    roomMembersData,
+    isGetRoomMembersLoading,
+    isGetRoomMembersError,
+    refetchRoomMembers,
+  } = useGetRoomMembers(roomId);
   const { patchRoomMutation } = usePatchRoom();
   const { deleteMyRoomMemberMutation } = useDeleteMyRoomMember();
+  const { deleteRoomMemberMutation } = useDeleteRoomMember();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -95,8 +101,14 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
           onInvite={() => {
             // TODO: 초대 링크 공유 플로우 연결
           }}
-          onRemoveParticipant={() => {
-            // TODO: 참여자 내보내기 API 연동
+          onRemoveParticipant={(participant) => {
+            deleteRoomMemberMutation(
+              { roomId, targetUserId: participant.id },
+              {
+                onSuccess: () => refetchRoomMembers(),
+                onError: () => setErrorMessage('참여자를 내보내지 못했어요'),
+              },
+            );
           }}
           onDeleteRoom={() => {
             // TODO: 여행방 삭제 확인 모달 및 API 연동
