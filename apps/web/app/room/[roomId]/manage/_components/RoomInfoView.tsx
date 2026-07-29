@@ -72,15 +72,17 @@ function RoomInfoView({
       <div className="flex flex-col gap-4 pt-4 pb-5">
         <div className="flex items-center justify-between">
           <h1 className="text-body-01 text-black">{room.title}</h1>
-          <Button
-            text="편집하기"
-            size="M"
-            style="weak"
-            type="secondary"
-            icon={<ModifyIcon className="size-4" />}
-            iconPosition="right"
-            onClick={onEdit}
-          />
+          {isHost && room.status === 'ONGOING' && (
+            <Button
+              text="편집하기"
+              size="M"
+              style="weak"
+              type="secondary"
+              icon={<ModifyIcon className="size-4" />}
+              iconPosition="right"
+              onClick={onEdit}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">

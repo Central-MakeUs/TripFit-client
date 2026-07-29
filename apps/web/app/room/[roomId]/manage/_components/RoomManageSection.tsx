@@ -3,12 +3,14 @@
 import { useState } from 'react';
 
 import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
+import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import Spinner from '@/components/spinner';
 
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
+import { usePatchRoom } from '../_hooks/usePatchRoom';
 import RoomEditForm from './RoomEditForm';
 import RoomInfoView from './RoomInfoView';
 
@@ -20,9 +22,12 @@ type ModeT = 'view' | 'edit';
 
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const [mode, setMode] = useState<ModeT>('view');
-  const { roomData, isGetRoomLoading, isGetRoomError } = useGetRoom(roomId);
+  const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
+  const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
+    useGetRoom(roomId);
   const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
     useGetRoomMembers(roomId);
+  const { patchRoomMutation } = usePatchRoom();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
     return (
@@ -99,12 +104,41 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
       ) : (
         <RoomEditForm
           room={room}
-          onSave={() => {
-            // TODO: 여행방 정보 수정 API 연동
-            setMode('view');
+          onSave={(value) => {
+            patchRoomMutation(
+              {
+                roomId,
+                requestBody: {
+                  title: value.title,
+                  memberCount: room.memberCount,
+                  nights: value.isDurationUndecided
+                    ? null
+                    : Number(value.nights),
+                  days: value.isDurationUndecided ? null : Number(value.days),
+                  destination: value.destination || null,
+                },
+              },
+              {
+                onSuccess: () => {
+                  refetchRoom();
+                  setMode('view');
+                },
+                onError: () => setIsErrorAlertOpen(true),
+              },
+            );
           }}
         />
       )}
+
+      <AlertModal
+        open={isErrorAlertOpen}
+        onOpenChange={setIsErrorAlertOpen}
+        variant="danger"
+        title="여행방 정보를 저장하지 못했어요"
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setIsErrorAlertOpen(false)}
+      />
     </div>
   );
 }
