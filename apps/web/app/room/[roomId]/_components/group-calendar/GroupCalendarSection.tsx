@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { eachMonthOfInterval, format, isWithinInterval } from 'date-fns';
+import {
+  eachMonthOfInterval,
+  format,
+  isWithinInterval,
+  parseISO,
+} from 'date-fns';
 
 import SettingsIcon from '@/assets/icons/settings.svg';
 import BasicInfo from '@/components/basic-info';
@@ -61,8 +66,8 @@ function GroupCalendarSection({
   isConfirmed,
   onShowRecommendation,
 }: GroupCalendarSectionProps) {
-  const minDate = new Date(room.startDate);
-  const maxDate = new Date(room.endDate);
+  const minDate = parseISO(room.startDate);
+  const maxDate = parseISO(room.endDate);
   const months = eachMonthOfInterval({ start: minDate, end: maxDate });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);

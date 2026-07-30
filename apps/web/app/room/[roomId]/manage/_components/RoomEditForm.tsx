@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 import Checkbox from '@/components/checkbox';
 import CtaButtonGroup from '@/components/cta-button-group';
@@ -35,8 +35,8 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
     !room.destination,
   );
 
-  const startDate = new Date(room.startDate);
-  const endDate = new Date(room.endDate);
+  const startDate = parseISO(room.startDate);
+  const endDate = parseISO(room.endDate);
 
   const isTitleValid = !!title.trim();
   const isDurationValid = isDurationUndecided || (!!nights && !!days);
@@ -161,7 +161,7 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
           onPrimaryClick={handleSave}
         />
       </div>
-      <div aria-hidden className="h-[58px] w-full shrink-0" />
+      <div aria-hidden className="h-14.5 w-full shrink-0" />
     </div>
   );
 }
