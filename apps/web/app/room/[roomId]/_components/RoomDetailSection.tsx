@@ -31,8 +31,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     getRoomError,
     refetchRoom,
   } = useGetRoom(roomId);
-  const { roomMembersData, isGetRoomMembersLoading, isGetRoomMembersError } =
-    useGetRoomMembers(roomId);
+  const {
+    roomMembersData,
+    isGetRoomMembersLoading,
+    isGetRoomMembersError,
+    refetchRoomMembers,
+  } = useGetRoomMembers(roomId);
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
 
   if (isGetRoomLoading || isGetRoomMembersLoading) {
@@ -59,6 +63,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             onComplete={() => {
               setIsBasicInfoOpen(false);
               refetchRoom();
+              refetchRoomMembers();
             }}
             onRegularScheduleNext={() => {
               // TODO: 정기 일정 저장 API 연동
@@ -114,19 +119,30 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   const room = roomData;
   const participants = roomMembersData;
-  const isHost =
-    participants.find((participant) => participant.isMe)?.isHost ?? false;
+  const isHost = room.isHost;
+  const myName =
+    participants.find((participant) => participant.isMe)?.name ?? '';
   const isConfirmed = room.status === 'CONFIRMED';
+  const respondedCount = room.activeMemberCount;
 
   if (section === 'recommendation') {
     return (
       <>
         <RecommendationSection
+          roomId={roomId}
           roomName={room.title}
+          myName={myName}
+          isHost={isHost}
           onExit={() => setSection('calendar')}
-          respondedCount={participants.length}
+          respondedCount={respondedCount}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
           isConfirmed={isConfirmed}
+          onConfirmed={refetchRoom}
+          confirmedStartDate={room.confirmedStartDate}
+          confirmedEndDate={room.confirmedEndDate}
+          confirmedAttendCount={room.confirmedAttendCount}
+          confirmedVacationMemberCount={room.confirmedVacationMemberCount}
+          confirmedUncertainCount={room.confirmedUncertainCount}
         />
         <ShareSheet
           open={isRequestResponseOpen}

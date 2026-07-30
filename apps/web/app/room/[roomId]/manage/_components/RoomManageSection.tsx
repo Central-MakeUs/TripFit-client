@@ -74,7 +74,7 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
 
   const room = roomData;
   const participants = roomMembersData;
-  const isHost = participants.find((p) => p.isMe)?.isHost ?? false;
+  const isHost = room.isHost;
 
   return (
     <div className="flex w-full flex-1 flex-col">
