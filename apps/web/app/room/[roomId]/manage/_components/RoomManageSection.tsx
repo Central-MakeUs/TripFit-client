@@ -1,15 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
+import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
-import {
-  MOCK_PARTICIPANTS,
-  MOCK_ROOM,
-  MOCK_ROOM_CAPACITY,
-} from '../../_common/_mocks/room';
+import Spinner from '@/components/spinner';
+
+import ShareSheet from '../../_common/_components/ShareSheet';
+import { useGetRoom } from '../../_common/_hooks/useGetRoom';
+import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
+import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
+import { useDeleteRoom } from '../_hooks/useDeleteRoom';
+import { useDeleteRoomMember } from '../_hooks/useDeleteRoomMember';
+import { usePatchRoom } from '../_hooks/usePatchRoom';
 import RoomEditForm from './RoomEditForm';
 import RoomInfoView from './RoomInfoView';
 
@@ -20,10 +26,54 @@ type RoomManageSectionProps = {
 type ModeT = 'view' | 'edit';
 
 function RoomManageSection({ roomId }: RoomManageSectionProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<ModeT>('view');
-  // TODO: 실제 API 연동 전까지 roomId 기반 mock 데이터 사용
-  const room = { ...MOCK_ROOM, id: Number(roomId) || MOCK_ROOM.id };
-  const participants = MOCK_PARTICIPANTS;
+  const [isInviteSheetOpen, setIsInviteSheetOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
+    useGetRoom(roomId);
+  const {
+    roomMembersData,
+    isGetRoomMembersLoading,
+    isGetRoomMembersError,
+    refetchRoomMembers,
+  } = useGetRoomMembers(roomId);
+  const { patchRoomMutation } = usePatchRoom();
+  const { deleteMyRoomMemberMutation } = useDeleteMyRoomMember();
+  const { deleteRoomMemberMutation } = useDeleteRoomMember();
+  const { deleteRoomMutation } = useDeleteRoom();
+
+  if (isGetRoomLoading || isGetRoomMembersLoading) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    isGetRoomError ||
+    isGetRoomMembersError ||
+    !roomData ||
+    !roomMembersData
+  ) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title="여행방 상세" />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <span className="text-body-03 text-grey-500">
+            여행방 정보를 불러오지 못했어요
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const room = roomData;
+  const participants = roomMembersData;
   const isHost = participants.find((p) => p.isMe)?.isHost ?? false;
 
   return (
@@ -49,31 +99,83 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
         <RoomInfoView
           room={room}
           participants={participants}
-          capacity={MOCK_ROOM_CAPACITY}
+          capacity={room.memberCount}
           isHost={isHost}
           onEdit={() => setMode('edit')}
-          onInvite={() => {
-            // TODO: 초대 링크 공유 플로우 연결
-          }}
-          onRemoveParticipant={() => {
-            // TODO: 참여자 내보내기 API 연동
+          onInvite={() => setIsInviteSheetOpen(true)}
+          onRemoveParticipant={(participant) => {
+            deleteRoomMemberMutation(
+              { roomId, targetUserId: participant.id },
+              {
+                onSuccess: () => refetchRoomMembers(),
+                onError: () => setErrorMessage('참여자를 내보내지 못했어요'),
+              },
+            );
           }}
           onDeleteRoom={() => {
-            // TODO: 여행방 삭제 확인 모달 및 API 연동
+            deleteRoomMutation(roomId, {
+              onSuccess: () => router.push('/'),
+              onError: () => setErrorMessage('여행방을 삭제하지 못했어요'),
+            });
           }}
           onLeaveRoom={() => {
-            // TODO: 여행방 나가기 확인 모달 및 API 연동
+            deleteMyRoomMemberMutation(roomId, {
+              onSuccess: () => router.push('/'),
+              onError: () => setErrorMessage('여행방을 나가지 못했어요'),
+            });
           }}
         />
       ) : (
         <RoomEditForm
           room={room}
-          onSave={() => {
-            // TODO: 여행방 정보 수정 API 연동
-            setMode('view');
+          onSave={(value) => {
+            patchRoomMutation(
+              {
+                roomId,
+                requestBody: {
+                  title: value.title,
+                  memberCount: room.memberCount,
+                  nights: value.isDurationUndecided
+                    ? null
+                    : Number(value.nights),
+                  days: value.isDurationUndecided ? null : Number(value.days),
+                  destination: value.destination || null,
+                },
+              },
+              {
+                onSuccess: () => {
+                  refetchRoom();
+                  setMode('view');
+                },
+                onError: () =>
+                  setErrorMessage('여행방 정보를 저장하지 못했어요'),
+              },
+            );
           }}
         />
       )}
+
+      <ShareSheet
+        open={isInviteSheetOpen}
+        onOpenChange={setIsInviteSheetOpen}
+        title="응답 요청하기"
+        initialTitleValue={`${room.title} 초대`}
+        initialDescriptionValue={`초대코드 ${room.inviteCode}로 참여해줘!`}
+        onShare={() => {
+          // TODO: 카카오톡 공유 연동
+          setIsInviteSheetOpen(false);
+        }}
+      />
+
+      <AlertModal
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
+        variant="danger"
+        title={errorMessage ?? ''}
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

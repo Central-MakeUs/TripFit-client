@@ -37,6 +37,7 @@ function RoomInfoView({
   onLeaveRoom,
 }: RoomInfoViewProps) {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] =
     useState<ParticipantT | null>(null);
   const [inviteBlockedReason, setInviteBlockedReason] =
@@ -67,20 +68,27 @@ function RoomInfoView({
     setIsDeleteConfirmOpen(false);
   };
 
+  const handleConfirmLeave = () => {
+    onLeaveRoom();
+    setIsLeaveConfirmOpen(false);
+  };
+
   return (
     <div className="flex w-full flex-1 flex-col px-5">
       <div className="flex flex-col gap-4 pt-4 pb-5">
         <div className="flex items-center justify-between">
           <h1 className="text-body-01 text-black">{room.title}</h1>
-          <Button
-            text="편집하기"
-            size="M"
-            style="weak"
-            type="secondary"
-            icon={<ModifyIcon className="size-4" />}
-            iconPosition="right"
-            onClick={onEdit}
-          />
+          {isHost && room.status === 'ONGOING' && (
+            <Button
+              text="편집하기"
+              size="M"
+              style="weak"
+              type="secondary"
+              icon={<ModifyIcon className="size-4" />}
+              iconPosition="right"
+              onClick={onEdit}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
@@ -107,6 +115,7 @@ function RoomInfoView({
       <ParticipantManageList
         participants={participants}
         capacity={capacity}
+        canRemoveParticipants={isHost && room.status === 'ONGOING'}
         onInvite={handleInviteClick}
         onRemove={setParticipantToRemove}
       />
@@ -130,7 +139,7 @@ function RoomInfoView({
         ) : (
           <button
             type="button"
-            onClick={onLeaveRoom}
+            onClick={() => setIsLeaveConfirmOpen(true)}
             className="w-full cursor-pointer rounded-2xl bg-red-20 px-4 py-3 text-left text-body-06 text-red-300"
           >
             여행방 나가기
@@ -171,6 +180,24 @@ function RoomInfoView({
         onSecondaryClick={() => setIsDeleteConfirmOpen(false)}
         primaryText="삭제하기"
         onPrimaryClick={handleConfirmDelete}
+      />
+
+      <AlertModal
+        open={isLeaveConfirmOpen}
+        onOpenChange={setIsLeaveConfirmOpen}
+        variant="danger"
+        title="여행방을 나갈까요?"
+        description={
+          <>
+            나가면 이 여행방에서의 일정과
+            <br />
+            참여 정보가 함께 삭제돼요.
+          </>
+        }
+        secondaryText="취소"
+        onSecondaryClick={() => setIsLeaveConfirmOpen(false)}
+        primaryText="나가기"
+        onPrimaryClick={handleConfirmLeave}
       />
 
       <AlertModal

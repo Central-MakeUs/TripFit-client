@@ -16,6 +16,8 @@ import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 import { RegularScheduleT } from '@/types/schedule';
 
+import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
+import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import { usePostRoom } from '../_hooks/usePostRoom';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
@@ -61,6 +63,7 @@ function RoomCreateForm() {
   const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
 
   const { postRoomMutation, isPostRoomPending } = usePostRoom();
+  const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
 
   const periodDays =
     tripPeriod.startDate && tripPeriod.endDate
@@ -161,35 +164,43 @@ function RoomCreateForm() {
 
   if (isBasicInfoOpen) {
     return (
-      <BasicInfo
-        initialScreen={basicInfoInitialScreen}
-        initialValue={
-          basicInfoInitialScreen === 'regularScheduleDetail'
-            ? {
-                ...DEFAULT_BASIC_INFO_VALUE,
-                hasRegularSchedule: true,
-                regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
-              }
-            : undefined
-        }
-        onExit={() => setIsBasicInfoOpen(false)}
-        onComplete={() => {
-          // TODO: 근무 일정 저장 API 연동
-          setIsBasicInfoOpen(false);
-        }}
-        completeTitle="일정 입력하기"
-        completeHeading={roomName}
-        completeDescription="일정 입력이 완료되었어요!"
-        completePrimaryText="참여자 초대하기"
-        onCompletePrimaryClick={() => {
-          // TODO: 참여자 초대하기 플로우 연결 예정 — 우선 방으로 바로 이동
-          if (createdRoomId) router.push(`/room/${createdRoomId}`);
-        }}
-        completeSecondaryText="나중에 할게요"
-        onCompleteSecondaryClick={() => {
-          if (createdRoomId) router.push(`/room/${createdRoomId}`);
-        }}
-      />
+      <>
+        <BasicInfo
+          initialScreen={basicInfoInitialScreen}
+          initialValue={
+            basicInfoInitialScreen === 'regularScheduleDetail'
+              ? {
+                  ...DEFAULT_BASIC_INFO_VALUE,
+                  hasRegularSchedule: true,
+                  regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
+                }
+              : undefined
+          }
+          onExit={() => setIsBasicInfoOpen(false)}
+          onRegularScheduleNext={() => {
+            // TODO: 정기 일정 저장 API 연동
+          }}
+          onBeforeComplete={async () => {
+            // TODO: 개별 일정 저장 API 연동 (confirm 호출 전에 완료되어야 함)
+            if (!createdRoomId) return false;
+            return confirmSchedule(createdRoomId);
+          }}
+          onComplete={() => {}}
+          completeTitle="일정 입력하기"
+          completeHeading={roomName}
+          completeDescription="일정 입력이 완료되었어요!"
+          completePrimaryText="참여자 초대하기"
+          onCompletePrimaryClick={() => {
+            // TODO: 참여자 초대하기 플로우 연결 예정 — 우선 방으로 바로 이동
+            if (createdRoomId) router.push(`/room/${createdRoomId}`);
+          }}
+          completeSecondaryText="나중에 할게요"
+          onCompleteSecondaryClick={() => {
+            if (createdRoomId) router.push(`/room/${createdRoomId}`);
+          }}
+        />
+        {confirmErrorModal}
+      </>
     );
   }
 
@@ -252,20 +263,10 @@ function RoomCreateForm() {
           />
         )}
       </div>
-      <AlertModal
+      <PreScheduleRequiredModal
         open={scheduleModal === 'preSchedule'}
         onOpenChange={(open) => !open && setScheduleModal('none')}
-        title="사전 일정 입력이 필요해요"
-        description={
-          <>
-            여행방에 입장하려면
-            <br />
-            본인 일정을 먼저 입력해주세요.
-          </>
-        }
-        primaryText="확인"
-        primaryColor="primary"
-        onPrimaryClick={() => handleStartBasicInfo('hasRegularSchedule')}
+        onConfirm={() => handleStartBasicInfo('hasRegularSchedule')}
       />
       <AlertModal
         open={scheduleModal === 'confirmSchedule'}
