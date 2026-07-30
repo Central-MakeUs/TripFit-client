@@ -2,54 +2,132 @@
 
 import { useState } from 'react';
 
+import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import {
   RecommendationCandidateDetailT,
   RecommendationTypeT,
 } from '@/types/recommendation';
 
-import { MOCK_CANDIDATES } from './_mocks/candidates';
+import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
+import { usePostConfirmTrip } from './_hooks/usePostConfirmTrip';
+import { usePostRecommendations } from './_hooks/usePostRecommendations';
+import { usePostUnconfirmTrip } from './_hooks/usePostUnconfirmTrip';
+import RecommendationCancelStep from './steps/RecommendationCancelStep';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
 import RecommendationResultStep from './steps/RecommendationResultStep';
 import RecommendationTypeStep from './steps/RecommendationTypeStep';
 
 type RecommendationSectionProps = {
+  roomId: string;
   roomName: string;
+  myName: string;
+  isHost: boolean;
   onExit: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
   isConfirmed: boolean;
+  onConfirmed?: () => void;
+  confirmedStartDate: string | null;
+  confirmedEndDate: string | null;
+  confirmedAttendCount: number | null;
+  confirmedVacationMemberCount: number | null;
+  confirmedUncertainCount: number | null;
 };
 
 function RecommendationSection({
+  roomId,
   roomName,
+  myName,
+  isHost,
   onExit,
   respondedCount,
   onRequestResponse,
   isConfirmed,
+  onConfirmed,
+  confirmedStartDate,
+  confirmedEndDate,
+  confirmedAttendCount,
+  confirmedVacationMemberCount,
+  confirmedUncertainCount,
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationTypeT | null>(null);
+  const [candidates, setCandidates] = useState<
+    RecommendationCandidateDetailT[]
+  >([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
   const [confirmedCandidate, setConfirmedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [justUnconfirmed, setJustUnconfirmed] = useState(false);
+  const { postRecommendationsMutation } = usePostRecommendations();
+  const { getRecommendationDetailMutation } = useGetRecommendationDetail();
+  const { postConfirmTripMutation } = usePostConfirmTrip();
+  const { postUnconfirmTripMutation, isPostUnconfirmTripPending } =
+    usePostUnconfirmTrip();
 
-  if (isConfirmed) {
-    // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
-    const mockConfirmedCandidate = MOCK_CANDIDATES[0];
+  const handleUnconfirm = (
+    reason: Parameters<typeof postUnconfirmTripMutation>[0]['reason'],
+    reasonDetail?: string,
+  ) => {
+    postUnconfirmTripMutation(
+      { roomId, reason, reasonDetail },
+      {
+        onSuccess: () => {
+          setIsCancelOpen(false);
+          setJustUnconfirmed(true);
+          setStep(1);
+          setType(null);
+          setCandidates([]);
+          setSelectedCandidate(null);
+          setConfirmedCandidate(null);
+          onConfirmed?.();
+        },
+        onError: () => setErrorMessage('일정을 취소하지 못했어요'),
+      },
+    );
+  };
 
+  if (isCancelOpen) {
+    return (
+      <>
+        <RecommendationCancelStep
+          onBack={() => setIsCancelOpen(false)}
+          onSubmit={handleUnconfirm}
+          isSubmitting={isPostUnconfirmTripPending}
+        />
+        <AlertModal
+          open={errorMessage !== null}
+          onOpenChange={(open) => !open && setErrorMessage(null)}
+          variant="danger"
+          title={errorMessage ?? ''}
+          description="잠시 후 다시 시도해주세요"
+          primaryText="확인"
+          onPrimaryClick={() => setErrorMessage(null)}
+        />
+      </>
+    );
+  }
+
+  if (isConfirmed && !justUnconfirmed) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title="추천 일정" onBack={onExit} />
         <div className="flex w-full flex-1 flex-col px-5">
-          {mockConfirmedCandidate && (
+          {confirmedStartDate && confirmedEndDate && (
             <RecommendationConfirmedStep
               roomName={roomName}
-              candidate={mockConfirmedCandidate}
-              onExit={onExit}
-              readOnly
+              startDate={confirmedStartDate}
+              endDate={confirmedEndDate}
+              attendCount={confirmedAttendCount ?? 0}
+              leaveCount={confirmedVacationMemberCount ?? 0}
+              uncertainCount={confirmedUncertainCount ?? 0}
+              onCancel={() => setIsCancelOpen(true)}
+              readOnly={!isHost}
             />
           )}
         </div>
@@ -71,14 +149,54 @@ function RecommendationSection({
   };
 
   const handleSelectCandidate = (candidate: RecommendationCandidateDetailT) => {
-    setSelectedCandidate(candidate);
-    setStep(3);
+    getRecommendationDetailMutation(
+      { roomId, rank: candidate.rank, myName },
+      {
+        onSuccess: (detail) => {
+          setSelectedCandidate({ ...candidate, ...detail });
+          setStep(3);
+        },
+        onError: () => setErrorMessage('추천 근거를 불러오지 못했어요'),
+      },
+    );
   };
 
   const handleConfirm = (candidate: RecommendationCandidateDetailT) => {
-    // TODO: 일정 확정 API 호출 예정 (응답/요청 스키마 확정 후 연결)
-    setConfirmedCandidate(candidate);
-    setStep(4);
+    getRecommendationDetailMutation(
+      { roomId, rank: candidate.rank, myName },
+      {
+        onSuccess: (detail) => {
+          const enrichedCandidate = { ...candidate, ...detail };
+          postConfirmTripMutation(
+            { roomId, recommendationRank: candidate.rank },
+            {
+              onSuccess: () => {
+                onConfirmed?.();
+                setJustUnconfirmed(false);
+                setConfirmedCandidate(enrichedCandidate);
+                setStep(4);
+              },
+              onError: () => setErrorMessage('일정을 확정하지 못했어요'),
+            },
+          );
+        },
+        onError: () => setErrorMessage('일정을 확정하지 못했어요'),
+      },
+    );
+  };
+
+  const handleGenerateRecommendations = () => {
+    if (!type) return;
+    postRecommendationsMutation(
+      { roomId, type },
+      {
+        onSuccess: (data) => {
+          setCandidates(data);
+          setStep(2);
+        },
+        onError: () => setErrorMessage('추천 일정을 불러오지 못했어요'),
+      },
+    );
   };
 
   return (
@@ -89,7 +207,7 @@ function RecommendationSection({
           <RecommendationTypeStep
             value={type}
             onChange={setType}
-            onNext={() => setStep(2)}
+            onNext={handleGenerateRecommendations}
             respondedCount={respondedCount}
             onRequestResponse={onRequestResponse}
           />
@@ -97,6 +215,7 @@ function RecommendationSection({
         {step === 2 && type && (
           <RecommendationResultStep
             type={type}
+            candidates={candidates}
             onSelectCandidate={handleSelectCandidate}
             onConfirm={handleConfirm}
             onRetry={() => setStep(1)}
@@ -104,19 +223,38 @@ function RecommendationSection({
         )}
         {step === 3 && selectedCandidate && (
           <RecommendationDetailStep
+            roomId={roomId}
             roomName={roomName}
             candidate={selectedCandidate}
             onConfirm={handleConfirm}
+            onFeedbackError={setErrorMessage}
           />
         )}
         {step === 4 && confirmedCandidate && (
           <RecommendationConfirmedStep
             roomName={roomName}
-            candidate={confirmedCandidate}
-            onExit={onExit}
+            startDate={confirmedCandidate.startDate}
+            endDate={confirmedCandidate.endDate}
+            attendCount={
+              confirmedCandidate.attendCount ??
+              confirmedCandidate.availableParticipants.length
+            }
+            leaveCount={confirmedCandidate.vacationMemberCount ?? 0}
+            uncertainCount={confirmedCandidate.uncertainCount}
+            onCancel={() => setIsCancelOpen(true)}
           />
         )}
       </div>
+
+      <AlertModal
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
+        variant="danger"
+        title={errorMessage ?? ''}
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

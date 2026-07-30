@@ -28,7 +28,7 @@ export const getRoomMembers = async (
   userId: string,
 ): Promise<GetRoomMembersResponseT> => {
   const membersResponse = await request<TripMembersResponse>(
-    `/api/v1/trips/${roomId}/members?userId=${userId}`,
+    `/api/v1/trips/${roomId}/members`,
   );
 
   return membersResponse.members.map((member, index) => ({

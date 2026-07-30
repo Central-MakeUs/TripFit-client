@@ -15,9 +15,8 @@ export type PatchPersonalScheduleRequestT = {
 
 export const patchPersonalSchedule = async (
   requestBody: PatchPersonalScheduleRequestT,
-  userId: string,
 ): Promise<void> => {
-  await request(`/api/v1/users/schedule/personal?userId=${userId}`, {
+  await request(`/api/v1/users/schedule/personal`, {
     method: 'PATCH',
     data: {
       items: [
