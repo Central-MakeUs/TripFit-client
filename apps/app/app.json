@@ -8,7 +8,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tripfit.app"
+      "bundleIdentifier": "com.tripfit.app",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.tripfit.app",
@@ -28,6 +29,29 @@
         "projectId": "677d5a24-2e81-4035-b503-162b75d42197"
       }
     },
-    "owner": "tripfit"
+    "owner": "tripfit",
+    "plugins": [
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1015195106839-6na06iqfihr97dg0u3lrrb1kn0hcr056"
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "6a686bacf5c3efba84a1cc8d0e655cd5"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
   }
 }
