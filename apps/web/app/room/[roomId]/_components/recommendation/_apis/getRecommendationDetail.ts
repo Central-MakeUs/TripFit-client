@@ -22,6 +22,7 @@ export type GetRecommendationDetailResponseT = {
   uncertainParticipants: RecommendationParticipantT[];
   feedback: RecommendationFeedbackT | null;
   attendCount: number;
+  vacationMemberCount: number;
 };
 
 const PARTICIPANT_COLORS: RecommendationParticipantT['color'][] = [
@@ -116,11 +117,17 @@ export const getRecommendationDetail = async (
   const attendCount = response.members.filter(
     (member) => member.attendance !== 'NON_ATTEND',
   ).length;
+  // confirmedVacationMemberCount는 연차가 필요한 "인원 수"인데, 후보 목록 API의 leaveCount는
+  // 연차 "일수" 합계(totalVacationDays)라 단위가 달라 그대로 쓰면 안 된다.
+  const vacationMemberCount = response.members.filter(
+    (member) => member.vacationDaysNeeded > 0,
+  ).length;
 
   return {
     availableParticipants,
     uncertainParticipants,
     feedback: response.feedback,
     attendCount,
+    vacationMemberCount,
   };
 };

@@ -47,6 +47,7 @@ export type RecommendationCandidateDetailT = RecommendationCandidateT & {
   availableParticipants: RecommendationParticipantT[];
   feedback?: RecommendationFeedbackT | null;
   attendCount?: number;
+  vacationMemberCount?: number;
 };
 
 export type RecommendationUnconfirmReasonT =

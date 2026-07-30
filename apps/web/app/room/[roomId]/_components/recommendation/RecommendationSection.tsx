@@ -237,7 +237,7 @@ function RecommendationSection({
               confirmedCandidate.attendCount ??
               confirmedCandidate.availableParticipants.length
             }
-            leaveCount={confirmedCandidate.leaveCount}
+            leaveCount={confirmedCandidate.vacationMemberCount ?? 0}
             uncertainCount={confirmedCandidate.uncertainCount}
             onCancel={() => setIsCancelOpen(true)}
           />
