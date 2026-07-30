@@ -13,7 +13,7 @@ export const useGetRoomScheduleCalendar = (roomId: string) => {
     isError: isGetRoomScheduleCalendarError,
     refetch: refetchRoomScheduleCalendar,
   } = useQuery({
-    queryKey: ['room-schedule-calendar', roomId],
+    queryKey: ['room-schedule-calendar', roomId, userId],
     queryFn: () => getRoomScheduleCalendar(roomId, userId),
   });
 
