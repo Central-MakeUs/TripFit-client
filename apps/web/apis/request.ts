@@ -1,5 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
+import { useAuthStore } from '@/stores/authStore';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const apiClient = axios.create({
@@ -10,17 +12,74 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// TODO: 로그인 유저 전역 상태 도입 후 실제 토큰으로 교체
-// NODE_ENV 분기는 프로덕션 빌드 시 정적으로 제거되어, 토큰 참조를 포함한 이 블록 전체가 번들에 포함되지 않는다
-if (process.env.NODE_ENV !== 'production') {
-  apiClient.interceptors.request.use((config) => {
-    const tempJwt = process.env.NEXT_PUBLIC_TEMP_JWT;
-    if (tempJwt) {
-      config.headers.Authorization = `Bearer ${tempJwt}`;
+apiClient.interceptors.request.use((config) => {
+  const { accessToken } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+// accessToken 만료(401) 시 refreshToken으로 한 번만 재발급을 시도하고 원래 요청을 재시도한다.
+// 재발급 요청 자체는 apiClient를 직접 호출해 이 인터셉터를 다시 타지 않게 한다(무한 재귀 방지).
+// 동시에 여러 요청이 401을 받아도 재발급은 한 번만 일어나도록 진행 중인 Promise를 공유한다.
+let refreshPromise: Promise<string> | null = null;
+
+const refreshAccessToken = (): Promise<string> => {
+  const { refreshToken } = useAuthStore.getState();
+  if (!refreshToken) return Promise.reject(new Error('로그인이 필요합니다.'));
+
+  if (!refreshPromise) {
+    refreshPromise = apiClient
+      .post<{ data: { accessToken: string } }>('/api/v1/auth/refresh', {
+        refreshToken,
+      })
+      .then((response) => {
+        const { accessToken } = response.data.data;
+        useAuthStore.getState().setAccessToken(accessToken);
+        return accessToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
+type RetriableConfig = AxiosRequestConfig & { _retried?: boolean };
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (!axios.isAxiosError(error) || !error.response || !error.config) {
+      throw error;
     }
-    return config;
-  });
-}
+
+    const originalRequest = error.config as RetriableConfig;
+    const isAuthEndpoint = originalRequest.url?.startsWith('/api/v1/auth/');
+
+    if (
+      error.response.status === 401 &&
+      !originalRequest._retried &&
+      !isAuthEndpoint
+    ) {
+      originalRequest._retried = true;
+      try {
+        const accessToken = await refreshAccessToken();
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${accessToken}`,
+        };
+        return apiClient.request(originalRequest);
+      } catch (refreshError) {
+        useAuthStore.getState().clear();
+        throw refreshError;
+      }
+    }
+
+    throw error;
+  },
+);
 
 type RequestConfig = Omit<
   AxiosRequestConfig,
