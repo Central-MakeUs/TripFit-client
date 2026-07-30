@@ -1,24 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
 
-import { postRoom, PostRoomRequestT } from '../_apis/postRoom';
+import { postRoom } from '../_apis/postRoom';
 
 export const usePostRoom = () => {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const mutationFn = useAuthenticatedMutationFn(postRoom);
 
   const {
     mutate: postRoomMutation,
     isPending: isPostRoomPending,
     error: postRoomError,
-  } = useMutation({
-    mutationFn: (requestBody: PostRoomRequestT) => {
-      if (!accessToken) {
-        return Promise.reject(new Error('로그인이 필요합니다.'));
-      }
-      return postRoom(requestBody);
-    },
-  });
+  } = useMutation({ mutationFn });
 
   return { postRoomMutation, isPostRoomPending, postRoomError };
 };

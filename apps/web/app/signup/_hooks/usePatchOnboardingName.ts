@@ -1,23 +1,20 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { patchOnboardingName, PatchOnboardingNameRequestT } from '@/apis/users';
+import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
 import { useAuthStore } from '@/stores/authStore';
 
+import { patchOnboardingName } from '../_apis/patchOnboardingName';
+
 export const usePatchOnboardingName = () => {
-  const accessToken = useAuthStore((state) => state.accessToken);
   const setName = useAuthStore((state) => state.setName);
+  const mutationFn = useAuthenticatedMutationFn(patchOnboardingName);
 
   const {
     mutate: patchOnboardingNameMutation,
     isPending: isPatchOnboardingNamePending,
     error: patchOnboardingNameError,
   } = useMutation({
-    mutationFn: (requestBody: PatchOnboardingNameRequestT) => {
-      if (!accessToken) {
-        return Promise.reject(new Error('로그인이 필요합니다.'));
-      }
-      return patchOnboardingName(requestBody);
-    },
+    mutationFn,
     onSuccess: (data) =>
       setName({
         firstName: data.firstName,

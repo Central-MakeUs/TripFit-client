@@ -17,7 +17,10 @@ export const loadExternalScript = (
     script.src = src;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error(errorMessage));
+    script.onerror = () => {
+      loadPromises.delete(src);
+      reject(new Error(errorMessage));
+    };
     document.head.appendChild(script);
   });
   loadPromises.set(src, promise);

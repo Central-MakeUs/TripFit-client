@@ -3,13 +3,13 @@ import { useMutation } from '@tanstack/react-query';
 import { postAuthLogin } from '@/apis/auth';
 import { useAuthStore } from '@/stores/authStore';
 
-export const useAuthLogin = () => {
+export const usePostAuthLogin = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const {
-    mutate: authLoginMutation,
-    isPending: isAuthLoginPending,
-    error: authLoginError,
+    mutate: postAuthLoginMutation,
+    isPending: isPostAuthLoginPending,
+    error: postAuthLoginError,
   } = useMutation({
     mutationFn: postAuthLogin,
     onSuccess: (data) => {
@@ -30,5 +30,9 @@ export const useAuthLogin = () => {
     },
   });
 
-  return { authLoginMutation, isAuthLoginPending, authLoginError };
+  return {
+    postAuthLoginMutation,
+    isPostAuthLoginPending,
+    postAuthLoginError,
+  };
 };
