@@ -119,6 +119,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const myName =
     participants.find((participant) => participant.isMe)?.name ?? '';
   const isConfirmed = room.status === 'CONFIRMED';
+  const respondedCount = participants.filter(
+    (participant) => participant.status === 'ACTIVE',
+  ).length;
 
   if (section === 'recommendation') {
     return (
@@ -129,7 +132,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           myName={myName}
           isHost={isHost}
           onExit={() => setSection('calendar')}
-          respondedCount={participants.length}
+          respondedCount={respondedCount}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
           isConfirmed={isConfirmed}
           onConfirmed={refetchRoom}

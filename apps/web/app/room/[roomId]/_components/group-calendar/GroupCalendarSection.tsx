@@ -83,6 +83,9 @@ function GroupCalendarSection({
   const [selectedTripId, setSelectedTripId] = useState(room.id);
 
   const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
+  const respondedCount = participants.filter(
+    (participant) => participant.status === 'ACTIVE',
+  ).length;
 
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData
@@ -207,10 +210,7 @@ function GroupCalendarSection({
           participants={participants}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
         />
-        <ResponseRateCard
-          respondedCount={participants.length}
-          capacity={capacity}
-        />
+        <ResponseRateCard respondedCount={respondedCount} capacity={capacity} />
       </div>
 
       <CalendarLegend onClickFilter={() => setIsFilterOpen(true)} />

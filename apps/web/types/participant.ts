@@ -1,3 +1,5 @@
+import { RoomMemberStatusT } from './room';
+
 export type ParticipantT = {
   id: string;
   name: string;
@@ -5,4 +7,5 @@ export type ParticipantT = {
   tone?: 1 | 2;
   isHost: boolean;
   isMe: boolean;
+  status: RoomMemberStatusT;
 };
