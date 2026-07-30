@@ -10,7 +10,6 @@ import {
   RecommendationTypeT,
 } from '@/types/recommendation';
 
-import { MOCK_CANDIDATES } from '../_mocks/candidates';
 import RecommendationCandidateCard from './_components/RecommendationCandidateCard';
 
 const CARD_WIDTH = 292;
@@ -52,6 +51,7 @@ const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
 
 type RecommendationResultStepProps = {
   type: RecommendationTypeT;
+  candidates: RecommendationCandidateDetailT[];
   onSelectCandidate: (candidate: RecommendationCandidateDetailT) => void;
   onConfirm: (candidate: RecommendationCandidateDetailT) => void;
   onRetry: () => void;
@@ -59,19 +59,20 @@ type RecommendationResultStepProps = {
 
 function RecommendationResultStep({
   type,
+  candidates,
   onSelectCandidate,
   onConfirm,
   onRetry,
 }: RecommendationResultStepProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(0);
-  const activeCandidate = MOCK_CANDIDATES[current] ?? MOCK_CANDIDATES[0];
+  const activeCandidate = candidates[current] ?? candidates[0];
 
   const handleScroll = () => {
     const container = containerRef.current;
     if (!container) return;
     const index = Math.round(container.scrollLeft / (CARD_WIDTH + CARD_GAP));
-    setCurrent(Math.min(Math.max(index, 0), MOCK_CANDIDATES.length - 1));
+    setCurrent(Math.min(Math.max(index, 0), candidates.length - 1));
   };
 
   return (
@@ -86,7 +87,7 @@ function RecommendationResultStep({
           onScroll={handleScroll}
           className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto"
         >
-          {MOCK_CANDIDATES.map((candidate, index) => (
+          {candidates.map((candidate, index) => (
             <RecommendationCandidateCard
               key={candidate.id}
               candidate={candidate}
@@ -96,10 +97,10 @@ function RecommendationResultStep({
             />
           ))}
         </div>
-        {MOCK_CANDIDATES.length > 1 && (
+        {candidates.length > 1 && (
           <Pagination
             className="justify-center"
-            total={MOCK_CANDIDATES.length}
+            total={candidates.length}
             current={current}
           />
         )}

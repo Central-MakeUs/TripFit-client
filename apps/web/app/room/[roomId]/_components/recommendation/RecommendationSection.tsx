@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import {
   RecommendationCandidateDetailT,
@@ -9,12 +10,14 @@ import {
 } from '@/types/recommendation';
 
 import { MOCK_CANDIDATES } from './_mocks/candidates';
+import { usePostRecommendations } from './_hooks/usePostRecommendations';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
 import RecommendationResultStep from './steps/RecommendationResultStep';
 import RecommendationTypeStep from './steps/RecommendationTypeStep';
 
 type RecommendationSectionProps = {
+  roomId: string;
   roomName: string;
   onExit: () => void;
   respondedCount: number;
@@ -23,6 +26,7 @@ type RecommendationSectionProps = {
 };
 
 function RecommendationSection({
+  roomId,
   roomName,
   onExit,
   respondedCount,
@@ -31,10 +35,15 @@ function RecommendationSection({
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationTypeT | null>(null);
+  const [candidates, setCandidates] = useState<
+    RecommendationCandidateDetailT[]
+  >([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
   const [confirmedCandidate, setConfirmedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
+  const { postRecommendationsMutation } = usePostRecommendations();
 
   if (isConfirmed) {
     // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
@@ -81,6 +90,20 @@ function RecommendationSection({
     setStep(4);
   };
 
+  const handleGenerateRecommendations = () => {
+    if (!type) return;
+    postRecommendationsMutation(
+      { roomId, type },
+      {
+        onSuccess: (data) => {
+          setCandidates(data);
+          setStep(2);
+        },
+        onError: () => setErrorMessage('추천 일정을 불러오지 못했어요'),
+      },
+    );
+  };
+
   return (
     <div className="flex w-full flex-1 flex-col">
       <Header variant="page" title="추천 일정" onBack={handleBack} />
@@ -89,7 +112,7 @@ function RecommendationSection({
           <RecommendationTypeStep
             value={type}
             onChange={setType}
-            onNext={() => setStep(2)}
+            onNext={handleGenerateRecommendations}
             respondedCount={respondedCount}
             onRequestResponse={onRequestResponse}
           />
@@ -97,6 +120,7 @@ function RecommendationSection({
         {step === 2 && type && (
           <RecommendationResultStep
             type={type}
+            candidates={candidates}
             onSelectCandidate={handleSelectCandidate}
             onConfirm={handleConfirm}
             onRetry={() => setStep(1)}
@@ -117,6 +141,16 @@ function RecommendationSection({
           />
         )}
       </div>
+
+      <AlertModal
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
+        variant="danger"
+        title={errorMessage ?? ''}
+        description="잠시 후 다시 시도해주세요"
+        primaryText="확인"
+        onPrimaryClick={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

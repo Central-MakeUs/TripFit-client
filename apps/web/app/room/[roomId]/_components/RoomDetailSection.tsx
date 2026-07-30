@@ -122,6 +122,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     return (
       <>
         <RecommendationSection
+          roomId={roomId}
           roomName={room.title}
           onExit={() => setSection('calendar')}
           respondedCount={participants.length}
