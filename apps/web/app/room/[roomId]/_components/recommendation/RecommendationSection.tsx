@@ -233,7 +233,10 @@ function RecommendationSection({
             roomName={roomName}
             startDate={confirmedCandidate.startDate}
             endDate={confirmedCandidate.endDate}
-            attendCount={confirmedCandidate.availableParticipants.length}
+            attendCount={
+              confirmedCandidate.attendCount ??
+              confirmedCandidate.availableParticipants.length
+            }
             leaveCount={confirmedCandidate.leaveCount}
             uncertainCount={confirmedCandidate.uncertainCount}
             onCancel={() => setIsCancelOpen(true)}

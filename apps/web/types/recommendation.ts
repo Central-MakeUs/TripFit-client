@@ -46,6 +46,7 @@ export type RecommendationCandidateDetailT = RecommendationCandidateT & {
   uncertainParticipants: RecommendationParticipantT[];
   availableParticipants: RecommendationParticipantT[];
   feedback?: RecommendationFeedbackT | null;
+  attendCount?: number;
 };
 
 export type RecommendationUnconfirmReasonT =

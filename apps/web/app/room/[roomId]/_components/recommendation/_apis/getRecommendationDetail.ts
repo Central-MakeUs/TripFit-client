@@ -21,6 +21,7 @@ export type GetRecommendationDetailResponseT = {
   availableParticipants: RecommendationParticipantT[];
   uncertainParticipants: RecommendationParticipantT[];
   feedback: RecommendationFeedbackT | null;
+  attendCount: number;
 };
 
 const PARTICIPANT_COLORS: RecommendationParticipantT['color'][] = [
@@ -110,9 +111,16 @@ export const getRecommendationDetail = async (
     }
   });
 
+  // 확정 API의 confirmedAttendCount(전체+부분참석)와 정의를 맞춘다 — availableParticipants는
+  // "주의가 필요한 인원" UI 분류 기준(불확실 일정 있으면 제외)이라 이 값과 다르다.
+  const attendCount = response.members.filter(
+    (member) => member.attendance !== 'NON_ATTEND',
+  ).length;
+
   return {
     availableParticipants,
     uncertainParticipants,
     feedback: response.feedback,
+    attendCount,
   };
 };
