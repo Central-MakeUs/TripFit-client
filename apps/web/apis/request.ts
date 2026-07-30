@@ -27,6 +27,15 @@ type RequestConfig = Omit<
   'url' | 'baseURL' | 'validateStatus'
 >;
 
+export class ApiError extends Error {
+  code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
 export async function request<T>(
   path: string,
   config?: RequestConfig,
@@ -40,12 +49,12 @@ export async function request<T>(
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       const body = error.response.data;
-      const message =
+      const { message, code } =
         typeof body === 'object' && body !== null
-          ? (body as { message?: string }).message
-          : undefined;
-      throw new Error(message || '요청 처리 중 오류가 발생했습니다.');
+          ? (body as { message?: string; code?: string })
+          : { message: undefined, code: undefined };
+      throw new ApiError(message || '요청 처리 중 오류가 발생했습니다.', code);
     }
-    throw new Error('서버 응답을 해석할 수 없습니다.');
+    throw new ApiError('서버 응답을 해석할 수 없습니다.');
   }
 }

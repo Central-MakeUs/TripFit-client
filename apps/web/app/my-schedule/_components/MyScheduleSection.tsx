@@ -12,9 +12,9 @@ import { cn } from '@/utils/cn';
 
 // TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
 const MOCK_TRIP_OPTIONS = [
-  { id: 1, title: '제주도 여행' },
-  { id: 2, title: '나트랑 여행' },
-  { id: 3, title: '전주 여행' },
+  { id: '1', title: '제주도 여행' },
+  { id: '2', title: '나트랑 여행' },
+  { id: '3', title: '전주 여행' },
 ];
 
 // TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
@@ -47,7 +47,7 @@ function MyScheduleSection() {
     useState(false);
   const [individualScheduleValue, setIndividualScheduleValue] =
     useState<IndividualScheduleValueT>({});
-  const [selectedTripId, setSelectedTripId] = useState(1);
+  const [selectedTripId, setSelectedTripId] = useState('1');
 
   if (isCalendarConnectOpen) {
     return (
@@ -89,10 +89,10 @@ function MyScheduleSection() {
         }}
         endsAtIncludeHalfDayHoliday
         onExit={() => setIsBasicInfoOpen(false)}
-        onComplete={() => {
+        onRegularScheduleNext={() => {
           // TODO: 기본 정보(정기 일정/연차 조건) 저장 API 연동
-          setIsBasicInfoOpen(false);
         }}
+        onComplete={() => setIsBasicInfoOpen(false)}
       />
     );
   }

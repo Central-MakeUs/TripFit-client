@@ -11,6 +11,7 @@ import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import IndividualScheduleInput from '@/components/individual-schedule-input';
+import Spinner from '@/components/spinner';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
 import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
@@ -24,7 +25,13 @@ import CalendarLegend from './_components/CalendarLegend';
 import DayDetailView from './_components/DayDetailView';
 import ParticipantSummaryRow from './_components/ParticipantSummaryRow';
 import ResponseRateCard from './_components/ResponseRateCard';
-import { getMockDayAvailabilityStatus } from './_consts/groupCalendar.const';
+import { useGetRoomScheduleCalendar } from './_hooks/useGetRoomScheduleCalendar';
+import { getDayAvailabilityStatus } from './_utils/getDayAvailabilityStatus';
+import { getDayDetailParticipants } from './_utils/getDayDetailParticipants';
+import {
+  DEFAULT_DAY_SCHEDULE_VALUE,
+  getMyDaySchedule,
+} from './_utils/getMyDaySchedule';
 
 type GroupCalendarSectionProps = {
   room: RoomT;
@@ -37,8 +44,8 @@ type GroupCalendarSectionProps = {
 
 // TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
 const MOCK_OTHER_TRIPS = [
-  { id: -1, title: '나트랑 여행' },
-  { id: -2, title: '전주 여행' },
+  { id: 'mock-other-1', title: '나트랑 여행' },
+  { id: 'mock-other-2', title: '전주 여행' },
 ];
 
 // TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
@@ -61,17 +68,60 @@ function GroupCalendarSection({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
+  const {
+    roomScheduleCalendarData,
+    isGetRoomScheduleCalendarLoading,
+    isGetRoomScheduleCalendarError,
+    refetchRoomScheduleCalendar,
+  } = useGetRoomScheduleCalendar(room.id);
   const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
   const [individualScheduleByTrip, setIndividualScheduleByTrip] = useState<
-    Record<number, IndividualScheduleValueT>
+    Record<string, IndividualScheduleValueT>
   >({});
   const [selectedTripId, setSelectedTripId] = useState(room.id);
 
   const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
 
-  const getDayStatus = (date: Date) => getMockDayAvailabilityStatus(date);
+  const getDayStatus = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
+      : 'unavailable';
+
+  const getDayParticipants = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
+      : { needsAttention: [], available: [] };
+
+  const getMyDayScheduleValue = (date: Date) =>
+    roomScheduleCalendarData
+      ? getMyDaySchedule(roomScheduleCalendarData, date)
+      : DEFAULT_DAY_SCHEDULE_VALUE;
+
+  if (isGetRoomScheduleCalendarLoading) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title={room.title} />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
+  if (isGetRoomScheduleCalendarError || !roomScheduleCalendarData) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header variant="page" title={room.title} />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <span className="text-body-03 text-grey-500">
+            일정 정보를 불러오지 못했어요
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedDate) {
     return (
@@ -82,6 +132,9 @@ function GroupCalendarSection({
         minDate={minDate}
         maxDate={maxDate}
         getDayStatus={getDayStatus}
+        getDayParticipants={getDayParticipants}
+        getMyDaySchedule={getMyDayScheduleValue}
+        onScheduleUpdated={refetchRoomScheduleCalendar}
       />
     );
   }

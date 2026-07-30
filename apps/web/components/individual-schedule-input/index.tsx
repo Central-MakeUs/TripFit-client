@@ -10,7 +10,7 @@ import { IndividualScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
 
 export type TripChipOptionT = {
-  id: number;
+  id: string;
   title: string;
 };
 
@@ -22,8 +22,8 @@ type IndividualScheduleInputProps = {
   /** 여행 선택 칩바 대신 보여줄 안내 문구 — tripOptions가 없을 때만 사용 */
   heading?: ReactNode;
   tripOptions?: TripChipOptionT[];
-  selectedTripId?: number;
-  onSelectTrip?: (id: number) => void;
+  selectedTripId?: string;
+  onSelectTrip?: (id: string) => void;
   value: IndividualScheduleValueT;
   onChange: (value: IndividualScheduleValueT) => void;
   onNext: () => void;

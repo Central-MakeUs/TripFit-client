@@ -1,13 +1,15 @@
-export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'CANCELED' | 'TERMINATED';
+export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'EXPIRED';
+export type RoomMemberStatusT = 'SCHEDULE_PENDING' | 'ACTIVE';
 
 export type RoomT = {
-  id: number;
+  id: string;
   title: string;
   startDate: string;
   endDate: string;
   nights: number;
   days: number;
   destination: string;
-  hostId: number;
+  memberCount: number;
+  inviteCode: string;
   status: RoomStatusT;
 };
