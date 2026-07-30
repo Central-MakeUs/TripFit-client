@@ -16,11 +16,13 @@ type PatchTripRequest = {
   destination: string | null;
 };
 
-export const patchRoom = async (
-  roomId: string,
-  requestBody: PatchRoomRequestT,
-  userId: string,
-): Promise<void> => {
+export const patchRoom = async ({
+  roomId,
+  requestBody,
+}: {
+  roomId: string;
+  requestBody: PatchRoomRequestT;
+}): Promise<void> => {
   const tripRequest: PatchTripRequest = {
     name: requestBody.title,
     memberCount: requestBody.memberCount,
@@ -29,7 +31,7 @@ export const patchRoom = async (
     destination: requestBody.destination,
   };
 
-  await request(`/api/v1/trips/${roomId}?userId=${userId}`, {
+  await request(`/api/v1/trips/${roomId}`, {
     method: 'PATCH',
     data: tripRequest,
   });

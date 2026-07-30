@@ -16,12 +16,9 @@ type TripDetailResponse = {
   status: RoomStatusT;
 };
 
-export const getRoom = async (
-  roomId: string,
-  userId: string,
-): Promise<GetRoomResponseT> => {
+export const getRoom = async (roomId: string): Promise<GetRoomResponseT> => {
   const tripResponse = await request<TripDetailResponse>(
-    `/api/v1/trips/${roomId}?userId=${userId}`,
+    `/api/v1/trips/${roomId}`,
   );
 
   return {
