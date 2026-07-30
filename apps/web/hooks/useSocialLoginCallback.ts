@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { useAuthLogin } from '@/hooks/useAuthLogin';
+import { usePostAuthLogin } from '@/hooks/usePostAuthLogin';
 import { SocialLoginTokenT, SocialProviderT } from '@/types/auth';
 
 // 소셜 로그인 리다이렉트 콜백 페이지들의 공통 로직. provider마다 다른 건
@@ -14,7 +14,7 @@ export const useSocialLoginCallback = (
   getToken: () => SocialLoginTokenT | null | Promise<SocialLoginTokenT | null>,
 ) => {
   const router = useRouter();
-  const { authLoginMutation } = useAuthLogin();
+  const { postAuthLoginMutation } = usePostAuthLogin();
   const hasRequestedRef = useRef(false);
 
   useEffect(() => {
@@ -25,13 +25,14 @@ export const useSocialLoginCallback = (
       router.replace(`/signup?error=${encodeURIComponent(message)}`);
     };
 
-    Promise.resolve(getToken())
+    Promise.resolve()
+      .then(() => getToken())
       .then((result) => {
         if (!result) {
           replaceWithError('로그인 정보를 가져오지 못했습니다.');
           return;
         }
-        authLoginMutation(
+        postAuthLoginMutation(
           { provider, ...result },
           {
             onSuccess: () => router.replace('/signup'),

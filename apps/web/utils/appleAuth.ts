@@ -1,6 +1,7 @@
 import { SocialLoginTokenT } from '@/types/auth';
 import { loadExternalScript } from '@/utils/loadExternalScript';
 import { requestSocialToken } from '@/utils/nativeBridge';
+import { createOAuthNonce, createOAuthState } from '@/utils/oauthState';
 
 declare global {
   interface Window {
@@ -11,6 +12,8 @@ declare global {
           scope: string;
           redirectURI: string;
           usePopup: boolean;
+          state?: string;
+          nonce?: string;
         }) => void;
         signIn: () => void;
       };
@@ -49,6 +52,8 @@ const redirectToAppleSignIn = async (): Promise<SocialLoginTokenT> => {
     scope: 'name email',
     redirectURI: getAppleRedirectUri(),
     usePopup: false,
+    state: createOAuthState('APPLE'),
+    nonce: createOAuthNonce('APPLE'),
   });
 
   window.AppleID!.auth.signIn();

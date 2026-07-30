@@ -1,5 +1,6 @@
 import { SocialLoginTokenT } from '@/types/auth';
 import { requestSocialToken } from '@/utils/nativeBridge';
+import { createOAuthNonce, createOAuthState } from '@/utils/oauthState';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -22,7 +23,8 @@ const redirectToGoogleAuthorize = async (): Promise<SocialLoginTokenT> => {
     redirect_uri: getGoogleRedirectUri(),
     response_type: 'id_token',
     scope: 'openid email profile',
-    nonce: crypto.randomUUID(),
+    nonce: createOAuthNonce('GOOGLE'),
+    state: createOAuthState('GOOGLE'),
     prompt: 'select_account',
   });
 

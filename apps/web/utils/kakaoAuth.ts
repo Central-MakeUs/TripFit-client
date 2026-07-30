@@ -1,6 +1,7 @@
 import { SocialLoginTokenT } from '@/types/auth';
 import { loadExternalScript } from '@/utils/loadExternalScript';
 import { requestSocialToken } from '@/utils/nativeBridge';
+import { createOAuthState } from '@/utils/oauthState';
 
 declare global {
   interface Window {
@@ -11,6 +12,7 @@ declare global {
         authorize: (options: {
           redirectUri: string;
           throughTalk?: boolean;
+          state?: string;
         }) => void;
       };
     };
@@ -49,6 +51,7 @@ const redirectToKakaoAuthorize = async (): Promise<SocialLoginTokenT> => {
     redirectUri: getKakaoRedirectUri(),
     // 카카오톡 앱으로의 전환 시도를 끄고 항상 웹 로그인 폼으로 바로 이동한다
     throughTalk: false,
+    state: createOAuthState('KAKAO'),
   });
 
   return new Promise<SocialLoginTokenT>(() => {});
