@@ -7,7 +7,7 @@ import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
-import { useAuthLogin } from '@/hooks/useAuthLogin';
+import { usePostAuthLogin } from '@/hooks/usePostAuthLogin';
 import { useAuthStore } from '@/stores/authStore';
 import { SocialProviderT } from '@/types/auth';
 import { requestAppleIdToken } from '@/utils/appleAuth';
@@ -27,14 +27,24 @@ function SignupFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const accessToken = useAuthStore((state) => state.accessToken);
-  const [step, setStep] = useState<StepT>(accessToken ? 'profile' : 'social');
+  const hasName = useAuthStore((state) => state.hasName);
+  const [step, setStep] = useState<StepT>(
+    accessToken && !hasName ? 'profile' : 'social',
+  );
 
   // 카카오/구글은 리다이렉트 방식이라 로그인 완료 후 이 페이지가 새로 로드된다 —
   // 로그인이 이미 완료돼 accessToken이 저장돼 있으면(하이드레이션 이후 반영되는 경우 포함)
-  // 소셜 로그인 단계를 건너뛰고 바로 이름 입력 단계로 진입한다
+  // 소셜 로그인 단계를 건너뛰고 바로 이름 입력 단계로 진입한다.
+  // 이미 이름까지 입력을 마친(hasName) 유저가 /signup으로 다시 들어온 경우는
+  // 이름을 덮어쓰지 않도록 회원가입 플로우 자체를 건너뛰고 홈으로 보낸다.
   useEffect(() => {
-    if (accessToken) setStep('profile');
-  }, [accessToken]);
+    if (!accessToken) return;
+    if (hasName) {
+      router.replace('/');
+      return;
+    }
+    setStep('profile');
+  }, [accessToken, hasName, router]);
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   // 카카오/구글 리다이렉트 콜백이 실패하면 /signup?error=메시지 로 돌아온다 —
@@ -43,7 +53,7 @@ function SignupFlow() {
     searchParams.get('error'),
   );
 
-  const { authLoginMutation } = useAuthLogin();
+  const { postAuthLoginMutation } = usePostAuthLogin();
   const { patchOnboardingNameMutation } = usePatchOnboardingName();
 
   const handleSelectSocial = async (provider: SocialProviderT) => {
@@ -55,7 +65,7 @@ function SignupFlow() {
             ? await requestKakaoToken()
             : await requestAppleIdToken();
 
-      authLoginMutation(
+      postAuthLoginMutation(
         { provider, ...result },
         {
           onSuccess: () => setStep('profile'),
@@ -88,6 +98,10 @@ function SignupFlow() {
     // URL에 남은 ?error= 쿼리를 지워서 새로고침해도 다시 뜨지 않게 한다
     if (searchParams.get('error')) router.replace('/signup');
   };
+
+  // 이미 이름까지 입력을 마친 유저는 위 useEffect가 홈으로 리다이렉트시키는 동안
+  // 잠깐이라도 회원가입 화면이 보이지 않도록 아무것도 렌더하지 않는다.
+  if (accessToken && hasName) return null;
 
   if (step === 'schedule') {
     return (
