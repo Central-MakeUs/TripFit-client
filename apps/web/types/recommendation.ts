@@ -23,6 +23,7 @@ export type RecommendationParticipantReasonT = {
 export type RecommendationParticipantT = {
   name: string;
   isHost: boolean;
+  isMe?: boolean;
   reason: RecommendationParticipantReasonT;
   color: 'purple' | 'pink' | 'orange' | 'yellow' | 'green';
   tone?: 1 | 2;

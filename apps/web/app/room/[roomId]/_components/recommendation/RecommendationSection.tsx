@@ -10,6 +10,7 @@ import {
 } from '@/types/recommendation';
 
 import { MOCK_CANDIDATES } from './_mocks/candidates';
+import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
 import { usePostRecommendations } from './_hooks/usePostRecommendations';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
@@ -19,6 +20,7 @@ import RecommendationTypeStep from './steps/RecommendationTypeStep';
 type RecommendationSectionProps = {
   roomId: string;
   roomName: string;
+  myName: string;
   onExit: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
@@ -28,6 +30,7 @@ type RecommendationSectionProps = {
 function RecommendationSection({
   roomId,
   roomName,
+  myName,
   onExit,
   respondedCount,
   onRequestResponse,
@@ -44,6 +47,7 @@ function RecommendationSection({
   const [confirmedCandidate, setConfirmedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
   const { postRecommendationsMutation } = usePostRecommendations();
+  const { getRecommendationDetailMutation } = useGetRecommendationDetail();
 
   if (isConfirmed) {
     // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
@@ -80,8 +84,16 @@ function RecommendationSection({
   };
 
   const handleSelectCandidate = (candidate: RecommendationCandidateDetailT) => {
-    setSelectedCandidate(candidate);
-    setStep(3);
+    getRecommendationDetailMutation(
+      { roomId, rank: candidate.rank, myName },
+      {
+        onSuccess: (detail) => {
+          setSelectedCandidate({ ...candidate, ...detail });
+          setStep(3);
+        },
+        onError: () => setErrorMessage('추천 근거를 불러오지 못했어요'),
+      },
+    );
   };
 
   const handleConfirm = (candidate: RecommendationCandidateDetailT) => {
