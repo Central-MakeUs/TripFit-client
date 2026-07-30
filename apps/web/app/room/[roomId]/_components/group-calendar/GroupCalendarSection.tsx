@@ -83,9 +83,7 @@ function GroupCalendarSection({
   const [selectedTripId, setSelectedTripId] = useState(room.id);
 
   const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
-  const respondedCount = participants.filter(
-    (participant) => participant.status === 'ACTIVE',
-  ).length;
+  const respondedCount = room.activeMemberCount;
 
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData

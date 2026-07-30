@@ -10,8 +10,10 @@ export type RoomT = {
   days: number;
   destination: string;
   memberCount: number;
+  activeMemberCount: number;
   inviteCode: string;
   status: RoomStatusT;
+  isHost: boolean;
   confirmedStartDate: string | null;
   confirmedEndDate: string | null;
   confirmedAttendCount: number | null;

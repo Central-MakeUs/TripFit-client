@@ -12,8 +12,10 @@ type TripDetailResponse = {
   durationDays: number | null;
   durationNights: number | null;
   memberCount: number;
+  activeMemberCount: number;
   inviteCode: string;
   status: RoomStatusT;
+  myRole: 'OWNER' | 'MEMBER';
   confirmedStartDate: string | null;
   confirmedEndDate: string | null;
   confirmedAttendCount: number | null;
@@ -35,8 +37,10 @@ export const getRoom = async (roomId: string): Promise<GetRoomResponseT> => {
     nights: tripResponse.durationNights ?? 0,
     days: tripResponse.durationDays ?? 0,
     memberCount: tripResponse.memberCount,
+    activeMemberCount: tripResponse.activeMemberCount,
     inviteCode: tripResponse.inviteCode,
     status: tripResponse.status,
+    isHost: tripResponse.myRole === 'OWNER',
     confirmedStartDate: tripResponse.confirmedStartDate,
     confirmedEndDate: tripResponse.confirmedEndDate,
     confirmedAttendCount: tripResponse.confirmedAttendCount,
