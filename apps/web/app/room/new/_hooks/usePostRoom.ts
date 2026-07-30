@@ -1,21 +1,23 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { useAuthStore } from '@/stores/authStore';
+
 import { postRoom, PostRoomRequestT } from '../_apis/postRoom';
 
-const TEMP_USER_ID = process.env.NEXT_PUBLIC_TEMP_USER_ID ?? '';
-
 export const usePostRoom = () => {
-  // TODO: 로그인 유저 전역 상태 도입 후 아래로 교체
-  // const userId = useUserStore((state) => state.userId);
-  const userId = TEMP_USER_ID;
+  const accessToken = useAuthStore((state) => state.accessToken);
 
   const {
     mutate: postRoomMutation,
     isPending: isPostRoomPending,
     error: postRoomError,
   } = useMutation({
-    mutationFn: (requestBody: PostRoomRequestT) =>
-      postRoom(requestBody, userId),
+    mutationFn: (requestBody: PostRoomRequestT) => {
+      if (!accessToken) {
+        return Promise.reject(new Error('로그인이 필요합니다.'));
+      }
+      return postRoom(requestBody);
+    },
   });
 
   return { postRoomMutation, isPostRoomPending, postRoomError };
