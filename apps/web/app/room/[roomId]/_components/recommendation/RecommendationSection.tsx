@@ -140,9 +140,11 @@ function RecommendationSection({
         )}
         {step === 3 && selectedCandidate && (
           <RecommendationDetailStep
+            roomId={roomId}
             roomName={roomName}
             candidate={selectedCandidate}
             onConfirm={handleConfirm}
+            onFeedbackError={setErrorMessage}
           />
         )}
         {step === 4 && confirmedCandidate && (

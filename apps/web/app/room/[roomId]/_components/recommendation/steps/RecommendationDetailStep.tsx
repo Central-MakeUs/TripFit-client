@@ -10,15 +10,19 @@ import RecommendationFeedback from './_components/RecommendationFeedback';
 import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationDetailStepProps = {
+  roomId: string;
   roomName: string;
   candidate: RecommendationCandidateDetailT;
   onConfirm: (candidate: RecommendationCandidateDetailT) => void;
+  onFeedbackError: (message: string) => void;
 };
 
 function RecommendationDetailStep({
+  roomId,
   roomName,
   candidate,
   onConfirm,
+  onFeedbackError,
 }: RecommendationDetailStepProps) {
   return (
     <div className="flex flex-1 flex-col">
@@ -65,7 +69,12 @@ function RecommendationDetailStep({
         />
       </div>
 
-      <RecommendationFeedback />
+      <RecommendationFeedback
+        roomId={roomId}
+        rank={candidate.rank}
+        initialFeedback={candidate.feedback}
+        onError={onFeedbackError}
+      />
 
       <CtaButtonGroup
         primaryText="일정 확정하기"

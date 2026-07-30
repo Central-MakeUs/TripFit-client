@@ -12,7 +12,13 @@ import Button from '@/components/button';
 import IconButton from '@/components/icon-button';
 import Input from '@/components/input';
 import RadioButton from '@/components/radio-button';
+import {
+  RecommendationFeedbackReasonT,
+  RecommendationFeedbackT,
+} from '@/types/recommendation';
 import { cn } from '@/utils/cn';
+
+import { usePatchRecommendationFeedback } from '../../_hooks/usePatchRecommendationFeedback';
 
 const REVIEW_BACKGROUND_CLASS_NAME =
   '[background:linear-gradient(180deg,rgba(232,233,235,0.50)_0%,rgba(232,233,235,0)_100%),var(--color-grey-50)]';
@@ -38,6 +44,28 @@ const FEEDBACK_REASON_ITEMS: { value: FeedbackReason; label: string }[] = [
   { value: FEEDBACK_REASON_OTHER, label: '기타 (직접 입력)' },
 ];
 
+const FEEDBACK_REASON_TO_API: Record<
+  FeedbackReason,
+  RecommendationFeedbackReasonT
+> = {
+  '참석 인원이 너무 적어요': 'TOO_FEW_ATTENDEES',
+  '연차를 너무 많이 써야 해요': 'TOO_MANY_VACATION_DAYS',
+  '불확실한 일정이 많이 포함됐어요': 'TOO_MANY_UNCERTAIN_SCHEDULES',
+  '추천 기준이 제 상황과 안 맞아요': 'CRITERIA_MISMATCH',
+  other: 'OTHER',
+};
+
+const API_REASON_TO_FEEDBACK: Record<
+  RecommendationFeedbackReasonT,
+  FeedbackReason
+> = {
+  TOO_FEW_ATTENDEES: '참석 인원이 너무 적어요',
+  TOO_MANY_VACATION_DAYS: '연차를 너무 많이 써야 해요',
+  TOO_MANY_UNCERTAIN_SCHEDULES: '불확실한 일정이 많이 포함됐어요',
+  CRITERIA_MISMATCH: '추천 기준이 제 상황과 안 맞아요',
+  OTHER: 'other',
+};
+
 type FeedbackIconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 const FEEDBACK_ICON_ITEMS: {
@@ -60,13 +88,37 @@ const FEEDBACK_ICON_ITEMS: {
   },
 ];
 
-function RecommendationFeedback() {
-  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+type RecommendationFeedbackProps = {
+  roomId: string;
+  rank: number;
+  initialFeedback?: RecommendationFeedbackT | null;
+  onError: (message: string) => void;
+};
+
+function RecommendationFeedback({
+  roomId,
+  rank,
+  initialFeedback,
+  onError,
+}: RecommendationFeedbackProps) {
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(
+    initialFeedback
+      ? initialFeedback.status === 'HELPFUL'
+        ? 'up'
+        : 'down'
+      : null,
+  );
   const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
   const [feedbackReason, setFeedbackReason] = useState<FeedbackReason | null>(
-    null,
+    initialFeedback?.reason
+      ? API_REASON_TO_FEEDBACK[initialFeedback.reason]
+      : null,
   );
-  const [customFeedbackReason, setCustomFeedbackReason] = useState('');
+  const [customFeedbackReason, setCustomFeedbackReason] = useState(
+    initialFeedback?.reasonDetail ?? '',
+  );
+  const { patchRecommendationFeedbackMutation } =
+    usePatchRecommendationFeedback();
 
   const isFeedbackSubmitted = feedback !== null && !isFeedbackSheetOpen;
 
@@ -76,22 +128,48 @@ function RecommendationFeedback() {
   };
 
   const handleClickFeedbackIcon = (value: 'up' | 'down') => {
-    setFeedback(value);
     if (value === 'down') {
+      setFeedback('down');
       setIsFeedbackSheetOpen(true);
+      return;
     }
+    patchRecommendationFeedbackMutation(
+      { roomId, rank, status: 'HELPFUL' },
+      {
+        onSuccess: () => setFeedback('up'),
+        onError: () => onError('피드백을 저장하지 못했어요'),
+      },
+    );
   };
 
   const handleFeedbackSheetOpenChange = (open: boolean) => {
     setIsFeedbackSheetOpen(open);
     if (!open) {
       resetFeedbackReason();
+      // 사유를 고르다가 저장 없이 닫으면 실제로는 아무것도 저장되지 않았으므로
+      // "제출 완료" 화면으로 보이지 않게 되돌린다.
+      setFeedback(null);
     }
   };
 
   const handleSaveFeedbackReason = () => {
-    // TODO: 피드백 저장 API 연동 예정 (연동 전까지는 새로고침/재진입 시 초기화됨)
-    setIsFeedbackSheetOpen(false);
+    if (!feedbackReason) return;
+    const reason = FEEDBACK_REASON_TO_API[feedbackReason];
+
+    patchRecommendationFeedbackMutation(
+      {
+        roomId,
+        rank,
+        status: 'NOT_HELPFUL',
+        reason,
+        reasonDetail:
+          reason === 'OTHER' ? customFeedbackReason.trim() : undefined,
+      },
+      {
+        onSuccess: () => setIsFeedbackSheetOpen(false),
+        onError: () => onError('피드백을 저장하지 못했어요'),
+      },
+    );
   };
 
   return (

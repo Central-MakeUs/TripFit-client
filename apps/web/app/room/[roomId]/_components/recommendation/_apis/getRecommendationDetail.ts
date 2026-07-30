@@ -1,5 +1,8 @@
 import { request } from '@/apis/request';
-import { RecommendationParticipantT } from '@/types/recommendation';
+import {
+  RecommendationFeedbackT,
+  RecommendationParticipantT,
+} from '@/types/recommendation';
 
 type MemberAttendanceResponse = {
   name: string;
@@ -11,11 +14,13 @@ type MemberAttendanceResponse = {
 type RecommendationDetailResponse = {
   rank: number;
   members: MemberAttendanceResponse[];
+  feedback: RecommendationFeedbackT | null;
 };
 
 export type GetRecommendationDetailResponseT = {
   availableParticipants: RecommendationParticipantT[];
   uncertainParticipants: RecommendationParticipantT[];
+  feedback: RecommendationFeedbackT | null;
 };
 
 const PARTICIPANT_COLORS: RecommendationParticipantT['color'][] = [
@@ -105,5 +110,9 @@ export const getRecommendationDetail = async (
     }
   });
 
-  return { availableParticipants, uncertainParticipants };
+  return {
+    availableParticipants,
+    uncertainParticipants,
+    feedback: response.feedback,
+  };
 };
