@@ -1,6 +1,5 @@
 import { Platform } from 'react-native';
 
-// TODO: 배포 도메인 정해지면 실제 주소로 교체
 const PRODUCTION_WEB_URL = 'https://tripfit.online';
 const LOCAL_WEB_URL = 'http://localhost:3000';
 
