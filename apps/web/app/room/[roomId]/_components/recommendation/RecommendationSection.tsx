@@ -67,7 +67,8 @@ function RecommendationSection({
   const { postRecommendationsMutation } = usePostRecommendations();
   const { getRecommendationDetailMutation } = useGetRecommendationDetail();
   const { postConfirmTripMutation } = usePostConfirmTrip();
-  const { postUnconfirmTripMutation } = usePostUnconfirmTrip();
+  const { postUnconfirmTripMutation, isPostUnconfirmTripPending } =
+    usePostUnconfirmTrip();
 
   const handleUnconfirm = (
     reason: Parameters<typeof postUnconfirmTripMutation>[0]['reason'],
@@ -97,6 +98,7 @@ function RecommendationSection({
         <RecommendationCancelStep
           onBack={() => setIsCancelOpen(false)}
           onSubmit={handleUnconfirm}
+          isSubmitting={isPostUnconfirmTripPending}
         />
         <AlertModal
           open={errorMessage !== null}

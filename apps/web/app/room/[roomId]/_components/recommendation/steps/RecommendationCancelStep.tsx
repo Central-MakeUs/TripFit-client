@@ -35,11 +35,13 @@ type RecommendationCancelStepProps = {
     reason: RecommendationUnconfirmReasonT,
     reasonDetail?: string,
   ) => void;
+  isSubmitting?: boolean;
 };
 
 function RecommendationCancelStep({
   onBack,
   onSubmit,
+  isSubmitting = false,
 }: RecommendationCancelStepProps) {
   const [reason, setReason] = useState<RecommendationUnconfirmReasonT | null>(
     null,
@@ -47,10 +49,10 @@ function RecommendationCancelStep({
   const [reasonDetail, setReasonDetail] = useState('');
 
   const isSubmitDisabled =
-    !reason || (reason === 'OTHER' && !reasonDetail.trim());
+    !reason || (reason === 'OTHER' && !reasonDetail.trim()) || isSubmitting;
 
   const handleSubmit = () => {
-    if (!reason) return;
+    if (!reason || isSubmitting) return;
     onSubmit(reason, reason === 'OTHER' ? reasonDetail.trim() : undefined);
   };
 
