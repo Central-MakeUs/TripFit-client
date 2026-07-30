@@ -26,6 +26,7 @@ export const usePostAuthLogin = () => {
         hasName: !!(data.user.firstName && data.user.lastName),
         hasPreSchedule: data.user.hasPreSchedule,
         isAllFree: data.user.isAllFree,
+        notificationEnabled: data.user.notificationEnabled,
       });
     },
   });
