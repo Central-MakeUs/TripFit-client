@@ -135,7 +135,7 @@ function HomeSections() {
 
         {hasAnyRoom ? (
           <>
-            <div className="flex w-full flex-col gap-[11px]">
+            <div className="flex w-full flex-col gap-2.75">
               {filteredRooms.map((room) => (
                 <RoomListItem
                   key={room.id}
@@ -184,7 +184,7 @@ function HomeSections() {
         <div
           aria-hidden
           className={cn(
-            'pointer-events-none fixed inset-x-0 bottom-0 z-10 mx-auto h-20 w-full bg-linear-to-b from-white/0 to-white/40 backdrop-blur-[1px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black)] [mask-image:linear-gradient(to_bottom,transparent,black)] transition-opacity duration-300 sm:max-w-90',
+            'pointer-events-none fixed inset-x-0 bottom-0 z-10 mx-auto h-20 w-full bg-linear-to-b from-white/0 to-white/40 backdrop-blur-[1px] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black)] mask-[linear-gradient(to_bottom,transparent,black)] transition-opacity duration-300 sm:max-w-90',
             hasMoreBelow ? 'opacity-100' : 'opacity-0',
           )}
         />
