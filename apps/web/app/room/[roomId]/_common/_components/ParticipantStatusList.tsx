@@ -48,7 +48,7 @@ function ParticipantStatusList({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1">
                 {participant.isMe && (
-                  <span className="flex size-4 shrink-0 items-center justify-center rounded-[6px] bg-grey-600 text-[8.5px] font-bold text-white">
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-md bg-grey-600 text-[8.5px] font-bold text-white">
                     나
                   </span>
                 )}
