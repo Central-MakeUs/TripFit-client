@@ -11,6 +11,7 @@ import {
 
 import { MOCK_CANDIDATES } from './_mocks/candidates';
 import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
+import { usePostConfirmTrip } from './_hooks/usePostConfirmTrip';
 import { usePostRecommendations } from './_hooks/usePostRecommendations';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
@@ -25,6 +26,7 @@ type RecommendationSectionProps = {
   respondedCount: number;
   onRequestResponse: () => void;
   isConfirmed: boolean;
+  onConfirmed?: () => void;
 };
 
 function RecommendationSection({
@@ -35,6 +37,7 @@ function RecommendationSection({
   respondedCount,
   onRequestResponse,
   isConfirmed,
+  onConfirmed,
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationTypeT | null>(null);
@@ -48,6 +51,7 @@ function RecommendationSection({
     useState<RecommendationCandidateDetailT | null>(null);
   const { postRecommendationsMutation } = usePostRecommendations();
   const { getRecommendationDetailMutation } = useGetRecommendationDetail();
+  const { postConfirmTripMutation } = usePostConfirmTrip();
 
   if (isConfirmed) {
     // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
@@ -97,9 +101,17 @@ function RecommendationSection({
   };
 
   const handleConfirm = (candidate: RecommendationCandidateDetailT) => {
-    // TODO: 일정 확정 API 호출 예정 (응답/요청 스키마 확정 후 연결)
-    setConfirmedCandidate(candidate);
-    setStep(4);
+    postConfirmTripMutation(
+      { roomId, recommendationRank: candidate.rank },
+      {
+        onSuccess: () => {
+          onConfirmed?.();
+          setConfirmedCandidate(candidate);
+          setStep(4);
+        },
+        onError: () => setErrorMessage('일정을 확정하지 못했어요'),
+      },
+    );
   };
 
   const handleGenerateRecommendations = () => {

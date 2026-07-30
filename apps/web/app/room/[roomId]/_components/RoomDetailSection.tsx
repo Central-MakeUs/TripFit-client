@@ -131,6 +131,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           respondedCount={participants.length}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
           isConfirmed={isConfirmed}
+          onConfirmed={refetchRoom}
         />
         <ShareSheet
           open={isRequestResponseOpen}
