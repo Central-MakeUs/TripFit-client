@@ -45,7 +45,8 @@ export async function request<T>(
       ...config,
       url: path,
     });
-    return response.data.data;
+    // 204 No Content 등 body가 없는 응답에서는 response.data 자체가 비어있을 수 있다
+    return response.data?.data as T;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       const body = error.response.data;
