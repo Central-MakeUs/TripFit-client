@@ -52,7 +52,6 @@ export const postRecommendations = async (
     uncertainCount: item.uncertainCount,
     partialCount: item.partialAttendCount,
     leaveCount: item.totalVacationDays,
-    // TODO: 추천 근거 상세(GET /recommendations/{rank}) 연동 시 채울 것
     availableParticipants: [],
     uncertainParticipants: [],
   }));
