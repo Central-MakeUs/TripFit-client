@@ -468,14 +468,22 @@ main ← dev ← {type}/{issue-number}-{description}
 | `NEXT_PUBLIC_KAKAO_JS_KEY`     | 카카오 JS SDK (`utils/kakaoAuth.ts`)             |
 | `NEXT_PUBLIC_APPLE_CLIENT_ID`  | Sign in with Apple JS (`utils/appleAuth.ts`)     |
 
+카카오는 인가 코드 → 액세스 토큰 교환에 Client Secret이 필요해 브라우저에서 직접 처리할 수 없다.
+`app/api/auth/kakao/route.ts`(Next.js Route Handler, 서버 전용)가 이 교환을 대신 처리하며,
+아래 두 변수는 **`NEXT_PUBLIC_` 접두사를 붙이면 안 된다** (브라우저에 노출되면 안 되는 값):
+
+| 변수                  | 용도                                  |
+| --------------------- | ------------------------------------- |
+| `KAKAO_REST_API_KEY`  | 카카오 토큰 교환 요청의 client_id     |
+| `KAKAO_CLIENT_SECRET` | 카카오 토큰 교환 요청의 client_secret |
+
 ### apps/app WebView 대상 URL
 
 `apps/app`이 감쌀 `apps/web` 주소는 `utils/webViewUrl.ts`에 상수로 고정한다 (환경변수 아님).
 `__DEV__`(RN 내장 플래그)로 로컬 개발(`http://localhost:3000`)과 배포 빌드를 자동 분기하고,
 Android 에뮬레이터는 `localhost`를 `10.0.2.2`로 자동 치환한다.
 
-- 배포 도메인이 아직 정해지지 않아 `PRODUCTION_WEB_URL`은 `REPLACE_WITH_PRODUCTION_WEB_DOMAIN` placeholder로 남겨둠 —
-  배포 도메인 확정되면 `webViewUrl.ts`에서 반드시 실제 주소로 교체할 것
+- 배포 도메인: `https://tripfit.online` (`PRODUCTION_WEB_URL`)
 
 ### 응답 구조
 
