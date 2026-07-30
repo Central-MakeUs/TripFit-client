@@ -469,8 +469,9 @@ main ← dev ← {type}/{issue-number}-{description}
 | `NEXT_PUBLIC_APPLE_CLIENT_ID`  | Sign in with Apple JS (`utils/appleAuth.ts`)     |
 
 카카오는 인가 코드 → 액세스 토큰 교환에 Client Secret이 필요해 브라우저에서 직접 처리할 수 없다.
-`app/api/auth/kakao/route.ts`(Next.js Route Handler, 서버 전용)가 이 교환을 대신 처리하며,
-아래 두 변수는 **`NEXT_PUBLIC_` 접두사를 붙이면 안 된다** (브라우저에 노출되면 안 되는 값):
+`app/api/auth/[provider]/callback/route.ts`(Next.js Route Handler, 서버 전용)가 카카오/애플의
+서버 전용 콜백 처리를 provider별로 분기해서 대신 처리하며, 아래 두 변수는 **`NEXT_PUBLIC_` 접두사를
+붙이면 안 된다** (브라우저에 노출되면 안 되는 값):
 
 | 변수                  | 용도                                  |
 | --------------------- | ------------------------------------- |
