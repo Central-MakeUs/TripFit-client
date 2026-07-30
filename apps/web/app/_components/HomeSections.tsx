@@ -1,22 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import ArrowDownIcon from '@/assets/icons/arrow-down-200.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-200.svg';
+import emptyTripsSuitcase from '@/assets/images/empty-trips-suitcase.png';
 import Button from '@/components/button';
 import RoomCardCarousel from '@/components/room-card-carousel';
 import { RoomCardProps } from '@/components/room-card';
 import RoomListItem from '@/components/room-list-item';
+import Spinner from '@/components/spinner';
 import TextButton from '@/components/text-button';
 import { cn } from '@/utils/cn';
 
+import { useGetTrips } from '../_hooks/useGetTrips';
+import { usePatchTripPin } from '../_hooks/usePatchTripPin';
 import {
-  ALL_ROOMS,
-  ONGOING_ROOM_CARDS,
-  RoomFilterT,
-} from '../_consts/room.const';
+  getTripDateRange,
+  getTripStatusTag,
+  truncateTripTitle,
+} from '../_utils/mapTripHomeCard';
+import { RoomFilterT } from '../_consts/room.const';
 import RoomFilterBottomSheet from './RoomFilterBottomSheet';
 
 // 진행 중인 여행이 이 개수 미만일 때만 캐러셀 끝에 "여행방 신규 생성하기" 카드를 노출한다.
@@ -27,50 +33,55 @@ function HomeSections() {
   const [filter, setFilter] = useState<RoomFilterT>('all');
   const [onlyMine, setOnlyMine] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  // 고정(pin) 아이콘의 즉시 시각 반영용 로컬 상태 — 실제 노출 순서는 서버 응답
-  // 기준이라 API 연동 전까지는 클릭해도 재정렬되지 않고, 새로고침(재요청)해야 반영된다.
-  const [pinnedIds, setPinnedIds] = useState<Set<number>>(
-    () =>
-      new Set(
-        ONGOING_ROOM_CARDS.flatMap((card) =>
-          card.type === 'fill' && card.isPinned ? [card.id] : [],
-        ),
-      ),
-  );
   // 페이지 전체가 스크롤되는 구조라, "리스트 아래로 더 볼 게 남았는지"는
   // 리스트 끝에 심어둔 sentinel이 뷰포트에 들어왔는지로 판단한다.
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
   const listEndRef = useRef<HTMLDivElement>(null);
 
-  const togglePinned = (id: number) => {
-    setPinnedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
+  const { tripsData: ongoingTrips, isTripsLoading: isOngoingTripsLoading } =
+    useGetTrips({ scope: 'ongoing' });
+  const { tripsData: allTrips, isTripsLoading: isAllTripsLoading } =
+    useGetTrips({ scope: 'all' });
+  const { patchTripPinMutation } = usePatchTripPin();
 
-  // 노출 우선순위(서버 기준 고정값): 1) 고정 여부 → 2) 최근 활동순.
-  const sortedOngoingRooms = ONGOING_ROOM_CARDS.filter(
-    (card) => card.type === 'fill',
-  ).sort((a, b) => {
-    if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-    return (
-      new Date(b.lastActivityAt).getTime() -
-      new Date(a.lastActivityAt).getTime()
-    );
+  // 핀 토글은 pinned 값만 낙관적으로 바꿔 아이콘 색만 즉시 반영하고, 순서 재배치는
+  // 의도적으로 하지 않는다 — 새로고침 시 백엔드가 pinned 순으로 내려주는 응답을
+  // 받아야 정렬되도록 둔다.
+  const sortedOngoingRooms = ongoingTrips ?? [];
+  // 필터(상태/내가 생성한 방만)는 서버 재요청 없이 이미 받아온 전체 목록을
+  // 클라이언트에서 그때그때 걸러서 보여준다 — 필터가 바뀔 때마다 새로 fetch할
+  // 필요가 없다.
+  const filteredRooms = (allTrips ?? []).filter((trip) => {
+    if (trip.status === 'EXPIRED') return false;
+    if (onlyMine && trip.myRole !== 'OWNER') return false;
+    if (filter === 'ongoing') return trip.status === 'ONGOING';
+    if (filter === 'confirmed') return trip.status === 'CONFIRMED';
+    return true;
   });
 
   const carouselItems: RoomCardProps[] = [
-    ...sortedOngoingRooms.map((card) => ({
-      ...card,
-      isPinned: pinnedIds.has(card.id),
-      onClick: () => router.push(`/room/${card.id}`),
-      onPin: () => togglePinned(card.id),
+    ...sortedOngoingRooms.map((trip) => ({
+      type: 'fill' as const,
+      id: trip.tripId,
+      title: truncateTripTitle(trip.name),
+      isHost: trip.myRole === 'OWNER',
+      isPinned: trip.pinned,
+      statusTag: getTripStatusTag(trip)?.text,
+      nights: trip.durationNights,
+      days: trip.durationDays,
+      dateRange: getTripDateRange(trip),
+      membersPreview: trip.membersPreview,
+      membersPreviewOverflow: trip.membersPreviewOverflow,
+      capacity: trip.memberCount,
+      respondedCount: trip.activeMemberCount,
+      progress: trip.memberFillRate * 100,
+      lastActivityAt: trip.lastActivityAt,
+      onClick: () => router.push(`/room/${trip.tripId}`),
+      onPin: () =>
+        patchTripPinMutation({
+          tripId: trip.tripId,
+          pinned: !trip.pinned,
+        }),
     })),
     ...(sortedOngoingRooms.length < MIN_ONGOING_ROOMS_FOR_HIDDEN_EMPTY_CARD
       ? [
@@ -82,17 +93,7 @@ function HomeSections() {
       : []),
   ];
 
-  const filteredRooms = ALL_ROOMS.filter(
-    (room) =>
-      (filter === 'all' || room.filter === filter) &&
-      (!onlyMine || room.isHost),
-  ).sort(
-    (a, b) =>
-      new Date(b.lastActivityAt).getTime() -
-      new Date(a.lastActivityAt).getTime(),
-  );
-
-  const hasAnyRoom = sortedOngoingRooms.length > 0 || ALL_ROOMS.length > 0;
+  const hasAnyRoom = sortedOngoingRooms.length > 0 || filteredRooms.length > 0;
 
   useEffect(() => {
     const target = listEndRef.current;
@@ -116,6 +117,14 @@ function HomeSections() {
     };
   }, [filteredRooms.length, hasAnyRoom]);
 
+  if (isOngoingTripsLoading || isAllTripsLoading) {
+    return (
+      <div className="flex w-full flex-1 items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <>
       <section className="flex w-full flex-col gap-4">
@@ -136,24 +145,29 @@ function HomeSections() {
         {hasAnyRoom ? (
           <>
             <div className="flex w-full flex-col gap-[11px]">
-              {filteredRooms.map((room) => (
+              {filteredRooms.map((trip) => (
                 <RoomListItem
-                  key={room.id}
-                  title={room.title}
-                  dateRange={room.dateRange}
-                  isHost={room.isHost}
-                  statusTag={room.statusTag}
-                  statusTagType={room.statusTagType}
-                  onClick={() => router.push(`/room/${room.id}`)}
+                  key={trip.tripId}
+                  title={trip.name}
+                  dateRange={getTripDateRange(trip)}
+                  isHost={trip.myRole === 'OWNER'}
+                  statusTag={getTripStatusTag(trip)?.text}
+                  statusTagType={getTripStatusTag(trip)?.type}
+                  onClick={() => router.push(`/room/${trip.tripId}`)}
                 />
               ))}
             </div>
             <div ref={listEndRef} aria-hidden className="h-px w-full" />
           </>
         ) : (
-          <div className="flex w-full flex-1 flex-col items-center justify-center gap-6 py-10">
-            {/* TODO: 디자인 확정되면 실제 일러스트로 교체 (Figma 463-40924엔 빈 사각형 placeholder만 있음) */}
-            <div className="size-20 shrink-0 bg-grey-100" />
+          <div className="flex w-full flex-1 flex-col items-center justify-center gap-4 py-10">
+            <Image
+              src={emptyTripsSuitcase}
+              alt=""
+              width={120}
+              height={120}
+              className="shrink-0"
+            />
             <div className="flex flex-col items-center gap-4">
               <div className="flex flex-col items-center text-center">
                 <p className="text-body-03 text-black">
