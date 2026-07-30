@@ -160,14 +160,23 @@ function RecommendationSection({
   };
 
   const handleConfirm = (candidate: RecommendationCandidateDetailT) => {
-    postConfirmTripMutation(
-      { roomId, recommendationRank: candidate.rank },
+    getRecommendationDetailMutation(
+      { roomId, rank: candidate.rank, myName },
       {
-        onSuccess: () => {
-          onConfirmed?.();
-          setJustUnconfirmed(false);
-          setConfirmedCandidate(candidate);
-          setStep(4);
+        onSuccess: (detail) => {
+          const enrichedCandidate = { ...candidate, ...detail };
+          postConfirmTripMutation(
+            { roomId, recommendationRank: candidate.rank },
+            {
+              onSuccess: () => {
+                onConfirmed?.();
+                setJustUnconfirmed(false);
+                setConfirmedCandidate(enrichedCandidate);
+                setStep(4);
+              },
+              onError: () => setErrorMessage('일정을 확정하지 못했어요'),
+            },
+          );
         },
         onError: () => setErrorMessage('일정을 확정하지 못했어요'),
       },
