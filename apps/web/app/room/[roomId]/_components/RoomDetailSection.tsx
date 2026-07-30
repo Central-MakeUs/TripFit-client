@@ -127,11 +127,17 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           roomId={roomId}
           roomName={room.title}
           myName={myName}
+          isHost={isHost}
           onExit={() => setSection('calendar')}
           respondedCount={participants.length}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
           isConfirmed={isConfirmed}
           onConfirmed={refetchRoom}
+          confirmedStartDate={room.confirmedStartDate}
+          confirmedEndDate={room.confirmedEndDate}
+          confirmedAttendCount={room.confirmedAttendCount}
+          confirmedVacationMemberCount={room.confirmedVacationMemberCount}
+          confirmedUncertainCount={room.confirmedUncertainCount}
         />
         <ShareSheet
           open={isRequestResponseOpen}

@@ -14,6 +14,11 @@ type TripDetailResponse = {
   memberCount: number;
   inviteCode: string;
   status: RoomStatusT;
+  confirmedStartDate: string | null;
+  confirmedEndDate: string | null;
+  confirmedAttendCount: number | null;
+  confirmedVacationMemberCount: number | null;
+  confirmedUncertainCount: number | null;
 };
 
 export const getRoom = async (roomId: string): Promise<GetRoomResponseT> => {
@@ -32,5 +37,10 @@ export const getRoom = async (roomId: string): Promise<GetRoomResponseT> => {
     memberCount: tripResponse.memberCount,
     inviteCode: tripResponse.inviteCode,
     status: tripResponse.status,
+    confirmedStartDate: tripResponse.confirmedStartDate,
+    confirmedEndDate: tripResponse.confirmedEndDate,
+    confirmedAttendCount: tripResponse.confirmedAttendCount,
+    confirmedVacationMemberCount: tripResponse.confirmedVacationMemberCount,
+    confirmedUncertainCount: tripResponse.confirmedUncertainCount,
   };
 };

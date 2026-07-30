@@ -9,7 +9,6 @@ import {
   RecommendationTypeT,
 } from '@/types/recommendation';
 
-import { MOCK_CANDIDATES } from './_mocks/candidates';
 import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
 import { usePostConfirmTrip } from './_hooks/usePostConfirmTrip';
 import { usePostRecommendations } from './_hooks/usePostRecommendations';
@@ -22,22 +21,34 @@ type RecommendationSectionProps = {
   roomId: string;
   roomName: string;
   myName: string;
+  isHost: boolean;
   onExit: () => void;
   respondedCount: number;
   onRequestResponse: () => void;
   isConfirmed: boolean;
   onConfirmed?: () => void;
+  confirmedStartDate: string | null;
+  confirmedEndDate: string | null;
+  confirmedAttendCount: number | null;
+  confirmedVacationMemberCount: number | null;
+  confirmedUncertainCount: number | null;
 };
 
 function RecommendationSection({
   roomId,
   roomName,
   myName,
+  isHost,
   onExit,
   respondedCount,
   onRequestResponse,
   isConfirmed,
   onConfirmed,
+  confirmedStartDate,
+  confirmedEndDate,
+  confirmedAttendCount,
+  confirmedVacationMemberCount,
+  confirmedUncertainCount,
 }: RecommendationSectionProps) {
   const [step, setStep] = useState(1);
   const [type, setType] = useState<RecommendationTypeT | null>(null);
@@ -54,19 +65,20 @@ function RecommendationSection({
   const { postConfirmTripMutation } = usePostConfirmTrip();
 
   if (isConfirmed) {
-    // TODO: 실제 확정된 candidate 연동 전까지 임시로 mock 데이터 사용
-    const mockConfirmedCandidate = MOCK_CANDIDATES[0];
-
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title="추천 일정" onBack={onExit} />
         <div className="flex w-full flex-1 flex-col px-5">
-          {mockConfirmedCandidate && (
+          {confirmedStartDate && confirmedEndDate && (
             <RecommendationConfirmedStep
               roomName={roomName}
-              candidate={mockConfirmedCandidate}
+              startDate={confirmedStartDate}
+              endDate={confirmedEndDate}
+              attendCount={confirmedAttendCount ?? 0}
+              leaveCount={confirmedVacationMemberCount ?? 0}
+              uncertainCount={confirmedUncertainCount ?? 0}
               onExit={onExit}
-              readOnly
+              readOnly={!isHost}
             />
           )}
         </div>
@@ -162,7 +174,11 @@ function RecommendationSection({
         {step === 4 && confirmedCandidate && (
           <RecommendationConfirmedStep
             roomName={roomName}
-            candidate={confirmedCandidate}
+            startDate={confirmedCandidate.startDate}
+            endDate={confirmedCandidate.endDate}
+            attendCount={confirmedCandidate.availableParticipants.length}
+            leaveCount={confirmedCandidate.leaveCount}
+            uncertainCount={confirmedCandidate.uncertainCount}
             onExit={onExit}
           />
         )}

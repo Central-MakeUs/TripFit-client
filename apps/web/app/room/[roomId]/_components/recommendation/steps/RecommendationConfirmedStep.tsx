@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import CheckCircleIcon from '@/assets/icons/check-circle.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
-import { RecommendationCandidateDetailT } from '@/types/recommendation';
 
 import ShareSheet from '../../../_common/_components/ShareSheet';
 import { formatDateLabel } from '../_utils/formatDateLabel';
@@ -10,14 +9,22 @@ import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationConfirmedStepProps = {
   roomName: string;
-  candidate: RecommendationCandidateDetailT;
+  startDate: string;
+  endDate: string;
+  attendCount: number;
+  leaveCount: number;
+  uncertainCount: number;
   onExit: () => void;
   readOnly?: boolean;
 };
 
 function RecommendationConfirmedStep({
   roomName,
-  candidate,
+  startDate,
+  endDate,
+  attendCount,
+  leaveCount,
+  uncertainCount,
   onExit,
   readOnly = false,
 }: RecommendationConfirmedStepProps) {
@@ -33,15 +40,15 @@ function RecommendationConfirmedStep({
 
         <div className="mt-6 flex w-full flex-col items-center rounded-3xl bg-blue-20 px-3 py-4">
           <span className="text-body-01">
-            {formatDateLabel(candidate.startDate)}
+            {formatDateLabel(startDate)}
             <span className="text-grey-400"> - </span>
-            {formatDateLabel(candidate.endDate)}
+            {formatDateLabel(endDate)}
           </span>
           <RecommendationStatBox
             stats={[
-              { label: '참석', value: candidate.availableParticipants.length },
-              { label: '연차 사용', value: candidate.leaveCount },
-              { label: '불확실 일정', value: candidate.uncertainCount },
+              { label: '참석', value: attendCount },
+              { label: '연차 사용', value: leaveCount },
+              { label: '불확실 일정', value: uncertainCount },
             ]}
             theme="blue"
             className="mt-4 w-full"
@@ -67,7 +74,7 @@ function RecommendationConfirmedStep({
         onOpenChange={setIsShareOpen}
         title="확정 일정 공유하기"
         initialTitleValue={`${roomName} 날짜 확정됐어!`}
-        initialDescriptionValue={`${formatDateLabel(candidate.startDate)} ~ ${formatDateLabel(candidate.endDate)} 이 날짜 비워둬!`}
+        initialDescriptionValue={`${formatDateLabel(startDate)} ~ ${formatDateLabel(endDate)} 이 날짜 비워둬!`}
         onShare={() => {
           // TODO: 확정 일정 공유 API/카카오톡 공유 연동
           setIsShareOpen(false);
