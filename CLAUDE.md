@@ -482,7 +482,8 @@ main ← dev ← {type}/{issue-number}-{description}
 
 `apps/app`이 감쌀 `apps/web` 주소는 `utils/webViewUrl.ts`에 상수로 고정한다 (환경변수 아님).
 `__DEV__`(RN 내장 플래그)로 로컬 개발(`http://localhost:3000`)과 배포 빌드를 자동 분기하고,
-Android 에뮬레이터는 `localhost`를 `10.0.2.2`로 자동 치환한다.
+`Platform.OS === 'android'`인 모든 환경(에뮬레이터·실기기 구분 없이)에서 `localhost`를 `10.0.2.2`로
+자동 치환한다 — 실기기로 로컬 개발 서버를 테스트하려면 호스트의 LAN IP를 직접 써야 한다.
 
 - 배포 도메인: `https://tripfit.online` (`PRODUCTION_WEB_URL`)
 

@@ -18,7 +18,7 @@ import WebView from 'react-native-webview';
 
 import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
 import { requestNativeSocialLoginToken } from '../utils/socialLogin';
-import { getWebUrl } from '../utils/webViewUrl';
+import { getWebUrl, isWebOrigin } from '../utils/webViewUrl';
 
 type WebViewComponentProps = ComponentProps<typeof WebView>;
 type OnMessage = NonNullable<WebViewComponentProps['onMessage']>;
@@ -52,6 +52,8 @@ function AppWebView() {
 
   const handleMessage: OnMessage = useCallback(
     (event) => {
+      if (!isWebOrigin(event.nativeEvent.url)) return;
+
       const message = parseBridgeMessage(event.nativeEvent.data);
       if (!message) return;
 

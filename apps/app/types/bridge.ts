@@ -1,5 +1,11 @@
 export type SocialLoginProvider = 'GOOGLE' | 'KAKAO' | 'APPLE';
 
+const SOCIAL_LOGIN_PROVIDERS: SocialLoginProvider[] = [
+  'GOOGLE',
+  'KAKAO',
+  'APPLE',
+];
+
 export type NativeSocialLoginResult = {
   token: string;
   authorizationCode?: string;
@@ -29,7 +35,11 @@ export const parseBridgeMessage = (
 ): BridgeOutgoingMessage | null => {
   try {
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.type === 'SOCIAL_LOGIN_REQUEST') {
+    if (
+      parsed &&
+      parsed.type === 'SOCIAL_LOGIN_REQUEST' &&
+      SOCIAL_LOGIN_PROVIDERS.includes(parsed.provider)
+    ) {
       return parsed as BridgeOutgoingMessage;
     }
   } catch {
