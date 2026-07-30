@@ -1,22 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { postRoom, PostRoomRequestT } from '../_apis/postRoom';
+import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
 
-const TEMP_USER_ID = process.env.NEXT_PUBLIC_TEMP_USER_ID ?? '';
+import { postRoom } from '../_apis/postRoom';
 
 export const usePostRoom = () => {
-  // TODO: 로그인 유저 전역 상태 도입 후 아래로 교체
-  // const userId = useUserStore((state) => state.userId);
-  const userId = TEMP_USER_ID;
+  const mutationFn = useAuthenticatedMutationFn(postRoom);
 
   const {
     mutate: postRoomMutation,
     isPending: isPostRoomPending,
     error: postRoomError,
-  } = useMutation({
-    mutationFn: (requestBody: PostRoomRequestT) =>
-      postRoom(requestBody, userId),
-  });
+  } = useMutation({ mutationFn });
 
   return { postRoomMutation, isPostRoomPending, postRoomError };
 };

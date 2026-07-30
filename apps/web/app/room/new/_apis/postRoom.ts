@@ -33,7 +33,6 @@ type CreateTripResponse = Omit<PostRoomResponseT, 'roomId'> & {
 
 export const postRoom = async (
   requestBody: PostRoomRequestT,
-  userId: string,
 ): Promise<PostRoomResponseT> => {
   const tripRequest: CreateTripRequest = {
     name: requestBody.title,
@@ -45,13 +44,10 @@ export const postRoom = async (
     destination: requestBody.destination,
   };
 
-  const tripResponse = await request<CreateTripResponse>(
-    `/api/v1/trips?userId=${userId}`,
-    {
-      method: 'POST',
-      data: tripRequest,
-    },
-  );
+  const tripResponse = await request<CreateTripResponse>('/api/v1/trips', {
+    method: 'POST',
+    data: tripRequest,
+  });
 
   return {
     roomId: tripResponse.tripId,

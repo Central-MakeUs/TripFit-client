@@ -16,9 +16,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
-import { getWebUrl } from '../utils/webViewUrl';
+import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
+import { requestNativeSocialLoginToken } from '../utils/socialLogin';
+import { getWebUrl, isWebOrigin } from '../utils/webViewUrl';
 
 type WebViewComponentProps = ComponentProps<typeof WebView>;
+type OnMessage = NonNullable<WebViewComponentProps['onMessage']>;
 type OnNavigationStateChange = NonNullable<
   WebViewComponentProps['onNavigationStateChange']
 >;
@@ -43,6 +46,39 @@ function AppWebView() {
     return () => subscription.remove();
   }, [canGoBack]);
 
+  const sendToWeb = useCallback((message: BridgeIncomingMessage) => {
+    webViewRef.current?.postMessage(JSON.stringify(message));
+  }, []);
+
+  const handleMessage: OnMessage = useCallback(
+    (event) => {
+      if (!isWebOrigin(event.nativeEvent.url)) return;
+
+      const message = parseBridgeMessage(event.nativeEvent.data);
+      if (!message) return;
+
+      requestNativeSocialLoginToken(message.provider)
+        .then((result) => {
+          sendToWeb({
+            type: 'SOCIAL_LOGIN_SUCCESS',
+            provider: message.provider,
+            ...result,
+          });
+        })
+        .catch((error) => {
+          sendToWeb({
+            type: 'SOCIAL_LOGIN_ERROR',
+            provider: message.provider,
+            message:
+              error instanceof Error
+                ? error.message
+                : '로그인 중 문제가 발생했어요.',
+          });
+        });
+    },
+    [sendToWeb],
+  );
+
   const handleNavigationStateChange: OnNavigationStateChange = useCallback(
     (navState) => {
       setCanGoBack(navState.canGoBack);
@@ -62,6 +98,7 @@ function AppWebView() {
         ref={webViewRef}
         source={{ uri: getWebUrl() }}
         style={styles.webview}
+        onMessage={handleMessage}
         onNavigationStateChange={handleNavigationStateChange}
         onLoadStart={() => {
           setIsLoading(true);
