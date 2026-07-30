@@ -14,7 +14,7 @@ type RecommendationConfirmedStepProps = {
   attendCount: number;
   leaveCount: number;
   uncertainCount: number;
-  onExit: () => void;
+  onCancel: () => void;
   readOnly?: boolean;
 };
 
@@ -25,7 +25,7 @@ function RecommendationConfirmedStep({
   attendCount,
   leaveCount,
   uncertainCount,
-  onExit,
+  onCancel,
   readOnly = false,
 }: RecommendationConfirmedStepProps) {
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -64,7 +64,7 @@ function RecommendationConfirmedStep({
           secondaryText="취소하기"
           secondaryVariant="text-link"
           secondaryIcon={false}
-          onSecondaryClick={onExit}
+          onSecondaryClick={onCancel}
           className="px-0"
         />
       )}

@@ -47,3 +47,11 @@ export type RecommendationCandidateDetailT = RecommendationCandidateT & {
   availableParticipants: RecommendationParticipantT[];
   feedback?: RecommendationFeedbackT | null;
 };
+
+export type RecommendationUnconfirmReasonT =
+  | 'NEW_SCHEDULE_ADDED'
+  | 'ATTENDEE_AVAILABILITY_CHANGED'
+  | 'RECOMMENDATION_UNSATISFACTORY'
+  | 'WANT_OTHER_RECOMMENDATION'
+  | 'TRIP_PLAN_CHANGED'
+  | 'OTHER';

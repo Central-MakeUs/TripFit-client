@@ -12,6 +12,8 @@ import {
 import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
 import { usePostConfirmTrip } from './_hooks/usePostConfirmTrip';
 import { usePostRecommendations } from './_hooks/usePostRecommendations';
+import { usePostUnconfirmTrip } from './_hooks/usePostUnconfirmTrip';
+import RecommendationCancelStep from './steps/RecommendationCancelStep';
 import RecommendationConfirmedStep from './steps/RecommendationConfirmedStep';
 import RecommendationDetailStep from './steps/RecommendationDetailStep';
 import RecommendationResultStep from './steps/RecommendationResultStep';
@@ -60,11 +62,56 @@ function RecommendationSection({
     useState<RecommendationCandidateDetailT | null>(null);
   const [confirmedCandidate, setConfirmedCandidate] =
     useState<RecommendationCandidateDetailT | null>(null);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [justUnconfirmed, setJustUnconfirmed] = useState(false);
   const { postRecommendationsMutation } = usePostRecommendations();
   const { getRecommendationDetailMutation } = useGetRecommendationDetail();
   const { postConfirmTripMutation } = usePostConfirmTrip();
+  const { postUnconfirmTripMutation } = usePostUnconfirmTrip();
 
-  if (isConfirmed) {
+  const handleUnconfirm = (
+    reason: Parameters<typeof postUnconfirmTripMutation>[0]['reason'],
+    reasonDetail?: string,
+  ) => {
+    postUnconfirmTripMutation(
+      { roomId, reason, reasonDetail },
+      {
+        onSuccess: () => {
+          setIsCancelOpen(false);
+          setJustUnconfirmed(true);
+          setStep(1);
+          setType(null);
+          setCandidates([]);
+          setSelectedCandidate(null);
+          setConfirmedCandidate(null);
+          onConfirmed?.();
+        },
+        onError: () => setErrorMessage('일정을 취소하지 못했어요'),
+      },
+    );
+  };
+
+  if (isCancelOpen) {
+    return (
+      <>
+        <RecommendationCancelStep
+          onBack={() => setIsCancelOpen(false)}
+          onSubmit={handleUnconfirm}
+        />
+        <AlertModal
+          open={errorMessage !== null}
+          onOpenChange={(open) => !open && setErrorMessage(null)}
+          variant="danger"
+          title={errorMessage ?? ''}
+          description="잠시 후 다시 시도해주세요"
+          primaryText="확인"
+          onPrimaryClick={() => setErrorMessage(null)}
+        />
+      </>
+    );
+  }
+
+  if (isConfirmed && !justUnconfirmed) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title="추천 일정" onBack={onExit} />
@@ -77,7 +124,7 @@ function RecommendationSection({
               attendCount={confirmedAttendCount ?? 0}
               leaveCount={confirmedVacationMemberCount ?? 0}
               uncertainCount={confirmedUncertainCount ?? 0}
-              onExit={onExit}
+              onCancel={() => setIsCancelOpen(true)}
               readOnly={!isHost}
             />
           )}
@@ -118,6 +165,7 @@ function RecommendationSection({
       {
         onSuccess: () => {
           onConfirmed?.();
+          setJustUnconfirmed(false);
           setConfirmedCandidate(candidate);
           setStep(4);
         },
@@ -179,7 +227,7 @@ function RecommendationSection({
             attendCount={confirmedCandidate.availableParticipants.length}
             leaveCount={confirmedCandidate.leaveCount}
             uncertainCount={confirmedCandidate.uncertainCount}
-            onExit={onExit}
+            onCancel={() => setIsCancelOpen(true)}
           />
         )}
       </div>
