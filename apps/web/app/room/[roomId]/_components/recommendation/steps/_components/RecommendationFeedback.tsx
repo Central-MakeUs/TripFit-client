@@ -117,8 +117,10 @@ function RecommendationFeedback({
   const [customFeedbackReason, setCustomFeedbackReason] = useState(
     initialFeedback?.reasonDetail ?? '',
   );
-  const { patchRecommendationFeedbackMutation } =
-    usePatchRecommendationFeedback();
+  const {
+    patchRecommendationFeedbackMutation,
+    isPatchRecommendationFeedbackPending,
+  } = usePatchRecommendationFeedback();
 
   const isFeedbackSubmitted = feedback !== null && !isFeedbackSheetOpen;
 
@@ -128,6 +130,7 @@ function RecommendationFeedback({
   };
 
   const handleClickFeedbackIcon = (value: 'up' | 'down') => {
+    if (isPatchRecommendationFeedbackPending) return;
     if (value === 'down') {
       setFeedback('down');
       setIsFeedbackSheetOpen(true);
@@ -153,7 +156,7 @@ function RecommendationFeedback({
   };
 
   const handleSaveFeedbackReason = () => {
-    if (!feedbackReason) return;
+    if (!feedbackReason || isPatchRecommendationFeedbackPending) return;
     const reason = FEEDBACK_REASON_TO_API[feedbackReason];
 
     patchRecommendationFeedbackMutation(
@@ -207,6 +210,7 @@ function RecommendationFeedback({
                     )
                   }
                   aria-label={label}
+                  disabled={isPatchRecommendationFeedbackPending}
                   onClick={() => handleClickFeedbackIcon(value)}
                 />
               ),
@@ -265,7 +269,8 @@ function RecommendationFeedback({
             disabled={
               !feedbackReason ||
               (feedbackReason === FEEDBACK_REASON_OTHER &&
-                !customFeedbackReason.trim())
+                !customFeedbackReason.trim()) ||
+              isPatchRecommendationFeedbackPending
             }
             className="w-full"
           />
