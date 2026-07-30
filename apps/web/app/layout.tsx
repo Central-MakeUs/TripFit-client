@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 
+import AuthGuard from './_components/AuthGuard';
 import QueryProvider from './providers';
 
 const pretendardNumerals = localFont({
@@ -29,7 +30,7 @@ export default function RootLayout({
       <body>
         <QueryProvider>
           <div className="mx-auto flex min-h-screen w-full flex-col bg-white sm:max-w-90">
-            {children}
+            <AuthGuard>{children}</AuthGuard>
           </div>
         </QueryProvider>
       </body>
