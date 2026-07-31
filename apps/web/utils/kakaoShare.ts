@@ -55,6 +55,11 @@ export const shareToKakao = async ({
 }: KakaoShareContentT): Promise<void> => {
   const kakao = await ensureKakaoInitialized();
 
+  // sendDefault()가 카카오톡 전환을 동기적으로(호출 직후) 일으킬 수 있으므로,
+  // 감지용 리스너는 반드시 sendDefault() 호출 전에 등록해야 한다 — 나중에
+  // 등록하면 이미 지나간 전환 이벤트를 놓쳐 항상 타임아웃(실패)으로 판정된다.
+  const appSwitchResult = isReactNativeWebView() ? didAppSwitchSucceed() : null;
+
   kakao.Share.sendDefault({
     objectType: 'feed',
     content: {
@@ -73,7 +78,7 @@ export const shareToKakao = async ({
     }),
   });
 
-  if (isReactNativeWebView() && !(await didAppSwitchSucceed())) {
+  if (appSwitchResult && !(await appSwitchResult)) {
     throw new Error('카카오톡이 설치되어 있지 않아 공유할 수 없어요.');
   }
 };
