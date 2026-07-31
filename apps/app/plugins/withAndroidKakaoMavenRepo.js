@@ -1,4 +1,4 @@
-const { withProjectBuildGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle } = require('expo/config-plugins');
 
 // com.kakao.sdk:* 아티팩트는 Google/Maven Central/JitPack이 아니라 카카오 자체
 // Maven 저장소에만 있어서, 이 저장소가 등록돼 있지 않으면 :app 모듈의 의존성 해석이

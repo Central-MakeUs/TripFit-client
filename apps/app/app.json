@@ -20,8 +20,8 @@
       "package": "com.tripfit.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/android-icon.png",
-        "backgroundImage": "./assets/android-icon.png"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#5EBCFF"
       },
       "predictiveBackGestureEnabled": false
     },
