@@ -57,7 +57,10 @@ export type BridgeIncomingMessage =
     }
   | ({
       type: 'NOTIFICATION_OPENED';
-    } & PushLandingData);
+    } & PushLandingData)
+  | {
+      type: 'NOTIFICATION_RECEIVED';
+    };
 
 export const parseBridgeMessage = (
   raw: string,

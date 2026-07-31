@@ -58,7 +58,10 @@ type NativeBridgeIncomingMessageT =
     }
   | ({
       type: 'NOTIFICATION_OPENED';
-    } & PushLandingDataT);
+    } & PushLandingDataT)
+  | {
+      type: 'NOTIFICATION_RECEIVED';
+    };
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
@@ -70,6 +73,7 @@ const INCOMING_MESSAGE_TYPES = [
   'PUSH_TOKEN_READY',
   'PUSH_TOKEN_ERROR',
   'NOTIFICATION_OPENED',
+  'NOTIFICATION_RECEIVED',
 ];
 
 const parseIncomingMessage = (
@@ -163,6 +167,26 @@ export const onNativeNotificationOpened = (
       landingType: message.landingType,
       tripId: message.tripId,
     });
+  };
+
+  window.addEventListener('message', handleMessage);
+  document.addEventListener('message', handleMessage as EventListener);
+
+  return () => {
+    window.removeEventListener('message', handleMessage);
+    document.removeEventListener('message', handleMessage as EventListener);
+  };
+};
+
+// 포그라운드로 도착한 푸시는 탭 여부와 무관하게 즉시 알려주는 이벤트라 구독 형태로 둔다.
+// 구독 해제 함수를 반환한다.
+export const onNativeNotificationReceived = (
+  callback: () => void,
+): (() => void) => {
+  const handleMessage = (event: MessageEvent) => {
+    const message = parseIncomingMessage(event.data);
+    if (!message || message.type !== 'NOTIFICATION_RECEIVED') return;
+    callback();
   };
 
   window.addEventListener('message', handleMessage);

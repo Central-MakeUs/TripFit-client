@@ -104,8 +104,10 @@ function AppWebView() {
     });
 
     // 앱이 열려 있는 동안 도착한 메시지는 OS가 배너를 자동으로 띄워주지 않아 직접 띄운다.
+    // 홈 화면을 보고 있는 동안 도착한 경우 알림센터 뱃지가 갱신되도록 웹에도 알려준다.
     const unsubscribeOnMessage = onMessage(messaging, (remoteMessage) => {
       showForegroundNotification(remoteMessage);
+      sendToWeb({ type: 'NOTIFICATION_RECEIVED' });
     });
     const unsubscribeOnOpenedApp = onNotificationOpenedApp(
       messaging,
@@ -125,7 +127,7 @@ function AppWebView() {
       unsubscribeOnOpenedApp();
       responseSubscription.remove();
     };
-  }, [handleNotificationOpened]);
+  }, [handleNotificationOpened, sendToWeb]);
 
   const handleMessage: OnMessage = useCallback(
     (event) => {
