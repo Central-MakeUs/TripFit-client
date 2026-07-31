@@ -1,8 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { patchNotificationRead } from '@/apis/notification';
 import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
-
-import { patchNotificationRead } from '../_apis/patchNotificationRead';
 
 export const usePatchNotificationRead = () => {
   const mutationFn = useAuthenticatedMutationFn(patchNotificationRead);

@@ -25,6 +25,7 @@ export type NativePushTokenResultT = {
 // landingType 값 자체는 백엔드가 FCM data payload에 실어 보내는 문자열이라
 // 여기선 구체적인 union으로 제한하지 않고 그대로 전달한다.
 export type PushLandingDataT = {
+  id: string | null;
   landingType: string;
   tripId: string | null;
 };
@@ -157,7 +158,11 @@ export const onNativeNotificationOpened = (
     const message = parseIncomingMessage(event.data);
     if (!message || message.type !== 'NOTIFICATION_OPENED') return;
 
-    callback({ landingType: message.landingType, tripId: message.tripId });
+    callback({
+      id: message.id,
+      landingType: message.landingType,
+      tripId: message.tripId,
+    });
   };
 
   window.addEventListener('message', handleMessage);

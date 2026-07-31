@@ -6,6 +6,11 @@ export type GetNotificationsResponseT = NotificationT[];
 export const getNotifications = () =>
   request<GetNotificationsResponseT>('/api/v1/notifications');
 
+export const patchNotificationRead = (notificationId: string) =>
+  request<void>(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+  });
+
 export type PostDeviceTokenRequestT = {
   token: string;
   deviceType: DeviceTypeT;
