@@ -17,14 +17,15 @@ function HomeHeader() {
     queryClient.invalidateQueries({ queryKey: TRIPS_QUERY_KEY });
   };
 
-  const hasUnreadNotifications =
-    notificationsData?.some((notification) => !notification.isRead) ?? false;
+  const unreadNotificationCount =
+    notificationsData?.filter((notification) => !notification.isRead).length ??
+    0;
 
   return (
     <Header
       variant="home"
       onLogoClick={handleLogoClick}
-      hasUnreadNotifications={hasUnreadNotifications}
+      unreadNotificationCount={unreadNotificationCount}
     />
   );
 }

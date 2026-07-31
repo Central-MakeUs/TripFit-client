@@ -9,6 +9,7 @@ import ArrowLeftIcon from '@/assets/icons/arrow-left-200.svg';
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import LogoIcon from '@/assets/icons/logo.svg';
 import NotificationIcon from '@/assets/icons/notification.svg';
+import Badge from '@/components/badge';
 import IconButton from '@/components/icon-button';
 import { cn } from '@/utils/cn';
 
@@ -21,7 +22,7 @@ type HeaderProps =
   | {
       variant: 'home';
       onLogoClick?: () => void;
-      hasUnreadNotifications?: boolean;
+      unreadNotificationCount?: number;
     }
   | {
       variant: 'page';
@@ -59,12 +60,10 @@ function Header(props: HeaderProps) {
               aria-label="알림"
               icon={<NotificationIcon className="text-grey-500" />}
             />
-            {props.hasUnreadNotifications && (
-              <span
-                aria-hidden
-                className="absolute top-1 right-1 size-1.5 rounded-full bg-red-300"
-              />
-            )}
+            <Badge
+              count={props.unreadNotificationCount ?? 0}
+              className="absolute top-1 right-1"
+            />
           </div>
           <IconButton
             href="/my-page"
