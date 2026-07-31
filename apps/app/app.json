@@ -10,7 +10,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.tripfit.app",
       "usesAppleSignIn": true,
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.tripfit.app",

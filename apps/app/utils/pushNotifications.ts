@@ -3,7 +3,6 @@ import { getApp } from '@react-native-firebase/app';
 import {
   getMessaging,
   getToken,
-  registerDeviceForRemoteMessages,
   RemoteMessage,
 } from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
@@ -29,12 +28,6 @@ export const requestNativePushToken =
     await ensureNotificationPermission();
 
     const messaging = getMessaging(getApp());
-    // iOS는 expo-notifications가 원격 알림 등록에 개입할 수 있어 Firebase의 자동 APNs
-    // 등록(swizzling)이 씹힐 수 있다 — 명시적으로 등록해 안전망을 둔다(중복 호출해도 무해함).
-    if (Platform.OS === 'ios') {
-      await registerDeviceForRemoteMessages(messaging);
-    }
-
     const token = await getToken(messaging);
     const deviceType: PushDeviceType =
       Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
