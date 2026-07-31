@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 import shareSheetBanner from '@/assets/images/share-sheet-banner.png';
+import AlertModal from '@/components/alert-modal';
 import BottomSheet from '@/components/bottom-sheet';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Input from '@/components/input';
 import Textarea from '@/components/textarea';
+import { copyToClipboard } from '@/utils/clipboard';
+import { shareToKakao } from '@/utils/kakaoShare';
+import { isReactNativeWebView } from '@/utils/platform';
 
 type ShareSheetProps = {
   open: boolean;
@@ -15,6 +19,12 @@ type ShareSheetProps = {
   title: string;
   initialTitleValue: string;
   initialDescriptionValue: string;
+  /** 공유 버튼(카카오 Feed 템플릿 버튼)에 들어갈 상대 경로(예: "/room/123") — 네이티브
+   * 앱에서는 카카오톡 공유로, 일반 웹에서는 클립보드 복사로 대체된다. 절대 URL은
+   * 클릭 시점(handleShare)에만 만든다 — 렌더링 중(SSR 포함) window에 접근하면 안 되므로 */
+  linkPath: string;
+  /** 카카오 Feed 템플릿의 버튼 문구 (예: "일정 입력 요청하기") */
+  buttonTitle: string;
   onShare: (value: { title: string; description: string }) => void;
 };
 
@@ -24,21 +34,58 @@ function ShareSheet({
   title,
   initialTitleValue,
   initialDescriptionValue,
+  linkPath,
+  buttonTitle,
   onShare,
 }: ShareSheetProps) {
   const [titleValue, setTitleValue] = useState(initialTitleValue);
   const [descriptionValue, setDescriptionValue] = useState(
     initialDescriptionValue,
   );
+  const [isCopiedMessageVisible, setIsCopiedMessageVisible] = useState(false);
+  const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (open) {
       setTitleValue(initialTitleValue);
       setDescriptionValue(initialDescriptionValue);
+      setIsCopiedMessageVisible(false);
     }
   }, [open, initialTitleValue, initialDescriptionValue]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    const linkUrl = `${window.location.origin}${linkPath}`;
+
+    if (isReactNativeWebView()) {
+      try {
+        await shareToKakao({
+          title: titleValue,
+          description: descriptionValue,
+          imageUrl: `${window.location.origin}${shareSheetBanner.src}`,
+          linkUrl,
+          buttonTitle,
+        });
+      } catch (error) {
+        setShareErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '공유하기에 실패했어요. 잠시 후 다시 시도해주세요.',
+        );
+        return;
+      }
+    } else {
+      const copied = await copyToClipboard(linkUrl);
+      if (!copied) {
+        setShareErrorMessage(
+          '링크 복사에 실패했어요. 잠시 후 다시 시도해주세요.',
+        );
+        return;
+      }
+      setIsCopiedMessageVisible(true);
+    }
+
     onShare({ title: titleValue, description: descriptionValue });
   };
 
@@ -76,6 +123,9 @@ function ShareSheet({
           value={descriptionValue}
           onChange={(event) => setDescriptionValue(event.target.value)}
         />
+        {isCopiedMessageVisible && (
+          <p className="text-body-06 text-blue-700">링크가 복사됐어요</p>
+        )}
       </div>
       <CtaButtonGroup
         primaryText="공유하기"
@@ -86,6 +136,15 @@ function ShareSheet({
         secondaryVariant="button-horizontal"
         onSecondaryClick={() => onOpenChange(false)}
         className="px-3 py-4"
+      />
+      <AlertModal
+        open={shareErrorMessage !== null}
+        onOpenChange={(nextOpen) => !nextOpen && setShareErrorMessage(null)}
+        variant="danger"
+        title="공유하지 못했어요"
+        description={shareErrorMessage ?? ''}
+        primaryText="확인"
+        onPrimaryClick={() => setShareErrorMessage(null)}
       />
     </BottomSheet>
   );
