@@ -1,5 +1,7 @@
 export type DeviceTypeT = 'ANDROID' | 'IOS' | 'WEB';
 
+export type LandingTypeT = 'TRAVEL_ROOM_DETAIL' | 'SCHEDULE_MANAGEMENT';
+
 export type NotificationTypeT =
   | 'PARTICIPANT_JOINED'
   | 'ALL_SCHEDULES_SUBMITTED'

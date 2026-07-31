@@ -22,6 +22,13 @@ export type NativePushTokenResultT = {
   deviceType: PushDeviceTypeT;
 };
 
+// landingType 값 자체는 백엔드가 FCM data payload에 실어 보내는 문자열이라
+// 여기선 구체적인 union으로 제한하지 않고 그대로 전달한다.
+export type PushLandingDataT = {
+  landingType: string;
+  tripId: string | null;
+};
+
 type NativeBridgeOutgoingMessageT =
   | {
       type: 'SOCIAL_LOGIN_REQUEST';
@@ -47,7 +54,10 @@ type NativeBridgeIncomingMessageT =
   | {
       type: 'PUSH_TOKEN_ERROR';
       message: string;
-    };
+    }
+  | ({
+      type: 'NOTIFICATION_OPENED';
+    } & PushLandingDataT);
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
@@ -58,6 +68,7 @@ const INCOMING_MESSAGE_TYPES = [
   'SOCIAL_LOGIN_ERROR',
   'PUSH_TOKEN_READY',
   'PUSH_TOKEN_ERROR',
+  'NOTIFICATION_OPENED',
 ];
 
 const parseIncomingMessage = (
@@ -136,6 +147,27 @@ export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
     document.addEventListener('message', handleMessage as EventListener);
     postMessageToNative({ type: 'PUSH_TOKEN_REQUEST' });
   });
+
+// 로그인 요청과 달리 앱이 언제든(백그라운드 복귀·콜드 스타트) 먼저 보낼 수 있는
+// 이벤트라 요청/응답이 아니라 구독 형태로 둔다. 구독 해제 함수를 반환한다.
+export const onNativeNotificationOpened = (
+  callback: (landing: PushLandingDataT) => void,
+): (() => void) => {
+  const handleMessage = (event: MessageEvent) => {
+    const message = parseIncomingMessage(event.data);
+    if (!message || message.type !== 'NOTIFICATION_OPENED') return;
+
+    callback({ landingType: message.landingType, tripId: message.tripId });
+  };
+
+  window.addEventListener('message', handleMessage);
+  document.addEventListener('message', handleMessage as EventListener);
+
+  return () => {
+    window.removeEventListener('message', handleMessage);
+    document.removeEventListener('message', handleMessage as EventListener);
+  };
+};
 
 // kakaoAuth/googleAuth/appleAuth 공통 진입점 — 앱(WebView) 안에서는 네이티브 로그인을
 // RN 쪽에 위임하고, 일반 브라우저에서는 각 provider의 리다이렉트 플로우로 로그인을 진행한다.

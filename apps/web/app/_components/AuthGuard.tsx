@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import { useAuthStore } from '@/stores/authStore';
 
+import NotificationDeepLinkHandler from './NotificationDeepLinkHandler';
 import PushTokenRegistrar from './PushTokenRegistrar';
 
 // 로그인 없이 접근 가능한 화면. 그 외 모든 화면은 로그인 화면(/signup)으로 리다이렉트된다.
@@ -48,6 +49,7 @@ function AuthGuard({ children }: AuthGuardProps) {
   return (
     <>
       <PushTokenRegistrar />
+      <NotificationDeepLinkHandler />
       {children}
     </>
   );
