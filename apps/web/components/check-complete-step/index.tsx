@@ -22,7 +22,7 @@ function CheckCircleMotion({ className }: CheckCircleMotionProps) {
         cy="36"
         r="36"
         fill="#0095FF"
-        className="[transform-box:fill-box] origin-center animate-check-circle-pop"
+        className="transform-fill origin-center animate-check-circle-pop"
       />
       <path
         d="M19 35.5L28.5885 45.9602C29.3579 46.7996 30.6719 46.8281 31.477 46.023L52.5 25"

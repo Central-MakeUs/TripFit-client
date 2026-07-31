@@ -52,7 +52,7 @@ export const getRoomScheduleCalendar = async (
   userId: string,
 ): Promise<GetRoomScheduleCalendarResponseT> => {
   const scheduleCalendarResponse = await request<ScheduleCalendarResponse>(
-    `/api/v1/trips/${roomId}/members/schedule-calendar?userId=${userId}`,
+    `/api/v1/trips/${roomId}/members/schedule-calendar`,
   );
 
   return {

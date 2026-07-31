@@ -16,6 +16,7 @@ export type AuthStateT = {
   hasName: boolean;
   hasPreSchedule: boolean;
   isAllFree: boolean;
+  notificationEnabled: boolean;
   setAuth: (auth: {
     userId: string;
     accessToken: string;
@@ -29,12 +30,19 @@ export type AuthStateT = {
     hasName: boolean;
     hasPreSchedule: boolean;
     isAllFree: boolean;
+    notificationEnabled: boolean;
   }) => void;
   setAccessToken: (accessToken: string) => void;
   setName: (name: {
     firstName: string;
     lastName: string;
     nickname: string;
+  }) => void;
+  setProfile: (profile: {
+    firstName?: string;
+    lastName?: string;
+    nickname?: string;
+    notificationEnabled?: boolean;
   }) => void;
   clear: () => void;
 };
@@ -52,6 +60,7 @@ const INITIAL_AUTH_STATE = {
   hasName: false,
   hasPreSchedule: false,
   isAllFree: false,
+  notificationEnabled: false,
 };
 
 export const useAuthStore = create<AuthStateT>()(
@@ -61,6 +70,7 @@ export const useAuthStore = create<AuthStateT>()(
       setAuth: (auth) => set(auth),
       setAccessToken: (accessToken) => set({ accessToken }),
       setName: (name) => set({ ...name, hasName: true }),
+      setProfile: (profile) => set(profile),
       clear: () => set(INITIAL_AUTH_STATE),
     }),
     {
@@ -81,6 +91,7 @@ export const useAuthStore = create<AuthStateT>()(
         hasName: state.hasName,
         hasPreSchedule: state.hasPreSchedule,
         isAllFree: state.isAllFree,
+        notificationEnabled: state.notificationEnabled,
       }),
     },
   ),

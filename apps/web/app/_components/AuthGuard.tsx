@@ -7,7 +7,9 @@ import { useAuthStore } from '@/stores/authStore';
 
 // 로그인 없이 접근 가능한 화면. 그 외 모든 화면은 로그인 화면(/signup)으로 리다이렉트된다.
 // 소셜 로그인 리다이렉트 콜백은 전부 /auth/* 아래에 있어서 provider가 늘어나도 따로 추가할 필요 없다.
-const PUBLIC_PATHS = ['/signup', '/onboarding'];
+// 개인정보 처리방침은 App Store 심사·앱 미설치 사용자 등 로그인 여부와 무관하게
+// 누구나 열람 가능해야 하는 페이지라 반드시 공개 상태여야 한다.
+const PUBLIC_PATHS = ['/signup', '/onboarding', '/privacy-policy'];
 const isPublicPath = (pathname: string) =>
   PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/auth/');
 

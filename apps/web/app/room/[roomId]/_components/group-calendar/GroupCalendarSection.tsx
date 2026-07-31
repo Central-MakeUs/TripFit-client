@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { eachMonthOfInterval, format, isWithinInterval } from 'date-fns';
+import {
+  eachMonthOfInterval,
+  format,
+  isWithinInterval,
+  parseISO,
+} from 'date-fns';
 
 import SettingsIcon from '@/assets/icons/settings.svg';
 import BasicInfo from '@/components/basic-info';
@@ -61,8 +66,8 @@ function GroupCalendarSection({
   isConfirmed,
   onShowRecommendation,
 }: GroupCalendarSectionProps) {
-  const minDate = new Date(room.startDate);
-  const maxDate = new Date(room.endDate);
+  const minDate = parseISO(room.startDate);
+  const maxDate = parseISO(room.endDate);
   const months = eachMonthOfInterval({ start: minDate, end: maxDate });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -83,6 +88,7 @@ function GroupCalendarSection({
   const [selectedTripId, setSelectedTripId] = useState(room.id);
 
   const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
+  const respondedCount = room.activeMemberCount;
 
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData
@@ -207,10 +213,7 @@ function GroupCalendarSection({
           participants={participants}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
         />
-        <ResponseRateCard
-          respondedCount={participants.length}
-          capacity={capacity}
-        />
+        <ResponseRateCard respondedCount={respondedCount} capacity={capacity} />
       </div>
 
       <CalendarLegend onClickFilter={() => setIsFilterOpen(true)} />

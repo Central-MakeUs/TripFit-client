@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format, isBefore } from 'date-fns';
+import { format, isBefore, parseISO } from 'date-fns';
 
 import ModifyIcon from '@/assets/icons/modify.svg';
 import AlertModal from '@/components/alert-modal';
@@ -43,8 +43,8 @@ function RoomInfoView({
   const [inviteBlockedReason, setInviteBlockedReason] =
     useState<InviteBlockedReasonT | null>(null);
 
-  const startDate = new Date(room.startDate);
-  const endDate = new Date(room.endDate);
+  const startDate = parseISO(room.startDate);
+  const endDate = parseISO(room.endDate);
 
   const handleInviteClick = () => {
     if (isBefore(endDate, new Date())) {
