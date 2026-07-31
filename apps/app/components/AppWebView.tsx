@@ -13,11 +13,20 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { getApp } from '@react-native-firebase/app';
+import {
+  getInitialNotification,
+  getMessaging,
+  onNotificationOpenedApp,
+} from '@react-native-firebase/messaging';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
 import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
-import { requestNativePushToken } from '../utils/pushNotifications';
+import {
+  getPushLandingData,
+  requestNativePushToken,
+} from '../utils/pushNotifications';
 import { requestNativeSocialLoginToken } from '../utils/socialLogin';
 import { getWebUrl, isWebOrigin } from '../utils/webViewUrl';
 
@@ -50,6 +59,43 @@ function AppWebView() {
   const sendToWeb = useCallback((message: BridgeIncomingMessage) => {
     webViewRef.current?.postMessage(JSON.stringify(message));
   }, []);
+
+  // 알림 탭으로 앱이 콜드 스타트된 경우, WebView가 메시지 리스너를 등록하기 전에
+  // postMessage를 보내면 유실된다 — 로딩이 끝날 때까지 대기시켰다가 보낸다.
+  const pendingNotificationRef = useRef<Extract<
+    BridgeIncomingMessage,
+    { type: 'NOTIFICATION_OPENED' }
+  > | null>(null);
+
+  const handleNotificationOpened = useCallback(
+    (landing: { landingType: string; tripId: string | null } | null) => {
+      if (!landing) return;
+      const message: BridgeIncomingMessage = {
+        type: 'NOTIFICATION_OPENED',
+        ...landing,
+      };
+      if (isLoading) {
+        pendingNotificationRef.current = message;
+      } else {
+        sendToWeb(message);
+      }
+    },
+    [isLoading, sendToWeb],
+  );
+
+  useEffect(() => {
+    const messaging = getMessaging(getApp());
+
+    getInitialNotification(messaging).then((remoteMessage) => {
+      if (remoteMessage) {
+        handleNotificationOpened(getPushLandingData(remoteMessage));
+      }
+    });
+
+    return onNotificationOpenedApp(messaging, (remoteMessage) => {
+      handleNotificationOpened(getPushLandingData(remoteMessage));
+    });
+  }, [handleNotificationOpened]);
 
   const handleMessage: OnMessage = useCallback(
     (event) => {
@@ -121,7 +167,13 @@ function AppWebView() {
           setIsLoading(true);
           setHasError(false);
         }}
-        onLoadEnd={() => setIsLoading(false)}
+        onLoadEnd={() => {
+          setIsLoading(false);
+          if (pendingNotificationRef.current) {
+            sendToWeb(pendingNotificationRef.current);
+            pendingNotificationRef.current = null;
+          }
+        }}
         onError={() => setHasError(true)}
       />
       {hasError ? (

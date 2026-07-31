@@ -4,10 +4,15 @@ import {
   getMessaging,
   getToken,
   registerDeviceForRemoteMessages,
+  RemoteMessage,
 } from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
 
-import { NativePushTokenResult, PushDeviceType } from '../types/bridge';
+import {
+  NativePushTokenResult,
+  PushDeviceType,
+  PushLandingData,
+} from '../types/bridge';
 
 const ensureNotificationPermission = async () => {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -36,3 +41,17 @@ export const requestNativePushToken =
 
     return { token, deviceType };
   };
+
+// 백엔드가 FCM data payload에도 REST 응답과 같은 이름(landingType/tripId)으로
+// 실어 보낸다고 가정한다 — 실제 값이 다르면 이 함수만 고치면 된다.
+export const getPushLandingData = (
+  message: RemoteMessage,
+): PushLandingData | null => {
+  const { landingType, tripId } = message.data ?? {};
+  if (typeof landingType !== 'string') return null;
+
+  return {
+    landingType,
+    tripId: typeof tripId === 'string' ? tripId : null,
+  };
+};

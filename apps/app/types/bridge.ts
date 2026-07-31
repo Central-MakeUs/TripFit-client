@@ -18,6 +18,13 @@ export type NativePushTokenResult = {
   deviceType: PushDeviceType;
 };
 
+// landingType/tripId 값 자체는 백엔드가 FCM data payload에 실어 보내는 문자열이라
+// 여기선 구체적인 union으로 제한하지 않고 그대로 전달한다.
+export type PushLandingData = {
+  landingType: string;
+  tripId: string | null;
+};
+
 export type BridgeOutgoingMessage =
   | {
       type: 'SOCIAL_LOGIN_REQUEST';
@@ -46,7 +53,10 @@ export type BridgeIncomingMessage =
   | {
       type: 'PUSH_TOKEN_ERROR';
       message: string;
-    };
+    }
+  | ({
+      type: 'NOTIFICATION_OPENED';
+    } & PushLandingData);
 
 export const parseBridgeMessage = (
   raw: string,
