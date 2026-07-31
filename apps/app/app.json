@@ -4,9 +4,10 @@
     "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/android-icon.png",
     "userInterfaceStyle": "light",
     "ios": {
+      "icon": "./assets/ios-icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.tripfit.app",
       "usesAppleSignIn": true,
@@ -19,10 +20,8 @@
       "package": "com.tripfit.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/android-icon.png",
+        "backgroundImage": "./assets/android-icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
