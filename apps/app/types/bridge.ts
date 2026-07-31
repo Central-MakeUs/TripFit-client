@@ -11,10 +11,21 @@ export type NativeSocialLoginResult = {
   authorizationCode?: string;
 };
 
-export type BridgeOutgoingMessage = {
-  type: 'SOCIAL_LOGIN_REQUEST';
-  provider: SocialLoginProvider;
+export type PushDeviceType = 'ANDROID' | 'IOS';
+
+export type NativePushTokenResult = {
+  token: string;
+  deviceType: PushDeviceType;
 };
+
+export type BridgeOutgoingMessage =
+  | {
+      type: 'SOCIAL_LOGIN_REQUEST';
+      provider: SocialLoginProvider;
+    }
+  | {
+      type: 'PUSH_TOKEN_REQUEST';
+    };
 
 export type BridgeIncomingMessage =
   | {
@@ -28,6 +39,13 @@ export type BridgeIncomingMessage =
       type: 'SOCIAL_LOGIN_ERROR';
       provider: SocialLoginProvider;
       message: string;
+    }
+  | ({
+      type: 'PUSH_TOKEN_READY';
+    } & NativePushTokenResult)
+  | {
+      type: 'PUSH_TOKEN_ERROR';
+      message: string;
     };
 
 export const parseBridgeMessage = (
@@ -40,6 +58,9 @@ export const parseBridgeMessage = (
       parsed.type === 'SOCIAL_LOGIN_REQUEST' &&
       SOCIAL_LOGIN_PROVIDERS.includes(parsed.provider)
     ) {
+      return parsed as BridgeOutgoingMessage;
+    }
+    if (parsed && parsed.type === 'PUSH_TOKEN_REQUEST') {
       return parsed as BridgeOutgoingMessage;
     }
   } catch {

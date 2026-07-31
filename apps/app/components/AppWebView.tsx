@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
 import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
+import { requestNativePushToken } from '../utils/pushNotifications';
 import { requestNativeSocialLoginToken } from '../utils/socialLogin';
 import { getWebUrl, isWebOrigin } from '../utils/webViewUrl';
 
@@ -57,24 +58,40 @@ function AppWebView() {
       const message = parseBridgeMessage(event.nativeEvent.data);
       if (!message) return;
 
-      requestNativeSocialLoginToken(message.provider)
-        .then((result) => {
-          sendToWeb({
-            type: 'SOCIAL_LOGIN_SUCCESS',
-            provider: message.provider,
-            ...result,
+      if (message.type === 'SOCIAL_LOGIN_REQUEST') {
+        const { provider } = message;
+        requestNativeSocialLoginToken(provider)
+          .then((result) => {
+            sendToWeb({ type: 'SOCIAL_LOGIN_SUCCESS', provider, ...result });
+          })
+          .catch((error) => {
+            sendToWeb({
+              type: 'SOCIAL_LOGIN_ERROR',
+              provider,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : '로그인 중 문제가 발생했어요.',
+            });
           });
-        })
-        .catch((error) => {
-          sendToWeb({
-            type: 'SOCIAL_LOGIN_ERROR',
-            provider: message.provider,
-            message:
-              error instanceof Error
-                ? error.message
-                : '로그인 중 문제가 발생했어요.',
+        return;
+      }
+
+      if (message.type === 'PUSH_TOKEN_REQUEST') {
+        requestNativePushToken()
+          .then((result) => {
+            sendToWeb({ type: 'PUSH_TOKEN_READY', ...result });
+          })
+          .catch((error) => {
+            sendToWeb({
+              type: 'PUSH_TOKEN_ERROR',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : '알림 토큰을 받아오지 못했어요.',
+            });
           });
-        });
+      }
     },
     [sendToWeb],
   );
