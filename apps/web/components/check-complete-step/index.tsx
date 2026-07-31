@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 
+import CloseIcon from '@/assets/icons/close.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
+import IconButton from '@/components/icon-button';
 import ProgressBar from '@/components/progress-bar';
 import { cn } from '@/utils/cn';
 
@@ -43,6 +45,9 @@ type CheckCompleteStepProps = {
   showHeader?: boolean;
   /** 헤더의 뒤로가기 버튼 동작 — showHeader와 무관하게 순수 뒤로가기 핸들러로만 쓰인다 */
   onBack?: () => void;
+  /** 지정하면 헤더 오른쪽에 전체 닫기(X) 버튼을 보여줌 — 자유롭게 나갈 수 있는
+   * 임의 편집 플로우에서만 쓰고, 반드시 완료해야 하는 필수 입력 플로우에는 넘기지 않는다 */
+  onClose?: () => void;
   heading: ReactNode;
   description?: ReactNode;
   primaryText?: string;
@@ -56,6 +61,7 @@ function CheckCompleteStep({
   title = '기본 정보 입력',
   showHeader = false,
   onBack,
+  onClose,
   heading,
   description,
   primaryText = '시작하기',
@@ -68,7 +74,20 @@ function CheckCompleteStep({
     <div className="flex w-full flex-1 flex-col">
       {showHeader && (
         <>
-          <Header variant="page" title={title} onBack={onBack} />
+          <Header
+            variant="page"
+            title={title}
+            onBack={onBack}
+            rightSlot={
+              onClose && (
+                <IconButton
+                  onClick={onClose}
+                  aria-label="닫기"
+                  icon={<CloseIcon className="text-grey-500" />}
+                />
+              )
+            }
+          />
           <div className="px-5 py-1">
             <ProgressBar size="sm" value={100} />
           </div>
