@@ -42,15 +42,16 @@ export const requestNativePushToken =
     return { token, deviceType };
   };
 
-// 백엔드가 FCM data payload에도 REST 응답과 같은 이름(landingType/tripId)으로
-// 실어 보낸다고 가정한다 — 실제 값이 다르면 이 함수만 고치면 된다.
+// 백엔드 FCM data payload 확인 완료: { id, landingType, tripId } — 여행방과 무관한
+// 알림(정기 리마인드)은 tripId 키 자체가 없어 undefined로 들어온다.
 export const getPushLandingData = (
   message: RemoteMessage,
 ): PushLandingData | null => {
-  const { landingType, tripId } = message.data ?? {};
+  const { id, landingType, tripId } = message.data ?? {};
   if (typeof landingType !== 'string') return null;
 
   return {
+    id: typeof id === 'string' ? id : null,
     landingType,
     tripId: typeof tripId === 'string' ? tripId : null,
   };

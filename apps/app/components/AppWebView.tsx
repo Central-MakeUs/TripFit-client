@@ -22,7 +22,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
-import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
+import {
+  BridgeIncomingMessage,
+  parseBridgeMessage,
+  PushLandingData,
+} from '../types/bridge';
 import {
   getPushLandingData,
   requestNativePushToken,
@@ -68,7 +72,7 @@ function AppWebView() {
   > | null>(null);
 
   const handleNotificationOpened = useCallback(
-    (landing: { landingType: string; tripId: string | null } | null) => {
+    (landing: PushLandingData | null) => {
       if (!landing) return;
       const message: BridgeIncomingMessage = {
         type: 'NOTIFICATION_OPENED',
