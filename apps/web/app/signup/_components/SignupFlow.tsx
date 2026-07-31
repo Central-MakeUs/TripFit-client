@@ -48,6 +48,16 @@ function SignupFlow() {
   // 중인지를 별도로 기억해뒀다가, 그런 경우엔 재진입 판정을 하지 않는다.
   const hasEnteredFlowRef = useRef(false);
 
+  // 초대 링크 등으로 보호된 페이지에 접근하려다 로그인이 안 돼있어 여기로 온
+  // 경우, AuthGuard가 원래 경로를 ?redirect=로 실어 보낸다 — 로그인/회원가입이
+  // 끝나면 홈이 아니라 그 경로로 바로 이어준다. 외부 사이트로 새는 오픈 리다이렉트를
+  // 막기 위해 우리 앱 내부의 상대 경로("/"로 시작)일 때만 신뢰한다.
+  const rawRedirect = searchParams.get('redirect');
+  const redirectTarget =
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+      ? rawRedirect
+      : '/';
+
   // 카카오/구글은 리다이렉트 방식이라 로그인 완료 후 이 페이지가 새로 로드된다 —
   // 로그인이 이미 완료돼 accessToken이 저장돼 있으면(하이드레이션 이후 반영되는 경우 포함)
   // 소셜 로그인 단계를 건너뛰고 바로 이름 입력 단계로 진입한다.
@@ -57,12 +67,12 @@ function SignupFlow() {
     if (!accessToken) return;
     if (hasName) {
       if (hasEnteredFlowRef.current) return;
-      router.replace('/');
+      router.replace(redirectTarget);
       return;
     }
     hasEnteredFlowRef.current = true;
     setStep('profile');
-  }, [accessToken, hasName, router]);
+  }, [accessToken, hasName, router, redirectTarget]);
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   // 카카오/구글 리다이렉트 콜백이 실패하면 /signup?error=메시지 로 돌아온다 —
@@ -141,9 +151,9 @@ function SignupFlow() {
             // hasName 변수는 이번 렌더 시점의 값이라 아직 갱신 전이다 — 재렌더를
             // 기다리지 않고 스토어에서 바로 최신값을 읽어야 한다.
             // 이미 이름까지 등록된 기존 유저가 로그인한 거라면 회원가입 절차 없이
-            // 바로 홈으로 보낸다.
+            // 원래 가려던 곳(없으면 홈)으로 바로 보낸다.
             if (useAuthStore.getState().hasName) {
-              router.replace('/');
+              router.replace(redirectTarget);
               return;
             }
             hasEnteredFlowRef.current = true;
@@ -178,8 +188,15 @@ function SignupFlow() {
 
   const handleCloseError = () => {
     setErrorMessage(null);
-    // URL에 남은 ?error= 쿼리를 지워서 새로고침해도 다시 뜨지 않게 한다
-    if (searchParams.get('error')) router.replace('/signup');
+    // URL에 남은 ?error= 쿼리를 지워서 새로고침해도 다시 뜨지 않게 하되, redirect
+    // 파라미터는 남겨서 로그인 재시도 후에도 원래 가려던 곳으로 이어지게 한다.
+    if (searchParams.get('error')) {
+      router.replace(
+        rawRedirect
+          ? `/signup?redirect=${encodeURIComponent(rawRedirect)}`
+          : '/signup',
+      );
+    }
   };
 
   // 이미 이름까지 입력을 마친 유저가 재진입한 경우엔, 위 useEffect가 홈으로
@@ -202,7 +219,7 @@ function SignupFlow() {
         onRegularScheduleNext={handleSaveRegularSchedule}
         onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
         onBeforeComplete={handleSaveIndividualSchedule}
-        onComplete={() => router.push('/')}
+        onComplete={() => router.push(redirectTarget)}
       />
     );
   }
