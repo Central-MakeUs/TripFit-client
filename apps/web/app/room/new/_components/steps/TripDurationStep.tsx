@@ -5,6 +5,10 @@ import Input from '@/components/input';
 export type TripDurationValue = {
   nights: string;
   days: string;
+  /** 지금 nights/days가 자동 채움으로 계산된 값이면 그 계산에 쓰인 periodDays.
+   * 부모(RoomCreateForm)가 들고 있는 tripDuration과 함께 저장되므로, 이 화면이
+   * 조건부 렌더링으로 언마운트·리마운트돼도 "자동 채움 여부"가 유지된다. */
+  autoFilledForPeriodDays?: number;
 };
 
 type TripDurationStepProps = {
@@ -46,40 +50,41 @@ function TripDurationStep({
   onChange,
   periodDays,
 }: TripDurationStepProps) {
-  // 지금 nights/days 값이 사용자가 직접 입력한 게 아니라 이 화면이 자동으로
-  // 채운 값인지 추적한다 — 그래야 뒤로 가서 희망 기간을 다시 좁게/넓게
-  // 바꿨을 때 자동 채움값만 다시 갱신하고, 사용자가 직접 입력한 값은 안 건드린다.
-  const isAutoFilledRef = useRef(false);
   // 박/일 중 사용자가 지금 직접 타이핑하고 있는(=상대 필드를 종속시키는) 쪽.
   // 이 필드를 편집하면 상대 필드가 그에 맞춰 자동으로 바뀌고, 반대로 상대
   // 필드를 편집하면 이 필드는 그대로 둔 채 그 값 기준 ±범위 안에서만 허용한다.
+  // (이 값 자체는 같은 렌더 사이클 안에서의 입력 우선순위만 다루므로 리마운트에
+  // 영향받아도 문제없어 로컬 ref로 충분하다)
   const syncSourceRef = useRef<'nights' | 'days' | null>(null);
 
   useEffect(() => {
     if (periodDays === null) return;
-    if (!isAutoFilledRef.current && (value.nights !== '' || value.days !== ''))
-      return;
+    const isAutoFilled = value.autoFilledForPeriodDays !== undefined;
+    if (!isAutoFilled && (value.nights !== '' || value.days !== '')) return;
+    // 이미 지금 periodDays 기준으로 자동 채움된 값이면 다시 계산할 필요 없다.
+    if (value.autoFilledForPeriodDays === periodDays) return;
 
     if (periodDays > MAX_AUTO_FILL_PERIOD_DAYS) {
-      if (isAutoFilledRef.current) {
-        isAutoFilledRef.current = false;
+      if (isAutoFilled) {
         onChange({ nights: '', days: '' });
       }
       return;
     }
 
-    isAutoFilledRef.current = true;
-    onChange({ nights: String(periodDays - 1), days: String(periodDays) });
+    onChange({
+      nights: String(periodDays - 1),
+      days: String(periodDays),
+      autoFilledForPeriodDays: periodDays,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodDays]);
 
   const handleNightsChange = (raw: string) => {
-    isAutoFilledRef.current = false;
     const digits = toDigitsOnly(raw);
 
     if (digits === '') {
       syncSourceRef.current = null;
-      onChange({ ...value, nights: '' });
+      onChange({ nights: '', days: value.days });
       return;
     }
 
@@ -88,7 +93,7 @@ function TripDurationStep({
     if (syncSourceRef.current === 'days' && value.days !== '') {
       const days = Number(value.days);
       const nights = clamp(Number(digits), Math.max(days - 2, 0), days);
-      onChange({ ...value, nights: String(nights) });
+      onChange({ nights: String(nights), days: value.days });
       return;
     }
 
@@ -98,12 +103,11 @@ function TripDurationStep({
   };
 
   const handleDaysChange = (raw: string) => {
-    isAutoFilledRef.current = false;
     const digits = toDigitsOnly(raw);
 
     if (digits === '') {
       syncSourceRef.current = null;
-      onChange({ ...value, days: '' });
+      onChange({ nights: value.nights, days: '' });
       return;
     }
 
@@ -112,7 +116,7 @@ function TripDurationStep({
     if (syncSourceRef.current === 'nights' && value.nights !== '') {
       const nights = Number(value.nights);
       const days = clamp(Number(digits), Math.max(nights, 1), nights + 2);
-      onChange({ ...value, days: String(days) });
+      onChange({ nights: value.nights, days: String(days) });
       return;
     }
 
