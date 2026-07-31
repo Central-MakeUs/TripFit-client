@@ -11,7 +11,7 @@ export function GET() {
         apps: [],
         details: [
           {
-            appID: 'TEAMID.com.tripfit.app',
+            appID: '6U7LKG9262.com.tripfit.app',
             paths: ['/room/*'],
           },
         ],
