@@ -38,8 +38,11 @@ function AuthGuard({ children }: AuthGuardProps) {
       : !hasName && pathname !== '/signup');
 
   useEffect(() => {
-    if (isBlocked) router.replace('/signup');
-  }, [isBlocked, router]);
+    if (!isBlocked) return;
+    // 로그인/회원가입 완료 후 원래 가려던 페이지(초대 링크로 들어온 여행방 등)로
+    // 바로 이어질 수 있도록, 지금 있던 경로를 쿼리로 들려보낸다.
+    router.replace(`/signup?redirect=${encodeURIComponent(pathname)}`);
+  }, [isBlocked, pathname, router]);
 
   if (!hasHydrated || isBlocked) return null;
 

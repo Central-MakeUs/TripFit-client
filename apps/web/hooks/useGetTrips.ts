@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getTrips, GetTripsRequestT } from '../_apis/getTrips';
+import { getTrips, GetTripsRequestT } from '@/apis/getTrips';
 
 export const TRIPS_QUERY_KEY = ['trips'];
 

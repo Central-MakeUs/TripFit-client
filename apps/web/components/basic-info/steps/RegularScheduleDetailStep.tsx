@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import AddSIcon from '@/assets/icons/add-s.svg';
 import ArrowLeftIcon from '@/assets/icons/arrow-left-200.svg';
@@ -44,6 +44,13 @@ function RegularScheduleDetailStep({
   onSkip,
 }: RegularScheduleDetailStepProps) {
   const hasSchedules = value.length > 0;
+  // 한 번이라도 리스트 화면(추가하기/수정하기)에 들어왔으면, 마지막 항목을
+  // 지워 목록이 비어도 처음 인라인 입력 폼으로 되돌아가지 않고 빈 목록으로 남는다.
+  const [hasEnteredListView, setHasEnteredListView] = useState(hasSchedules);
+
+  useEffect(() => {
+    if (hasSchedules) setHasEnteredListView(true);
+  }, [hasSchedules]);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
@@ -120,8 +127,13 @@ function RegularScheduleDetailStep({
     setOpenMenuId(null);
   };
 
+  // 요일 단위로 근무 패턴을 정의하는 구조라, 자정을 넘겨 다음 날로 이어지는
+  // 근무(야간 근무)는 지원하지 않는다 — 출근이 퇴근보다 늦거나 같으면 막는다.
   const isAddDisabled =
-    draftDays.length === 0 || !draftStartTime || !draftEndTime;
+    draftDays.length === 0 ||
+    !draftStartTime ||
+    !draftEndTime ||
+    draftStartTime >= draftEndTime;
 
   const draftTimeByField = { start: draftStartTime, end: draftEndTime };
 
@@ -136,7 +148,7 @@ function RegularScheduleDetailStep({
     setIsSheetOpen(true);
     // 일정이 없어 인라인 폼으로 진입한 경우, 이전 추가/수정 시트 세션에서
     // 남아있을 수 있는 isAddSheetOpen 잔여값을 명시적으로 정리한다
-    if (!hasSchedules) {
+    if (!hasEnteredListView) {
       setIsAddSheetOpen(false);
     }
   };
@@ -152,11 +164,14 @@ function RegularScheduleDetailStep({
     if (activeTimeField) {
       setDraftTimeByField(activeTimeField, pendingTime);
     }
-    setActiveTimeField(null);
-    // 폼 시트를 거치지 않고 바로 연 경우(인라인)는 돌아갈 화면이 없으므로 시트 자체를 닫는다
+    // 폼 시트를 거치지 않고 바로 연 경우(인라인)는 돌아갈 화면이 없으므로 시트 자체를 닫는다.
+    // 이때 activeTimeField를 여기서 같이 초기화하면 닫히는 애니메이션 도중 내용이
+    // TimePicker에서 폼으로 바뀌어 보이는(깜빡임) 문제가 생기므로, 다음에 새로 열 때만 초기화한다.
     if (!isAddSheetOpen) {
       setIsSheetOpen(false);
+      return;
     }
+    setActiveTimeField(null);
   };
 
   const draftForm = (
@@ -207,7 +222,7 @@ function RegularScheduleDetailStep({
         입력한 요일은 피해서 추천할게요
       </p>
 
-      {hasSchedules ? (
+      {hasEnteredListView ? (
         <>
           <ul className="flex flex-col gap-2 mb-2">
             {value.map((schedule) => (
@@ -274,10 +289,10 @@ function RegularScheduleDetailStep({
       )}
 
       <CtaButtonGroup
-        primaryText={hasSchedules ? '다음' : '추가하기'}
+        primaryText={hasEnteredListView ? '다음' : '추가하기'}
         primaryColor="secondary"
-        primaryDisabled={hasSchedules ? false : isAddDisabled}
-        onPrimaryClick={hasSchedules ? onNext : handleSaveSchedule}
+        primaryDisabled={hasEnteredListView ? false : isAddDisabled}
+        onPrimaryClick={hasEnteredListView ? onNext : handleSaveSchedule}
         secondaryText={onSkip ? '건너뛰기' : undefined}
         secondaryVariant="text-link"
         secondaryIcon={false}

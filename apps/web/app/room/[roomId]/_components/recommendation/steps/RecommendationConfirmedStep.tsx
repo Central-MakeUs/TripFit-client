@@ -3,11 +3,12 @@ import { useState } from 'react';
 import CheckCircleIcon from '@/assets/icons/check-circle.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 
-import ShareSheet from '../../../_common/_components/ShareSheet';
+import ShareSheet from '../../../../_common/_components/ShareSheet';
 import { formatDateLabel } from '../_utils/formatDateLabel';
 import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationConfirmedStepProps = {
+  roomId: string;
   roomName: string;
   startDate: string;
   endDate: string;
@@ -19,6 +20,7 @@ type RecommendationConfirmedStepProps = {
 };
 
 function RecommendationConfirmedStep({
+  roomId,
   roomName,
   startDate,
   endDate,
@@ -75,8 +77,8 @@ function RecommendationConfirmedStep({
         title="확정 일정 공유하기"
         initialTitleValue={`${roomName} 날짜 확정됐어!`}
         initialDescriptionValue={`${formatDateLabel(startDate)} ~ ${formatDateLabel(endDate)} 이 날짜 비워둬!`}
+        linkPath={`/room/${roomId}`}
         onShare={() => {
-          // TODO: 확정 일정 공유 API/카카오톡 공유 연동
           setIsShareOpen(false);
         }}
       />

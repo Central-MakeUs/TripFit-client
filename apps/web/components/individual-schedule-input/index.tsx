@@ -2,8 +2,10 @@
 
 import { ReactNode, useEffect, useState } from 'react';
 
+import CloseIcon from '@/assets/icons/close.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
+import IconButton from '@/components/icon-button';
 import ProgressBar from '@/components/progress-bar';
 import ScheduleCalendar from '@/components/schedule-calendar';
 import { IndividualScheduleValueT } from '@/types/schedule';
@@ -17,28 +19,43 @@ export type TripChipOptionT = {
 type IndividualScheduleInputProps = {
   title?: string;
   onBack: () => void;
+  /** 지정하면 헤더 오른쪽에 전체 닫기(X) 버튼을 보여줌 — 자유롭게 나갈 수 있는
+   * 임의 편집 플로우에서만 쓴다 */
+  onClose?: () => void;
   /** 위저드 안에 얹을 때 헤더 밑에 보여줄 진행률 — 미지정 시 프로그레스바 숨김 */
   progress?: number;
   /** 여행 선택 칩바 대신 보여줄 안내 문구 — tripOptions가 없을 때만 사용 */
   heading?: ReactNode;
+  /** heading 아래에 보여줄 보조 설명 — tripOptions가 없을 때만 사용 */
+  description?: ReactNode;
   tripOptions?: TripChipOptionT[];
   selectedTripId?: string;
   onSelectTrip?: (id: string) => void;
+  /** 캘린더가 스크롤을 시작할 연/월 — 미지정 시 오늘 기준 */
+  initialYear?: number;
+  initialMonth?: number;
   value: IndividualScheduleValueT;
   onChange: (value: IndividualScheduleValueT) => void;
+  /** 정기 일정 등을 합쳐 계산된 읽기 전용 배경값 — ScheduleCalendar에 그대로 전달 */
+  mergedStatus?: IndividualScheduleValueT;
   onNext: () => void;
 };
 
 function IndividualScheduleInput({
   title = '내 일정 입력하기',
   onBack,
+  onClose,
   progress,
   heading,
+  description,
   tripOptions,
   selectedTripId,
   onSelectTrip,
+  initialYear,
+  initialMonth,
   value,
   onChange,
+  mergedStatus,
   onNext,
 }: IndividualScheduleInputProps) {
   const [today, setToday] = useState<Date | null>(null);
@@ -51,7 +68,20 @@ function IndividualScheduleInput({
 
   return (
     <div className="flex w-full flex-1 flex-col">
-      <Header variant="page" title={title} onBack={onBack} />
+      <Header
+        variant="page"
+        title={title}
+        onBack={onBack}
+        rightSlot={
+          onClose && (
+            <IconButton
+              onClick={onClose}
+              aria-label="닫기"
+              icon={<CloseIcon className="text-grey-500" />}
+            />
+          )
+        }
+      />
       {progress !== undefined && (
         <div className="px-5 py-1">
           <ProgressBar size="sm" value={progress} />
@@ -83,15 +113,21 @@ function IndividualScheduleInput({
         </>
       )}
       <div className="flex w-full flex-1 flex-col px-5 pt-3">
-        {heading && !hasTripChips && (
-          <h2 className="text-body-01 mb-13">{heading}</h2>
+        {(heading || description) && !hasTripChips && (
+          <div className="mb-13 flex flex-col gap-0.5">
+            {heading && <h2 className="text-body-01">{heading}</h2>}
+            {description && (
+              <p className="text-caption-01 text-grey-400">{description}</p>
+            )}
+          </div>
         )}
         {today && (
           <ScheduleCalendar
-            year={today.getFullYear()}
-            month={today.getMonth() + 1}
+            year={initialYear ?? today.getFullYear()}
+            month={initialMonth ?? today.getMonth() + 1}
             value={value}
             onChange={onChange}
+            mergedStatus={mergedStatus}
           />
         )}
         <div aria-hidden className="h-14.5 w-full shrink-0" />

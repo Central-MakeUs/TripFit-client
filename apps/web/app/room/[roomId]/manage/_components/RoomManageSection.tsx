@@ -9,7 +9,7 @@ import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import Spinner from '@/components/spinner';
 
-import ShareSheet from '../../_common/_components/ShareSheet';
+import ShareSheet from '../../../_common/_components/ShareSheet';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../../_common/_hooks/useGetRoomMembers';
 import { useDeleteMyRoomMember } from '../_hooks/useDeleteMyRoomMember';
@@ -158,11 +158,14 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
       <ShareSheet
         open={isInviteSheetOpen}
         onOpenChange={setIsInviteSheetOpen}
-        title="응답 요청하기"
+        title="참여자 초대하기"
         initialTitleValue={`${room.title} 초대`}
-        initialDescriptionValue={`초대코드 ${room.inviteCode}로 참여해줘!`}
+        initialDescriptionValue={`${room.title} 여행 같이 가자!`}
+        // TODO: 초대 코드로 바로 참여(join)하는 전용 페이지가 아직 없어 우선 방 상세로 보낸다.
+        // 로그인/참여 전 사용자는 AuthGuard에 의해 /signup으로 리다이렉트된다.
+        linkPath={`/room/${roomId}`}
+        buttonTitle="여행방 참여하기"
         onShare={() => {
-          // TODO: 카카오톡 공유 연동
           setIsInviteSheetOpen(false);
         }}
       />

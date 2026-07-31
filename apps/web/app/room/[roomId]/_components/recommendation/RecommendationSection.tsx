@@ -120,6 +120,7 @@ function RecommendationSection({
         <div className="flex w-full flex-1 flex-col px-5">
           {confirmedStartDate && confirmedEndDate && (
             <RecommendationConfirmedStep
+              roomId={roomId}
               roomName={roomName}
               startDate={confirmedStartDate}
               endDate={confirmedEndDate}
@@ -232,6 +233,7 @@ function RecommendationSection({
         )}
         {step === 4 && confirmedCandidate && (
           <RecommendationConfirmedStep
+            roomId={roomId}
             roomName={roomName}
             startDate={confirmedCandidate.startDate}
             endDate={confirmedCandidate.endDate}

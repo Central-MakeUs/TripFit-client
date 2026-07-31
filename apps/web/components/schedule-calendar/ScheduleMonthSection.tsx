@@ -20,6 +20,7 @@ type ScheduleMonthSectionProps = {
   year: number;
   month: number;
   value: Record<string, DayScheduleValueT>;
+  mergedStatus?: Record<string, DayScheduleValueT>;
   selectedDateKey: string | null;
   onSelectDate: (date: Date) => void;
 };
@@ -28,6 +29,7 @@ function ScheduleMonthSection({
   year,
   month,
   value,
+  mergedStatus,
   selectedDateKey,
   onSelectDate,
 }: ScheduleMonthSectionProps) {
@@ -62,7 +64,9 @@ function ScheduleMonthSection({
           const dateKey = getDateKey(date);
           const isDisabled = isBefore(date, today);
           const isSelected = selectedDateKey === dateKey;
-          const hasData = hasScheduleData(value[dateKey]);
+          const hasData = hasScheduleData(
+            value[dateKey] ?? mergedStatus?.[dateKey],
+          );
           // TODO: 공휴일 데이터 연동 시 공휴일도 포함
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 

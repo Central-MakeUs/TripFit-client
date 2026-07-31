@@ -4,19 +4,34 @@ import { useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
-import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import {
   BasicInfoScreen,
+  BasicInfoValue,
   DEFAULT_BASIC_INFO_VALUE,
 } from '@/components/basic-info/basicInfo.const';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
-import { RegularScheduleT } from '@/types/schedule';
+import Spinner from '@/components/spinner';
+import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
+import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
+import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
+import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useAuthStore } from '@/stores/authStore';
+import { IndividualScheduleValueT } from '@/types/schedule';
+import { cn } from '@/utils/cn';
+import {
+  getIncludeHalfDayHolidayFromRegularSchedules,
+  getLeaveNoticeDaysFromRegularSchedules,
+  mapRegularScheduleItemToClient,
+} from '@/utils/mapRegularSchedule';
+import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
+import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal';
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
+import ShareSheet from '../../_common/_components/ShareSheet';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import { usePostRoom } from '../_hooks/usePostRoom';
 import CompleteStep from './steps/CompleteStep';
@@ -30,14 +45,6 @@ import TripDurationStep, {
 import TripPeriodStep, { TripPeriodValue } from './steps/TripPeriodStep';
 
 const TOTAL_STEPS = 6;
-
-// TODO: 근무 일정 저장 여부 조회 API 연동 전까지 임시로 고정
-const HAS_SAVED_SCHEDULE = true;
-
-// TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
-const MOCK_SAVED_REGULAR_SCHEDULES: RegularScheduleT[] = [
-  { id: 'mock-1', days: [1, 2, 3], startTime: '09:30', endTime: '18:00' },
-];
 
 type ScheduleModal = 'none' | 'preSchedule' | 'confirmSchedule';
 
@@ -60,10 +67,75 @@ function RoomCreateForm() {
   const [participantCount, setParticipantCount] = useState(0);
   const [destination, setDestination] = useState('');
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+  const [isInviteSheetOpen, setIsInviteSheetOpen] = useState(false);
   const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(false);
+  const [scheduleErrorMessage, setScheduleErrorMessage] = useState<
+    string | null
+  >(null);
 
   const { postRoomMutation, isPostRoomPending } = usePostRoom();
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
+  const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
+  const { refreshScheduleStatus } = useRefreshScheduleStatus();
+
+  const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
+  const isAllFree = useAuthStore((state) => state.isAllFree);
+  const hasSavedSchedule = hasPreSchedule || isAllFree;
+
+  const {
+    regularSchedulesData,
+    isRegularSchedulesLoading,
+    saveRegularSchedule,
+  } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
+
+  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+    try {
+      await saveRegularSchedule(value);
+      await refreshScheduleStatus();
+      return true;
+    } catch (error) {
+      setScheduleErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return false;
+    }
+  };
+
+  const { refetchScheduleCalendar } = useGetScheduleCalendar({
+    startDate: tripPeriod.startDate
+      ? format(tripPeriod.startDate, 'yyyy-MM-dd')
+      : '',
+    endDate: tripPeriod.endDate ? format(tripPeriod.endDate, 'yyyy-MM-dd') : '',
+  });
+
+  const handleBeforeIndividualSchedule = async () => {
+    if (!tripPeriod.startDate || !tripPeriod.endDate) return undefined;
+    const { data } = await refetchScheduleCalendar();
+    if (!data) return undefined;
+    return mapScheduleCalendarToIndividualScheduleValue(data.days);
+  };
+
+  const handleSaveIndividualSchedule = async (
+    value: BasicInfoValue,
+    individualScheduleBackdrop: IndividualScheduleValueT,
+  ) => {
+    try {
+      if (Object.keys(value.individualSchedule).length > 0) {
+        await patchPersonalScheduleMutation({
+          value: value.individualSchedule,
+          mergedStatus: individualScheduleBackdrop,
+        });
+        await refreshScheduleStatus();
+      }
+    } catch (error) {
+      setScheduleErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return false;
+    }
+    if (!createdRoomId) return false;
+    return confirmSchedule(createdRoomId);
+  };
 
   const periodDays =
     tripPeriod.startDate && tripPeriod.endDate
@@ -153,7 +225,7 @@ function RoomCreateForm() {
   };
 
   const handleGoToRoom = () => {
-    setScheduleModal(HAS_SAVED_SCHEDULE ? 'confirmSchedule' : 'preSchedule');
+    setScheduleModal(hasSavedSchedule ? 'confirmSchedule' : 'preSchedule');
   };
 
   const handleStartBasicInfo = (initialScreen: BasicInfoScreen) => {
@@ -163,6 +235,19 @@ function RoomCreateForm() {
   };
 
   if (isBasicInfoOpen) {
+    if (
+      basicInfoInitialScreen === 'regularScheduleDetail' &&
+      isRegularSchedulesLoading
+    ) {
+      return (
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      );
+    }
+
+    const savedItems = regularSchedulesData ?? [];
+
     return (
       <>
         <BasicInfo
@@ -171,35 +256,58 @@ function RoomCreateForm() {
             basicInfoInitialScreen === 'regularScheduleDetail'
               ? {
                   ...DEFAULT_BASIC_INFO_VALUE,
-                  hasRegularSchedule: true,
-                  regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
+                  hasRegularSchedule: savedItems.length > 0,
+                  regularSchedules: savedItems.map(
+                    mapRegularScheduleItemToClient,
+                  ),
+                  annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
+                  leaveNoticeDays:
+                    getLeaveNoticeDaysFromRegularSchedules(savedItems),
+                  includeHalfDayHoliday:
+                    getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
                 }
               : undefined
           }
           onExit={() => setIsBasicInfoOpen(false)}
-          onRegularScheduleNext={() => {
-            // TODO: 정기 일정 저장 API 연동
-          }}
-          onBeforeComplete={async () => {
-            // TODO: 개별 일정 저장 API 연동 (confirm 호출 전에 완료되어야 함)
-            if (!createdRoomId) return false;
-            return confirmSchedule(createdRoomId);
-          }}
+          onRegularScheduleNext={handleSaveRegularSchedule}
+          onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
+          onBeforeComplete={handleSaveIndividualSchedule}
           onComplete={() => {}}
           completeTitle="일정 입력하기"
           completeHeading={roomName}
           completeDescription="일정 입력이 완료되었어요!"
           completePrimaryText="참여자 초대하기"
-          onCompletePrimaryClick={() => {
-            // TODO: 참여자 초대하기 플로우 연결 예정 — 우선 방으로 바로 이동
-            if (createdRoomId) router.push(`/room/${createdRoomId}`);
-          }}
+          onCompletePrimaryClick={() => setIsInviteSheetOpen(true)}
           completeSecondaryText="나중에 할게요"
           onCompleteSecondaryClick={() => {
             if (createdRoomId) router.push(`/room/${createdRoomId}`);
           }}
         />
         {confirmErrorModal}
+        <AlertModal
+          open={scheduleErrorMessage !== null}
+          onOpenChange={(open) => !open && setScheduleErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={scheduleErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setScheduleErrorMessage(null)}
+        />
+        {createdRoomId && (
+          <ShareSheet
+            open={isInviteSheetOpen}
+            onOpenChange={setIsInviteSheetOpen}
+            title="참여자 초대하기"
+            initialTitleValue={`${roomName}에 초대할게!`}
+            initialDescriptionValue="일정 입력하고 같이 여행 떠나자!"
+            linkPath={`/room/${createdRoomId}`}
+            buttonTitle="여행방 참여하기"
+            onShare={() => {
+              setIsInviteSheetOpen(false);
+              router.push(`/room/${createdRoomId}`);
+            }}
+          />
+        )}
       </>
     );
   }
@@ -238,6 +346,15 @@ function RoomCreateForm() {
           )}
           {step === 6 && <CompleteStep roomName={roomName} />}
         </form>
+        <div
+          aria-hidden
+          className={cn(
+            'w-full shrink-0',
+            step === 6 || step === 3 || step === 5 ? 'h-28' : 'h-14.5',
+          )}
+        />
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto w-full rounded-t-xl bg-white/80 backdrop-blur-[18px] sm:max-w-90">
         {step === 6 ? (
           <CtaButtonGroup
             primaryText="여행방 바로가기"
@@ -268,23 +385,10 @@ function RoomCreateForm() {
         onOpenChange={(open) => !open && setScheduleModal('none')}
         onConfirm={() => handleStartBasicInfo('hasRegularSchedule')}
       />
-      <AlertModal
+      <ConfirmScheduleModal
         open={scheduleModal === 'confirmSchedule'}
         onOpenChange={(open) => !open && setScheduleModal('none')}
-        icon={<CalendarMonthIcon className="h-6 w-auto" />}
-        title="입력하신 일정을 확인해주세요"
-        description={
-          <>
-            이전에 입력한 일정에
-            <br />
-            변경 사항이 있다면 수정해주세요.
-          </>
-        }
-        secondaryText="변경된게 없어요"
-        onSecondaryClick={() => handleStartBasicInfo('regularScheduleDetail')}
-        primaryText="수정하기"
-        primaryColor="primary"
-        onPrimaryClick={() => handleStartBasicInfo('regularScheduleDetail')}
+        onConfirm={() => handleStartBasicInfo('regularScheduleDetail')}
       />
       <AlertModal
         open={isErrorAlertOpen}
