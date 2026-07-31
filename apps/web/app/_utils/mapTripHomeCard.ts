@@ -16,8 +16,21 @@ export const getTripStatusTag = (trip: TripHomeCardT): StatusTagT | null => {
   return null;
 };
 
-export const getTripDateRange = (trip: TripHomeCardT) =>
-  `${format(new Date(trip.startRange), 'yy.MM.dd')} - ${format(new Date(trip.endRange), 'yy.MM.dd')}`;
+export const getTripDateRange = (trip: TripHomeCardT) => {
+  const startDate = new Date(trip.startRange);
+  const endDate = new Date(trip.endRange);
+
+  if (
+    !trip.startRange ||
+    !trip.endRange ||
+    isNaN(startDate.getTime()) ||
+    isNaN(endDate.getTime())
+  ) {
+    return '미정';
+  }
+
+  return `${format(startDate, 'yy.MM.dd')} - ${format(endDate, 'yy.MM.dd')}`;
+};
 
 export const truncateTripTitle = (title: string) =>
   title.length > MAX_TRIP_TITLE_LENGTH
