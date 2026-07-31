@@ -406,9 +406,9 @@ function GroupCalendarSection({
         onOpenChange={setIsRequestResponseOpen}
         title="응답 요청하기"
         initialTitleValue={`${room.title} 일정 입력 요청`}
-        initialDescriptionValue="아직 일정 입력 안 한 사람들은 얼른 입력해줘!"
+        initialDescriptionValue={'그때 얘기했던 여행 언제갈래?\n일정 공유해줘'}
         linkPath={`/room/${room.id}`}
-        buttonTitle="일정 입력 요청하기"
+        buttonTitle="응답하기"
         onShare={() => {
           setIsRequestResponseOpen(false);
         }}

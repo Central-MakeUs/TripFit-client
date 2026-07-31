@@ -11,7 +11,7 @@ type KakaoFeedTemplateT = {
     imageUrl: string;
     link: { mobileWebUrl: string; webUrl: string };
   };
-  buttons: {
+  buttons?: {
     title: string;
     link: { mobileWebUrl: string; webUrl: string };
   }[];
