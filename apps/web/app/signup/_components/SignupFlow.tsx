@@ -209,6 +209,7 @@ function SignupFlow() {
     return (
       <BasicInfo
         allowSkip
+        skipPath={redirectTarget}
         initialScreen="calendarConnectIntro"
         calendarConnectTitle="기본 정보 입력"
         calendarConnectProgress={PROFILE_STEP_PROGRESS}

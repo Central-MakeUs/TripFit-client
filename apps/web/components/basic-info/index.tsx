@@ -45,6 +45,9 @@ type BasicInfoProps = {
     individualScheduleBackdrop: IndividualScheduleValueT,
   ) => boolean | void | Promise<boolean | void>;
   allowSkip?: boolean;
+  /** "건너뛰기" 시 이동할 경로 — 미지정 시 홈("/"). 초대 링크로 들어온 회원가입처럼
+   * 완료 후 원래 가려던 곳으로 이어져야 하는 플로우에서 사용 */
+  skipPath?: string;
   onExit?: () => void;
   /** 지정하면 위저드 전 화면(완료 화면 포함) 헤더 오른쪽에 전체 닫기(X) 버튼을
    * 보여줌 — 자유롭게 나갈 수 있는 임의 편집 플로우에서만 쓰고, 반드시 완료해야
@@ -88,6 +91,7 @@ function BasicInfo({
   onBeforeIndividualSchedule,
   onBeforeComplete,
   allowSkip = true,
+  skipPath = '/',
   onExit,
   onClose,
   title = '일정 입력하기',
@@ -175,7 +179,7 @@ function BasicInfo({
   };
 
   const handleSkip = () => {
-    router.push('/');
+    router.push(skipPath);
   };
 
   const handleRegularScheduleDetailNext = () => {

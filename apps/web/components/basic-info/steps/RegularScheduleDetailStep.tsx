@@ -127,6 +127,8 @@ function RegularScheduleDetailStep({
     setOpenMenuId(null);
   };
 
+  // 요일 단위로 근무 패턴을 정의하는 구조라, 자정을 넘겨 다음 날로 이어지는
+  // 근무(야간 근무)는 지원하지 않는다 — 출근이 퇴근보다 늦거나 같으면 막는다.
   const isAddDisabled =
     draftDays.length === 0 ||
     !draftStartTime ||
