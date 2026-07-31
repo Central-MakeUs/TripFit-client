@@ -44,6 +44,10 @@ export type AuthStateT = {
     nickname?: string;
     notificationEnabled?: boolean;
   }) => void;
+  setScheduleStatus: (status: {
+    hasPreSchedule: boolean;
+    isAllFree: boolean;
+  }) => void;
   clear: () => void;
 };
 
@@ -71,6 +75,7 @@ export const useAuthStore = create<AuthStateT>()(
       setAccessToken: (accessToken) => set({ accessToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
+      setScheduleStatus: (status) => set(status),
       clear: () => set(INITIAL_AUTH_STATE),
     }),
     {

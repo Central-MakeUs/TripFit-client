@@ -47,7 +47,7 @@ export const LEAVE_NOTICE_DAYS_OPTIONS = [
   { label: '상관없음', value: 0 },
   { label: '1주 전', value: 7 },
   { label: '2주 전', value: 14 },
-  { label: '3주 전', value: 21 },
+  { label: '한 달 전', value: 30 },
 ];
 
 export const ANNUAL_LEAVE_COUNT_VALUES = Array.from(
