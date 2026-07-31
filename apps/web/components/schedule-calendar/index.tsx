@@ -53,9 +53,13 @@ function ScheduleCalendar({
   // 개인 일정 조회/저장 API가 "오늘~오늘+2년-1일" 구간만 허용하므로,
   // 그 밖의 날짜를 선택해 저장이 거부되는 일이 없도록 스크롤 자체를 여기서 막는다.
   const maxScheduleDate = subDays(addYears(new Date(), 2), 1);
-  const maxMonthCount =
+  // 기준 월이 maxScheduleDate보다 뒤(여행 종료일이 오늘+2년을 넘는 경우 등)면
+  // 이 값이 0 이하가 되어 캘린더가 아예 안 보일 수 있으므로 최소 1개월은 보장한다.
+  const maxMonthCount = Math.max(
     differenceInCalendarMonths(maxScheduleDate, new Date(year, month - 1, 1)) +
-    1;
+      1,
+    1,
+  );
   const { months, sentinelRef } = useInfiniteMonths({
     year,
     month,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addYears, format, subDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -19,8 +19,9 @@ import { IndividualScheduleValueT } from '@/types/schedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
-import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import ShareSheet from '../../_common/_components/ShareSheet';
+import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
+import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import { useGetRoom } from '../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
@@ -57,6 +58,16 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
   const isAllFree = useAuthStore((state) => state.isAllFree);
+
+  // hasPreSchedule/isAllFree는 persist된 store 값이라, 하이드레이션이 끝나기
+  // 전엔 이미 일정을 입력한 사용자도 잠깐 기본값(false)으로 보인다 — 그 사이
+  // needsScheduleEntry가 true로 잘못 계산돼 일정 입력 모달이 짧게 노출되는 걸
+  // 막기 위해 하이드레이션 완료 여부를 별도로 추적한다.
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => {
+    setHasHydrated(useAuthStore.persist.hasHydrated());
+    return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
+  }, []);
 
   // activate(POST /trips/{roomId}/activate)는 방장 전용 API라, getRoom()이
   // SCHEDULE_ENTRY_REQUIRED/SCHEDULE_ACTIVATION_REQUIRED로 에러난 상태에선
@@ -131,7 +142,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     return isHost ? confirmSchedule(roomId) : true;
   };
 
-  if (isGetRoomLoading || isGetRoomMembersLoading || isTripsLoading) {
+  if (
+    isGetRoomLoading ||
+    isGetRoomMembersLoading ||
+    isTripsLoading ||
+    !hasHydrated
+  ) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header
@@ -247,9 +263,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           onOpenChange={setIsRequestResponseOpen}
           title="응답 요청하기"
           initialTitleValue={`${room.title} 일정 입력 요청`}
-          initialDescriptionValue={
-            '그때 얘기했던 여행 언제갈래?\n일정 공유해줘'
-          }
+          initialDescriptionValue={SCHEDULE_REQUEST_SHARE_DESCRIPTION}
           linkPath={`/room/${roomId}`}
           buttonTitle="응답하기"
           onShare={() => {

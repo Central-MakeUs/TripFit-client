@@ -89,19 +89,31 @@ function MyScheduleSection() {
   // 그보다 뒤면 그 날짜까지 상한이 늘어난다. 이미 불러온 다른 기간의
   // baseline은 덮어쓰지 않고 합쳐서, 그 기간에 입력해둔 편집이 나중에
   // 저장할 때도 올바른 기준값으로 비교되게 한다.
-  const loadScheduleCalendarForTrip = async (trip: TripHomeCardT | null) => {
+  const loadScheduleCalendarForTrip = async (
+    trip: TripHomeCardT | null,
+  ): Promise<boolean> => {
     const defaultEnd = subDays(addYears(today, 2), 1);
     const endDate = trip
       ? max([defaultEnd, parseISO(trip.endRange)])
       : defaultEnd;
-    const data = await getScheduleCalendar({
-      startDate: format(today, 'yyyy-MM-dd'),
-      endDate: format(endDate, 'yyyy-MM-dd'),
-    });
-    setIndividualScheduleBackdrop((prev) => ({
-      ...prev,
-      ...mapScheduleCalendarToIndividualScheduleValue(data.days),
-    }));
+    try {
+      const data = await getScheduleCalendar({
+        startDate: format(today, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+      });
+      setIndividualScheduleBackdrop((prev) => ({
+        ...prev,
+        ...mapScheduleCalendarToIndividualScheduleValue(data.days),
+      }));
+      return true;
+    } catch (error) {
+      // 기준값 조회가 실패한 채로 진행하면 모든 날짜가 기본값(가능)으로
+      // 취급돼, 실제 서버 상태와 다른 기준으로 편집·저장될 수 있다.
+      setErrorMessage(
+        error instanceof Error ? error.message : '일정을 불러오지 못했어요.',
+      );
+      return false;
+    }
   };
 
   const handleSelectTrip = (tripId: string) => {
@@ -126,10 +138,14 @@ function MyScheduleSection() {
   const handleOpenIndividualSchedule = async () => {
     setIndividualSchedule({});
     setIndividualScheduleBackdrop({});
-    setIsIndividualScheduleOpen(true);
     const defaultTrip = tripsData?.[0] ?? null;
     setSelectedTripId(defaultTrip?.tripId ?? null);
-    await loadScheduleCalendarForTrip(defaultTrip);
+    // 기준값 조회에 실패하면 잘못된(전부 가능 처리된) 기준으로 편집하게 되므로,
+    // 조회가 끝나 성공했을 때만 입력 화면으로 들어간다.
+    const success = await loadScheduleCalendarForTrip(defaultTrip);
+    if (success) {
+      setIsIndividualScheduleOpen(true);
+    }
   };
 
   const handleSaveIndividualSchedule = async () => {
@@ -307,6 +323,15 @@ function MyScheduleSection() {
           ))}
         </ul>
       </div>
+      <AlertModal
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
+        variant="danger"
+        title="문제가 발생했어요"
+        description={errorMessage ?? ''}
+        primaryText="확인"
+        onPrimaryClick={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

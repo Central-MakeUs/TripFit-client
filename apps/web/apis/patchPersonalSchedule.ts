@@ -29,22 +29,28 @@ export const patchPersonalSchedule = async ({
     data: {
       // Object.entries의 key는 getDateKey(Date.toDateString())라서, API가 요구하는
       // "yyyy-MM-dd" 형식으로 다시 변환해야 한다.
-      items: Object.entries(value).map(([dateKey, day]) => {
+      items: Object.entries(value).flatMap(([dateKey, day]) => {
         const baseline = mergedStatus[dateKey] ?? DEFAULT_DAY_VALUE;
         const slotsChanged = !areSlotsEqual(day, baseline);
         const uncertainChanged = day.isUncertain !== baseline.isUncertain;
 
-        return {
-          scheduleDate: format(new Date(dateKey), 'yyyy-MM-dd'),
-          ...(slotsChanged && {
-            slots: {
-              morningStatus: toSlotStatus(day.morning),
-              afternoonStatus: toSlotStatus(day.afternoon),
-              eveningStatus: toSlotStatus(day.evening),
-            },
-          }),
-          ...(uncertainChanged && { uncertain: day.isUncertain }),
-        };
+        // baseline과 완전히 같아 아무 필드도 안 바뀐 날짜는 scheduleDate만 남는데,
+        // 이런 빈 아이템은 서버가 허용하지 않을 수 있어 요청에서 제외한다.
+        if (!slotsChanged && !uncertainChanged) return [];
+
+        return [
+          {
+            scheduleDate: format(new Date(dateKey), 'yyyy-MM-dd'),
+            ...(slotsChanged && {
+              slots: {
+                morningStatus: toSlotStatus(day.morning),
+                afternoonStatus: toSlotStatus(day.afternoon),
+                eveningStatus: toSlotStatus(day.evening),
+              },
+            }),
+            ...(uncertainChanged && { uncertain: day.isUncertain }),
+          },
+        ];
       }),
     },
   });

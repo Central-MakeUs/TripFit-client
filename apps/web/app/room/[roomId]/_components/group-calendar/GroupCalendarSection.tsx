@@ -40,6 +40,7 @@ import {
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
 import ShareSheet from '../../../_common/_components/ShareSheet';
+import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../../_common/_consts/shareMessages';
 import CalendarFabMenu from './_components/CalendarFabMenu';
 import CalendarFilterBottomSheet, {
   CalendarFilterT,
@@ -129,13 +130,18 @@ function GroupCalendarSection({
 
   const handleOpenIndividualSchedule = async () => {
     setIndividualSchedule({});
-    setIsIndividualScheduleOpen(true);
+    setIndividualScheduleBackdrop({});
+    // 기준값 조회가 실패하면 잘못된(전부 가능 처리된) 기준으로 편집하게 되므로,
+    // 조회가 끝나 성공했을 때만 입력 화면으로 들어간다.
     const { data } = await refetchScheduleCalendar();
-    if (data) {
-      setIndividualScheduleBackdrop(
-        mapScheduleCalendarToIndividualScheduleValue(data.days),
-      );
+    if (!data) {
+      setScheduleErrorMessage('일정을 불러오지 못했어요.');
+      return;
     }
+    setIndividualScheduleBackdrop(
+      mapScheduleCalendarToIndividualScheduleValue(data.days),
+    );
+    setIsIndividualScheduleOpen(true);
   };
 
   const handleSaveIndividualSchedule = async () => {
@@ -406,12 +412,22 @@ function GroupCalendarSection({
         onOpenChange={setIsRequestResponseOpen}
         title="응답 요청하기"
         initialTitleValue={`${room.title} 일정 입력 요청`}
-        initialDescriptionValue={'그때 얘기했던 여행 언제갈래?\n일정 공유해줘'}
+        initialDescriptionValue={SCHEDULE_REQUEST_SHARE_DESCRIPTION}
         linkPath={`/room/${room.id}`}
         buttonTitle="응답하기"
         onShare={() => {
           setIsRequestResponseOpen(false);
         }}
+      />
+
+      <AlertModal
+        open={scheduleErrorMessage !== null}
+        onOpenChange={(open) => !open && setScheduleErrorMessage(null)}
+        variant="danger"
+        title="문제가 발생했어요"
+        description={scheduleErrorMessage ?? ''}
+        primaryText="확인"
+        onPrimaryClick={() => setScheduleErrorMessage(null)}
       />
     </div>
   );
