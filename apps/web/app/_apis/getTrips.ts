@@ -1,6 +1,5 @@
 import { request } from '@/apis/request';
-import { MemberPreviewT } from '@/components/room-card';
-import { RoomMemberStatusT, RoomStatusT } from '@/types/room';
+import { MemberPreviewT, RoomMemberStatusT, RoomStatusT } from '@/types/room';
 
 export type GetTripsRequestT = {
   scope?: 'ongoing' | 'all';
