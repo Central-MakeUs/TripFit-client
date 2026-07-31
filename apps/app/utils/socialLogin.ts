@@ -39,9 +39,15 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
   if (response.type !== 'success' || !response.data.idToken) {
     throw new Error('구글 로그인에 실패했습니다.');
   }
+  // 백엔드가 구글 로그인 처리에 authorizationCode(serverAuthCode)를 요구하므로,
+  // offlineAccess 설정 문제 등으로 이 값이 비어 있으면 로그인 요청 자체를
+  // 보내지 않고 여기서 바로 실패시킨다.
+  if (!response.data.serverAuthCode) {
+    throw new Error('구글 로그인에 실패했습니다.');
+  }
   return {
     token: response.data.idToken,
-    authorizationCode: response.data.serverAuthCode ?? undefined,
+    authorizationCode: response.data.serverAuthCode,
   };
 };
 
