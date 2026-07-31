@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 
 import Header from '@/components/header';
+import { useGetNotifications } from '@/hooks/useGetNotifications';
 
 import { TRIPS_QUERY_KEY } from '../_hooks/useGetTrips';
 
@@ -10,12 +11,22 @@ import { TRIPS_QUERY_KEY } from '../_hooks/useGetTrips';
 // 클릭 시 페이지 이동 대신 여행 목록을 다시 불러오는 새로고침으로 동작한다.
 function HomeHeader() {
   const queryClient = useQueryClient();
+  const { notificationsData } = useGetNotifications();
 
   const handleLogoClick = () => {
     queryClient.invalidateQueries({ queryKey: TRIPS_QUERY_KEY });
   };
 
-  return <Header variant="home" onLogoClick={handleLogoClick} />;
+  const hasUnreadNotifications =
+    notificationsData?.some((notification) => !notification.isRead) ?? false;
+
+  return (
+    <Header
+      variant="home"
+      onLogoClick={handleLogoClick}
+      hasUnreadNotifications={hasUnreadNotifications}
+    />
+  );
 }
 
 export default HomeHeader;

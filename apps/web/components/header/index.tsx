@@ -18,7 +18,11 @@ const HEADER_BACKGROUND_CLASS = {
 } as const;
 
 type HeaderProps =
-  | { variant: 'home'; onLogoClick?: () => void }
+  | {
+      variant: 'home';
+      onLogoClick?: () => void;
+      hasUnreadNotifications?: boolean;
+    }
   | {
       variant: 'page';
       title: ReactNode;
@@ -49,11 +53,19 @@ function Header(props: HeaderProps) {
             aria-label="내 일정"
             icon={<CalendarMonthIcon className="text-grey-500" />}
           />
-          <IconButton
-            href="/my-page/notifications"
-            aria-label="알림"
-            icon={<NotificationIcon className="text-grey-500" />}
-          />
+          <div className="relative">
+            <IconButton
+              href="/my-page/notifications"
+              aria-label="알림"
+              icon={<NotificationIcon className="text-grey-500" />}
+            />
+            {props.hasUnreadNotifications && (
+              <span
+                aria-hidden
+                className="absolute top-1 right-1 size-1.5 rounded-full bg-red-300"
+              />
+            )}
+          </div>
           <IconButton
             href="/my-page"
             aria-label="마이페이지"

@@ -1,5 +1,10 @@
 import { request } from '@/apis/request';
-import { DeviceTypeT } from '@/types/notification';
+import { DeviceTypeT, NotificationT } from '@/types/notification';
+
+export type GetNotificationsResponseT = NotificationT[];
+
+export const getNotifications = () =>
+  request<GetNotificationsResponseT>('/api/v1/notifications');
 
 export type PostDeviceTokenRequestT = {
   token: string;
