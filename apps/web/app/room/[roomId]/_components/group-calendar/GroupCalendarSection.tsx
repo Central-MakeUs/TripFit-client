@@ -2,26 +2,44 @@
 
 import { useState } from 'react';
 import {
+  addYears,
   eachMonthOfInterval,
   format,
   isWithinInterval,
   parseISO,
+  subDays,
 } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 import SettingsIcon from '@/assets/icons/settings.svg';
+import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
-import { DEFAULT_BASIC_INFO_VALUE } from '@/components/basic-info/basicInfo.const';
+import {
+  BasicInfoValue,
+  DEFAULT_BASIC_INFO_VALUE,
+} from '@/components/basic-info/basicInfo.const';
 import Calendar from '@/components/calendar';
+import CheckCompleteStep from '@/components/check-complete-step';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import IndividualScheduleInput from '@/components/individual-schedule-input';
 import Spinner from '@/components/spinner';
+import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
+import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
+import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
+import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
-import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
+import { IndividualScheduleValueT } from '@/types/schedule';
+import {
+  getIncludeHalfDayHolidayFromRegularSchedules,
+  getLeaveNoticeDaysFromRegularSchedules,
+  mapRegularScheduleItemToClient,
+} from '@/utils/mapRegularSchedule';
+import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
-import ShareSheet from '../../_common/_components/ShareSheet';
+import ShareSheet from '../../../_common/_components/ShareSheet';
 import CalendarFabMenu from './_components/CalendarFabMenu';
 import CalendarFilterBottomSheet, {
   CalendarFilterT,
@@ -47,17 +65,6 @@ type GroupCalendarSectionProps = {
   onShowRecommendation: () => void;
 };
 
-// TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
-const MOCK_OTHER_TRIPS = [
-  { id: 'mock-other-1', title: '나트랑 여행' },
-  { id: 'mock-other-2', title: '전주 여행' },
-];
-
-// TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
-const MOCK_SAVED_REGULAR_SCHEDULES: RegularScheduleT[] = [
-  { id: 'mock-1', days: [1, 2, 3], startTime: '09:30', endTime: '18:00' },
-];
-
 function GroupCalendarSection({
   room,
   participants,
@@ -66,6 +73,7 @@ function GroupCalendarSection({
   isConfirmed,
   onShowRecommendation,
 }: GroupCalendarSectionProps) {
+  const router = useRouter();
   const minDate = parseISO(room.startDate);
   const maxDate = parseISO(room.endDate);
   const months = eachMonthOfInterval({ start: minDate, end: maxDate });
@@ -82,12 +90,73 @@ function GroupCalendarSection({
   const [isRepeatScheduleOpen, setIsRepeatScheduleOpen] = useState(false);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
-  const [individualScheduleByTrip, setIndividualScheduleByTrip] = useState<
-    Record<string, IndividualScheduleValueT>
-  >({});
-  const [selectedTripId, setSelectedTripId] = useState(room.id);
+  const [isIndividualScheduleComplete, setIsIndividualScheduleComplete] =
+    useState(false);
+  const [individualSchedule, setIndividualSchedule] =
+    useState<IndividualScheduleValueT>({});
+  const [individualScheduleBackdrop, setIndividualScheduleBackdrop] =
+    useState<IndividualScheduleValueT>({});
+  const [scheduleErrorMessage, setScheduleErrorMessage] = useState<
+    string | null
+  >(null);
 
-  const tripOptions = [{ id: room.id, title: room.title }, ...MOCK_OTHER_TRIPS];
+  const {
+    regularSchedulesData,
+    isRegularSchedulesLoading,
+    saveRegularSchedule,
+  } = useSaveRegularSchedule({ enabled: isRepeatScheduleOpen });
+  const { refreshScheduleStatus } = useRefreshScheduleStatus();
+  const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
+
+  const today = new Date();
+  const { refetchScheduleCalendar } = useGetScheduleCalendar({
+    startDate: format(today, 'yyyy-MM-dd'),
+    endDate: format(subDays(addYears(today, 2), 1), 'yyyy-MM-dd'),
+  });
+
+  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+    try {
+      await saveRegularSchedule(value);
+      await refreshScheduleStatus();
+      return true;
+    } catch (error) {
+      setScheduleErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return false;
+    }
+  };
+
+  const handleOpenIndividualSchedule = async () => {
+    setIndividualSchedule({});
+    setIsIndividualScheduleOpen(true);
+    const { data } = await refetchScheduleCalendar();
+    if (data) {
+      setIndividualScheduleBackdrop(
+        mapScheduleCalendarToIndividualScheduleValue(data.days),
+      );
+    }
+  };
+
+  const handleSaveIndividualSchedule = async () => {
+    try {
+      if (Object.keys(individualSchedule).length > 0) {
+        await patchPersonalScheduleMutation({
+          value: individualSchedule,
+          mergedStatus: individualScheduleBackdrop,
+        });
+        await refreshScheduleStatus();
+        refetchRoomScheduleCalendar();
+      }
+    } catch (error) {
+      setScheduleErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return;
+    }
+    setIsIndividualScheduleComplete(true);
+  };
+
   const respondedCount = room.activeMemberCount;
 
   const getDayStatus = (date: Date) =>
@@ -146,43 +215,106 @@ function GroupCalendarSection({
   }
 
   if (isRepeatScheduleOpen) {
+    if (isRegularSchedulesLoading) {
+      return (
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      );
+    }
+
+    const savedItems = regularSchedulesData ?? [];
+
     return (
-      <BasicInfo
-        allowSkip={false}
-        initialScreen="regularScheduleDetail"
-        initialValue={{
-          ...DEFAULT_BASIC_INFO_VALUE,
-          hasRegularSchedule: true,
-          regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
-        }}
-        onExit={() => setIsRepeatScheduleOpen(false)}
-        onComplete={() => {
-          // TODO: 근무 일정 저장 API 연동
-          setIsRepeatScheduleOpen(false);
-        }}
-      />
+      <>
+        <BasicInfo
+          allowSkip={false}
+          title="반복 일정 수정"
+          initialScreen="regularScheduleDetail"
+          initialValue={{
+            ...DEFAULT_BASIC_INFO_VALUE,
+            hasRegularSchedule: savedItems.length > 0,
+            regularSchedules: savedItems.map(mapRegularScheduleItemToClient),
+            annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
+            leaveNoticeDays: getLeaveNoticeDaysFromRegularSchedules(savedItems),
+            includeHalfDayHoliday:
+              getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
+          }}
+          endsAtIncludeHalfDayHoliday
+          onExit={() => setIsRepeatScheduleOpen(false)}
+          onClose={() => setIsRepeatScheduleOpen(false)}
+          onRegularScheduleNext={handleSaveRegularSchedule}
+          onComplete={() => setIsRepeatScheduleOpen(false)}
+          completeTitle="반복 일정 수정"
+          completeHeading="반복 일정 수정이 완료되었습니다!"
+          completePrimaryText="확인"
+        />
+        <AlertModal
+          open={scheduleErrorMessage !== null}
+          onOpenChange={(open) => !open && setScheduleErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={scheduleErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setScheduleErrorMessage(null)}
+        />
+      </>
     );
   }
 
   if (isIndividualScheduleOpen) {
+    if (isIndividualScheduleComplete) {
+      return (
+        <CheckCompleteStep
+          showHeader
+          title="개별 일정 수정"
+          onBack={() => {
+            setIsIndividualScheduleComplete(false);
+            setIsIndividualScheduleOpen(false);
+          }}
+          onClose={() => {
+            setIsIndividualScheduleComplete(false);
+            setIsIndividualScheduleOpen(false);
+          }}
+          heading="개별 일정 수정이 완료되었습니다!"
+          primaryText="확인"
+          onPrimaryClick={() => {
+            setIsIndividualScheduleComplete(false);
+            setIsIndividualScheduleOpen(false);
+          }}
+        />
+      );
+    }
+
     return (
-      <IndividualScheduleInput
-        tripOptions={tripOptions}
-        selectedTripId={selectedTripId}
-        onSelectTrip={setSelectedTripId}
-        value={individualScheduleByTrip[selectedTripId] ?? {}}
-        onChange={(nextValue) =>
-          setIndividualScheduleByTrip((prev) => ({
-            ...prev,
-            [selectedTripId]: nextValue,
-          }))
-        }
-        onBack={() => setIsIndividualScheduleOpen(false)}
-        onNext={() => {
-          // TODO: 개별 일정 저장 API 연동
-          setIsIndividualScheduleOpen(false);
-        }}
-      />
+      <>
+        <IndividualScheduleInput
+          title="개별 일정 수정"
+          heading={
+            <>
+              여행 기간 중 여행이 어렵거나
+              <br />
+              확실하지 않은 날짜를 알려주세요.
+            </>
+          }
+          description="앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요."
+          value={individualSchedule}
+          onChange={setIndividualSchedule}
+          mergedStatus={individualScheduleBackdrop}
+          onBack={() => setIsIndividualScheduleOpen(false)}
+          onClose={() => setIsIndividualScheduleOpen(false)}
+          onNext={handleSaveIndividualSchedule}
+        />
+        <AlertModal
+          open={scheduleErrorMessage !== null}
+          onOpenChange={(open) => !open && setScheduleErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={scheduleErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setScheduleErrorMessage(null)}
+        />
+      </>
     );
   }
 
@@ -191,6 +323,7 @@ function GroupCalendarSection({
       <Header
         variant="page"
         titleAlign="left"
+        onBack={() => router.push('/')}
         title={
           <div className="flex flex-col">
             <span className="text-body-03 text-black">{room.title}</span>
@@ -257,7 +390,7 @@ function GroupCalendarSection({
 
       <CalendarFabMenu
         onSelectRepeatSchedule={() => setIsRepeatScheduleOpen(true)}
-        onSelectIndividualSchedule={() => setIsIndividualScheduleOpen(true)}
+        onSelectIndividualSchedule={handleOpenIndividualSchedule}
       />
 
       <CalendarFilterBottomSheet
@@ -274,8 +407,9 @@ function GroupCalendarSection({
         title="응답 요청하기"
         initialTitleValue={`${room.title} 일정 입력 요청`}
         initialDescriptionValue="아직 일정 입력 안 한 사람들은 얼른 입력해줘!"
+        linkPath={`/room/${room.id}`}
+        buttonTitle="일정 입력 요청하기"
         onShare={() => {
-          // TODO: 응답 요청 알림 발송 API/카카오톡 공유 연동
           setIsRequestResponseOpen(false);
         }}
       />
