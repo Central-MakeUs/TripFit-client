@@ -71,7 +71,12 @@ let refreshPromise: Promise<string> | null = null;
 
 const refreshAccessToken = (): Promise<string> => {
   const { refreshToken } = useAuthStore.getState();
-  if (!refreshToken) return Promise.reject(new Error('로그인이 필요합니다.'));
+  // refreshToken이 없으면 재발급이 애초에 불가능한, 확실한 인증 실패 상황이다.
+  // 일반 Error로 던지면 아래 401/403 판별(instanceof ApiError)을 통과하지 못해 로그아웃
+  // 처리가 되지 않고 조용히 실패만 반복되므로, 같은 경로를 타도록 ApiError(401)로 던진다.
+  if (!refreshToken) {
+    return Promise.reject(new ApiError('로그인이 필요합니다.', undefined, 401));
+  }
 
   if (!refreshPromise) {
     refreshPromise = request<{ accessToken: string }>('/api/v1/auth/refresh', {

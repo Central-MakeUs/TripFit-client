@@ -1,6 +1,13 @@
 export type RoomStatusT = 'ONGOING' | 'CONFIRMED' | 'EXPIRED';
 export type RoomMemberStatusT = 'SCHEDULE_PENDING' | 'ACTIVE';
 
+export type MemberPreviewT = {
+  displayName: string;
+  profileImageUrl: string | null;
+  role: 'OWNER' | 'MEMBER';
+  userId: string;
+};
+
 export type RoomT = {
   id: string;
   title: string;

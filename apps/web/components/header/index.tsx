@@ -18,7 +18,7 @@ const HEADER_BACKGROUND_CLASS = {
 } as const;
 
 type HeaderProps =
-  | { variant: 'home' }
+  | { variant: 'home'; onLogoClick?: () => void }
   | {
       variant: 'page';
       title: ReactNode;
@@ -40,7 +40,7 @@ function Header(props: HeaderProps) {
   if (props.variant === 'home') {
     content = (
       <div className="flex w-full items-center justify-between pl-5 pr-2.5">
-        <Link href="/" aria-label="홈">
+        <Link href="/" aria-label="홈" onClick={props.onLogoClick}>
           <LogoIcon className="h-6 w-20" />
         </Link>
         <div className="flex items-center gap-1">
