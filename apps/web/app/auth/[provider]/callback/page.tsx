@@ -50,7 +50,8 @@ function AuthCallbackForProvider({
 }: AuthCallbackForProviderProps) {
   useSocialLoginCallback(provider, async () => {
     // 카카오는 인가 코드(code)를 쿼리로 돌려줘서 서버에서 토큰 교환이 필요하고,
-    // 구글은 id_token을 URL 프래그먼트(#)로 바로 돌려주고,
+    // 구글은 하이브리드 플로우(code id_token)라 id_token과 authorization code를
+    // URL 프래그먼트(#)로 함께 돌려주고(code 교환은 백엔드가 처리),
     // 애플은 id_token을 POST body로 돌려줘서 서버 라우트(app/api/auth/apple/callback)가
     // HttpOnly 쿠키에 담아둔 뒤 이 페이지가 GET 요청으로 한 번만 꺼내간다 — id_token/code를
     // URL 쿼리파라미터에 실으면 브라우저 히스토리 등으로 새어나갈 수 있어서다.
@@ -79,12 +80,18 @@ function AuthCallbackForProvider({
         ...(data.code ? { authorizationCode: data.code } : {}),
       };
     }
+    // 하이브리드 플로우(response_type=code id_token)라서 id_token과 authorization
+    // code가 같은 프래그먼트에 함께 돌아온다 — code 자체의 교환은 백엔드가 한다.
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
     const idToken = hashParams.get('id_token');
+    const code = hashParams.get('code');
     const state = hashParams.get('state');
     if (!idToken || !consumeOAuthState('GOOGLE', state)) return null;
     if (!consumeOAuthNonce('GOOGLE', idToken)) return null;
-    return { token: idToken };
+    return {
+      token: idToken,
+      ...(code ? { authorizationCode: code } : {}),
+    };
   });
 
   return null;

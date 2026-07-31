@@ -21,6 +21,9 @@ const ensureGoogleConfigured = () => {
   GoogleSignin.configure({
     webClientId: GOOGLE_WEB_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
+    // serverAuthCode(백엔드가 요구하는 authorizationCode)를 받으려면 필요하다 —
+    // webClientId가 있어야 하고, 이게 꺼져 있으면 항상 null로 온다.
+    offlineAccess: true,
   });
   isGoogleConfigured = true;
 };
@@ -36,7 +39,10 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
   if (response.type !== 'success' || !response.data.idToken) {
     throw new Error('구글 로그인에 실패했습니다.');
   }
-  return { token: response.data.idToken };
+  return {
+    token: response.data.idToken,
+    authorizationCode: response.data.serverAuthCode ?? undefined,
+  };
 };
 
 const requestKakaoToken = async (): Promise<NativeSocialLoginResult> => {
