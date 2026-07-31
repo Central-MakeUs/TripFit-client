@@ -174,11 +174,23 @@ function AppWebView() {
     [sendToWeb],
   );
 
+  // 로딩 종료 시점은 onLoadEnd 대신 이 값을 기준으로 삼는다 — Android에서는 클라이언트
+  // 사이드 라우팅(예: 로그인 안 된 상태의 /signup 리다이렉트) 시 onLoadEnd가 불리지 않는
+  // 경우가 있어, 오버레이가 안 걷히고 흰 화면에 멈추는 문제가 있었다.
+  const handleLoadFinished = useCallback(() => {
+    setIsLoading(false);
+    if (pendingNotificationRef.current) {
+      sendToWeb(pendingNotificationRef.current);
+      pendingNotificationRef.current = null;
+    }
+  }, [sendToWeb]);
+
   const handleNavigationStateChange: OnNavigationStateChange = useCallback(
     (navState) => {
       setCanGoBack(navState.canGoBack);
+      if (!navState.loading) handleLoadFinished();
     },
-    [],
+    [handleLoadFinished],
   );
 
   const handleRetry = () => {
@@ -199,13 +211,7 @@ function AppWebView() {
           setIsLoading(true);
           setHasError(false);
         }}
-        onLoadEnd={() => {
-          setIsLoading(false);
-          if (pendingNotificationRef.current) {
-            sendToWeb(pendingNotificationRef.current);
-            pendingNotificationRef.current = null;
-          }
-        }}
+        onLoadEnd={handleLoadFinished}
         onError={() => setHasError(true)}
       />
       {hasError ? (
