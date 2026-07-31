@@ -1,6 +1,6 @@
 import { request } from '@/apis/request';
 
-import { TripHomeCardT } from './getTrips';
+import { TripHomeCardT } from '@/apis/getTrips';
 
 export type TripDetailT = TripHomeCardT & {
   inviteCode: string | null;
