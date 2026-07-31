@@ -7,16 +7,10 @@ import IconButton from '@/components/icon-button';
 import ProgressBar from '@/components/progress-bar';
 import Profile from '@/components/profile';
 import Tag from '@/components/tag';
+import { MemberPreviewT } from '@/types/room';
 import { cn } from '@/utils/cn';
 
 import { roomCardStyle } from './roomCard.style';
-
-export type MemberPreviewT = {
-  displayName: string;
-  profileImageUrl: string | null;
-  role: 'OWNER' | 'MEMBER';
-  userId: string;
-};
 
 // 참여자 아바타는 이름을 안 받아서 색으로 구분한다 — 순서(인덱스)에 고정 배정되며
 // 특정 유저에게 늘 같은 색이 붙는 게 아니라 카드 안에서의 노출 순서에 따라 정해진다.
@@ -105,17 +99,17 @@ function RoomCard(props: RoomCardProps) {
     onPin?.();
   };
 
-  // 방장을 항상 맨 앞에 오도록만 정렬하고, 나머지 순서(참여 시각 내림차순)는
-  // 안정 정렬(stable sort)로 백엔드가 내려준 순서를 그대로 유지한다.
-  const sortedMembers = [...membersPreview].sort((a, b) => {
-    if (a.role === b.role) return 0;
-    return a.role === 'OWNER' ? -1 : 1;
-  });
   // membersPreview엔 아직 응답하지 않은 방장 등이 남아있을 수 있어(예: 응답
   // 0명인데도 방장 1명이 들어있는 경우), 실제로 응답한 인원 수(respondedCount)를
   // 넘는 항목은 신뢰하지 않는다. capacity(목표 인원)도 마찬가지로 실제 참여
-  // 인원이 아니라서 슬롯/배지 계산엔 쓰지 않는다.
-  const respondedMembers = sortedMembers.slice(0, respondedCount);
+  // 인원이 아니라서 슬롯/배지 계산엔 쓰지 않는다. 정렬 전에 먼저 잘라내
+  // 응답자만 남긴 뒤, 그 안에서만 방장을 앞으로 오도록 안정 정렬한다.
+  const respondedMembers = membersPreview
+    .slice(0, respondedCount)
+    .sort((a, b) => {
+      if (a.role === b.role) return 0;
+      return a.role === 'OWNER' ? -1 : 1;
+    });
   const knownMemberTotal = respondedMembers.length + membersPreviewOverflow;
   const showAllMembers = knownMemberTotal <= MAX_PARTICIPANT_SLOTS;
   const maxVisibleSlots = showAllMembers
