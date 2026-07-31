@@ -31,7 +31,8 @@ function Profile({
         className,
       )}
     >
-      <span>{text}</span>
+      {/* disabled는 "+N" 초과 배지 용도라 이름이 아니므로 자르지 않는다 */}
+      <span>{disabled ? text : text.slice(0, 2)}</span>
     </div>
   );
 }

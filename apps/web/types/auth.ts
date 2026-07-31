@@ -18,4 +18,5 @@ export type UserSummaryT = {
   isGoogleCalendarConnected: boolean;
   hasPreSchedule: boolean;
   isAllFree: boolean;
+  notificationEnabled: boolean;
 };
