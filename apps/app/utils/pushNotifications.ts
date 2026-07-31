@@ -44,10 +44,10 @@ export const requestNativePushToken =
 
 // 백엔드 FCM data payload 확인 완료: { id, landingType, tripId } — 여행방과 무관한
 // 알림(정기 리마인드)은 tripId 키 자체가 없어 undefined로 들어온다.
-export const getPushLandingData = (
-  message: RemoteMessage,
+const extractPushLandingData = (
+  data: Record<string, unknown> | undefined,
 ): PushLandingData | null => {
-  const { id, landingType, tripId } = message.data ?? {};
+  const { id, landingType, tripId } = data ?? {};
   if (typeof landingType !== 'string') return null;
 
   return {
@@ -55,4 +55,38 @@ export const getPushLandingData = (
     landingType,
     tripId: typeof tripId === 'string' ? tripId : null,
   };
+};
+
+export const getPushLandingData = (
+  message: RemoteMessage,
+): PushLandingData | null => extractPushLandingData(message.data);
+
+// 포그라운드에서 직접 띄운 로컬 알림(showForegroundNotification)을 탭했을 때 쓰는 경로 —
+// expo-notifications의 응답 객체는 RemoteMessage가 아니라 이 data만 들고 있다.
+export const getPushLandingDataFromLocalNotification = (
+  data: Record<string, unknown> | undefined,
+): PushLandingData | null => extractPushLandingData(data);
+
+// 앱이 포그라운드일 때는 FCM/APNs가 배너를 자동으로 띄워주지 않아, 직접 로컬 알림으로
+// 만들어 보여준다. 이 핸들러는 그렇게 만든 로컬 알림을 포그라운드에서도 배너로 보이게 한다.
+export const configureForegroundNotificationHandler = () => {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+};
+
+export const showForegroundNotification = async (message: RemoteMessage) => {
+  const title = message.notification?.title;
+  const body = message.notification?.body;
+  if (!title && !body) return;
+
+  await Notifications.scheduleNotificationAsync({
+    content: { title, body, data: message.data ?? {} },
+    trigger: null,
+  });
 };

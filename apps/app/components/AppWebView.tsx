@@ -17,8 +17,10 @@ import { getApp } from '@react-native-firebase/app';
 import {
   getInitialNotification,
   getMessaging,
+  onMessage,
   onNotificationOpenedApp,
 } from '@react-native-firebase/messaging';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
@@ -28,8 +30,11 @@ import {
   PushLandingData,
 } from '../types/bridge';
 import {
+  configureForegroundNotificationHandler,
   getPushLandingData,
+  getPushLandingDataFromLocalNotification,
   requestNativePushToken,
+  showForegroundNotification,
 } from '../utils/pushNotifications';
 import { requestNativeSocialLoginToken } from '../utils/socialLogin';
 import { getWebUrl, isWebOrigin } from '../utils/webViewUrl';
@@ -88,6 +93,8 @@ function AppWebView() {
   );
 
   useEffect(() => {
+    configureForegroundNotificationHandler();
+
     const messaging = getMessaging(getApp());
 
     getInitialNotification(messaging).then((remoteMessage) => {
@@ -96,9 +103,28 @@ function AppWebView() {
       }
     });
 
-    return onNotificationOpenedApp(messaging, (remoteMessage) => {
-      handleNotificationOpened(getPushLandingData(remoteMessage));
+    // 앱이 열려 있는 동안 도착한 메시지는 OS가 배너를 자동으로 띄워주지 않아 직접 띄운다.
+    const unsubscribeOnMessage = onMessage(messaging, (remoteMessage) => {
+      showForegroundNotification(remoteMessage);
     });
+    const unsubscribeOnOpenedApp = onNotificationOpenedApp(
+      messaging,
+      (remoteMessage) => {
+        handleNotificationOpened(getPushLandingData(remoteMessage));
+      },
+    );
+    // 위에서 직접 띄운 로컬 알림을 탭한 경우는 FCM 경로가 아니라 이 리스너로 들어온다.
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data;
+        handleNotificationOpened(getPushLandingDataFromLocalNotification(data));
+      });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnOpenedApp();
+      responseSubscription.remove();
+    };
   }, [handleNotificationOpened]);
 
   const handleMessage: OnMessage = useCallback(
