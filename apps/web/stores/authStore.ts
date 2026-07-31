@@ -17,6 +17,8 @@ export type AuthStateT = {
   hasPreSchedule: boolean;
   isAllFree: boolean;
   notificationEnabled: boolean;
+  // 로그아웃 시 서버에 해제 요청을 보내야 해서 등록된 FCM 토큰 값을 들고 있는다.
+  pushDeviceToken: string | null;
   setAuth: (auth: {
     userId: string;
     accessToken: string;
@@ -44,6 +46,7 @@ export type AuthStateT = {
     nickname?: string;
     notificationEnabled?: boolean;
   }) => void;
+  setPushDeviceToken: (pushDeviceToken: string | null) => void;
   clear: () => void;
 };
 
@@ -61,6 +64,7 @@ const INITIAL_AUTH_STATE = {
   hasPreSchedule: false,
   isAllFree: false,
   notificationEnabled: false,
+  pushDeviceToken: null,
 };
 
 export const useAuthStore = create<AuthStateT>()(
@@ -71,6 +75,7 @@ export const useAuthStore = create<AuthStateT>()(
       setAccessToken: (accessToken) => set({ accessToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
+      setPushDeviceToken: (pushDeviceToken) => set({ pushDeviceToken }),
       clear: () => set(INITIAL_AUTH_STATE),
     }),
     {
@@ -92,6 +97,7 @@ export const useAuthStore = create<AuthStateT>()(
         hasPreSchedule: state.hasPreSchedule,
         isAllFree: state.isAllFree,
         notificationEnabled: state.notificationEnabled,
+        pushDeviceToken: state.pushDeviceToken,
       }),
     },
   ),

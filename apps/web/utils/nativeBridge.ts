@@ -15,10 +15,21 @@ declare global {
 
 type NativeSocialLoginProviderT = SocialProviderT;
 
-type NativeBridgeOutgoingMessageT = {
-  type: 'SOCIAL_LOGIN_REQUEST';
-  provider: NativeSocialLoginProviderT;
+export type PushDeviceTypeT = 'ANDROID' | 'IOS';
+
+export type NativePushTokenResultT = {
+  token: string;
+  deviceType: PushDeviceTypeT;
 };
+
+type NativeBridgeOutgoingMessageT =
+  | {
+      type: 'SOCIAL_LOGIN_REQUEST';
+      provider: NativeSocialLoginProviderT;
+    }
+  | {
+      type: 'PUSH_TOKEN_REQUEST';
+    };
 
 type NativeBridgeIncomingMessageT =
   | ({
@@ -29,11 +40,25 @@ type NativeBridgeIncomingMessageT =
       type: 'SOCIAL_LOGIN_ERROR';
       provider: NativeSocialLoginProviderT;
       message: string;
+    }
+  | ({
+      type: 'PUSH_TOKEN_READY';
+    } & NativePushTokenResultT)
+  | {
+      type: 'PUSH_TOKEN_ERROR';
+      message: string;
     };
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
 };
+
+const INCOMING_MESSAGE_TYPES = [
+  'SOCIAL_LOGIN_SUCCESS',
+  'SOCIAL_LOGIN_ERROR',
+  'PUSH_TOKEN_READY',
+  'PUSH_TOKEN_ERROR',
+];
 
 const parseIncomingMessage = (
   raw: unknown,
@@ -41,11 +66,7 @@ const parseIncomingMessage = (
   if (typeof raw !== 'string') return null;
   try {
     const parsed = JSON.parse(raw);
-    if (
-      parsed &&
-      (parsed.type === 'SOCIAL_LOGIN_SUCCESS' ||
-        parsed.type === 'SOCIAL_LOGIN_ERROR')
-    ) {
+    if (parsed && INCOMING_MESSAGE_TYPES.includes(parsed.type)) {
       return parsed as NativeBridgeIncomingMessageT;
     }
   } catch {
@@ -61,7 +82,14 @@ export const requestNativeSocialLogin = (
   new Promise((resolve, reject) => {
     const handleMessage = (event: MessageEvent) => {
       const message = parseIncomingMessage(event.data);
-      if (!message || message.provider !== provider) return;
+      if (
+        !message ||
+        (message.type !== 'SOCIAL_LOGIN_SUCCESS' &&
+          message.type !== 'SOCIAL_LOGIN_ERROR') ||
+        message.provider !== provider
+      ) {
+        return;
+      }
 
       window.removeEventListener('message', handleMessage);
       document.removeEventListener('message', handleMessage as EventListener);
@@ -79,6 +107,34 @@ export const requestNativeSocialLogin = (
     window.addEventListener('message', handleMessage);
     document.addEventListener('message', handleMessage as EventListener);
     postMessageToNative({ type: 'SOCIAL_LOGIN_REQUEST', provider });
+  });
+
+// RN WebView는 플랫폼에 따라 메시지를 window 또는 document에 실어 보내므로 둘 다 구독한다.
+export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
+  new Promise((resolve, reject) => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = parseIncomingMessage(event.data);
+      if (
+        !message ||
+        (message.type !== 'PUSH_TOKEN_READY' &&
+          message.type !== 'PUSH_TOKEN_ERROR')
+      ) {
+        return;
+      }
+
+      window.removeEventListener('message', handleMessage);
+      document.removeEventListener('message', handleMessage as EventListener);
+
+      if (message.type === 'PUSH_TOKEN_READY') {
+        resolve({ token: message.token, deviceType: message.deviceType });
+      } else {
+        reject(new Error(message.message));
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    document.addEventListener('message', handleMessage as EventListener);
+    postMessageToNative({ type: 'PUSH_TOKEN_REQUEST' });
   });
 
 // kakaoAuth/googleAuth/appleAuth 공통 진입점 — 앱(WebView) 안에서는 네이티브 로그인을
