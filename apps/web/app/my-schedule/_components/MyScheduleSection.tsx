@@ -247,10 +247,7 @@ function MyScheduleSection() {
         <CheckCompleteStep
           showHeader
           title="내 일정 입력하기"
-          onBack={() => {
-            setIsIndividualScheduleComplete(false);
-            setIsIndividualScheduleOpen(false);
-          }}
+          onBack={() => setIsIndividualScheduleComplete(false)}
           heading="일정 입력이 완료되었어요!"
           primaryText="확인"
           onPrimaryClick={() => {
@@ -269,14 +266,6 @@ function MyScheduleSection() {
           onSelectTrip={handleSelectTrip}
           initialYear={calendarStartDate.getFullYear()}
           initialMonth={calendarStartDate.getMonth() + 1}
-          heading={
-            <>
-              여행 기간 중 여행이 어렵거나
-              <br />
-              확실하지 않은 날짜를 알려주세요.
-            </>
-          }
-          description="앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요."
           value={individualSchedule}
           onChange={setIndividualSchedule}
           mergedStatus={individualScheduleBackdrop}

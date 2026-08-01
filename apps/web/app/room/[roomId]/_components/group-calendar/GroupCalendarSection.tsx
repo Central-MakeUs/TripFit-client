@@ -427,7 +427,7 @@ function GroupCalendarSection({
         title="응답 요청하기"
         initialTitleValue={`${room.title} 일정 입력 요청`}
         initialDescriptionValue={SCHEDULE_REQUEST_SHARE_DESCRIPTION}
-        linkPath={`/room/${room.id}`}
+        linkPath={`/room/${room.id}?inviteCode=${room.inviteCode}`}
         buttonTitle="응답하기"
         onShare={() => {
           setIsRequestResponseOpen(false);

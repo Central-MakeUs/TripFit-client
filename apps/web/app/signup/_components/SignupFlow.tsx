@@ -31,7 +31,9 @@ import SocialLoginStep from './SocialLoginStep';
 
 type StepT = 'social' | 'profile' | 'schedule';
 
-const PROFILE_STEP_PROGRESS = 28.75;
+// 프로필 설정/캘린더 연동/정기 일정(기본 정보 입력의 첫 단계)까지는 하나의
+// 단계로 묶어서 전부 25%로 보여준다.
+const PROFILE_STEP_PROGRESS = 25;
 
 function SignupFlow() {
   const router = useRouter();
@@ -244,6 +246,15 @@ function SignupFlow() {
               ? 'hasRegularSchedule'
               : 'calendarConnectIntro'
           }
+          title="기본 정보 입력"
+          individualScheduleHeading={
+            <>
+              여행 기간 중 여행이 어렵거나
+              <br />
+              확실하지 않은 날짜를 알려주세요.
+            </>
+          }
+          individualScheduleDescription="앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요."
           calendarConnectTitle="기본 정보 입력"
           calendarConnectProgress={PROFILE_STEP_PROGRESS}
           calendarConnectContinuesToSchedule
