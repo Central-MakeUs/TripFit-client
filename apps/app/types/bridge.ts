@@ -69,6 +69,25 @@ export type BridgeIncomingMessage =
       type: 'NOTIFICATION_RECEIVED';
     };
 
+// OPEN_EXTERNAL_URL은 지금 구글 캘린더 OAuth 동의 화면을 여는 용도로만 쓰인다.
+// isWebOrigin은 메시지를 보낸 WebView가 우리 origin인지만 확인할 뿐, 그 origin
+// 자체에 XSS가 있어 임의의 postMessage를 흉내 내는 경우까지는 막아주지 못한다 —
+// url 값 자체가 https://accounts.google.com이 아니면 거부해, 그런 경우에도
+// Linking.openURL로 임의의 URL(피싱 사이트, 다른 앱의 딥링크 등)을 열 수 없게 한다.
+const ALLOWED_EXTERNAL_URL_HOSTS = ['accounts.google.com'];
+
+const isAllowedExternalUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === 'https:' &&
+      ALLOWED_EXTERNAL_URL_HOSTS.includes(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const parseBridgeMessage = (
   raw: string,
 ): BridgeOutgoingMessage | null => {
@@ -91,7 +110,8 @@ export const parseBridgeMessage = (
     if (
       parsed &&
       parsed.type === 'OPEN_EXTERNAL_URL' &&
-      typeof parsed.url === 'string'
+      typeof parsed.url === 'string' &&
+      isAllowedExternalUrl(parsed.url)
     ) {
       return parsed as BridgeOutgoingMessage;
     }
