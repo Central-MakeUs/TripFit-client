@@ -8,7 +8,7 @@ type NotificationCardProps = {
 };
 
 function NotificationCard({ notification, onClick }: NotificationCardProps) {
-  const { roomName, message, isRead } = notification;
+  const { title, roomName, body, isRead } = notification;
 
   return (
     <li>
@@ -26,9 +26,11 @@ function NotificationCard({ notification, onClick }: NotificationCardProps) {
           <NotificationIcon className="size-4" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-caption-03 text-grey-400">{roomName}</span>
+          <span className="text-caption-03 text-grey-400">
+            {roomName ?? title}
+          </span>
           <p className="text-caption-01 text-grey-800 whitespace-pre-line">
-            {message}
+            {body}
           </p>
         </div>
       </button>

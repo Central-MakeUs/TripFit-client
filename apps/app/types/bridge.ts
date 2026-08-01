@@ -11,10 +11,30 @@ export type NativeSocialLoginResult = {
   authorizationCode?: string;
 };
 
-export type BridgeOutgoingMessage = {
-  type: 'SOCIAL_LOGIN_REQUEST';
-  provider: SocialLoginProvider;
+export type PushDeviceType = 'ANDROID' | 'IOS';
+
+export type NativePushTokenResult = {
+  token: string;
+  deviceType: PushDeviceType;
 };
+
+// landingType/tripId 값 자체는 백엔드가 FCM data payload에 실어 보내는 문자열이라
+// 여기선 구체적인 union으로 제한하지 않고 그대로 전달한다.
+export type PushLandingData = {
+  id: string | null;
+  landingType: string;
+  tripId: string | null;
+};
+
+export type BridgeOutgoingMessage =
+  | {
+      type: 'SOCIAL_LOGIN_REQUEST';
+      provider: SocialLoginProvider;
+    }
+  | {
+      type: 'PUSH_TOKEN_REQUEST';
+      requestId: string;
+    };
 
 export type BridgeIncomingMessage =
   | {
@@ -28,6 +48,21 @@ export type BridgeIncomingMessage =
       type: 'SOCIAL_LOGIN_ERROR';
       provider: SocialLoginProvider;
       message: string;
+    }
+  | ({
+      type: 'PUSH_TOKEN_READY';
+      requestId: string;
+    } & NativePushTokenResult)
+  | {
+      type: 'PUSH_TOKEN_ERROR';
+      requestId: string;
+      message: string;
+    }
+  | ({
+      type: 'NOTIFICATION_OPENED';
+    } & PushLandingData)
+  | {
+      type: 'NOTIFICATION_RECEIVED';
     };
 
 export const parseBridgeMessage = (
@@ -39,6 +74,13 @@ export const parseBridgeMessage = (
       parsed &&
       parsed.type === 'SOCIAL_LOGIN_REQUEST' &&
       SOCIAL_LOGIN_PROVIDERS.includes(parsed.provider)
+    ) {
+      return parsed as BridgeOutgoingMessage;
+    }
+    if (
+      parsed &&
+      parsed.type === 'PUSH_TOKEN_REQUEST' &&
+      typeof parsed.requestId === 'string'
     ) {
       return parsed as BridgeOutgoingMessage;
     }

@@ -9,6 +9,7 @@ import ArrowLeftIcon from '@/assets/icons/arrow-left-200.svg';
 import CalendarMonthIcon from '@/assets/icons/calendar-month.svg';
 import LogoIcon from '@/assets/icons/logo.svg';
 import NotificationIcon from '@/assets/icons/notification.svg';
+import Badge from '@/components/badge';
 import IconButton from '@/components/icon-button';
 import { cn } from '@/utils/cn';
 
@@ -18,7 +19,11 @@ const HEADER_BACKGROUND_CLASS = {
 } as const;
 
 type HeaderProps =
-  | { variant: 'home'; onLogoClick?: () => void }
+  | {
+      variant: 'home';
+      onLogoClick?: () => void;
+      unreadNotificationCount?: number;
+    }
   | {
       variant: 'page';
       title: ReactNode;
@@ -49,11 +54,17 @@ function Header(props: HeaderProps) {
             aria-label="내 일정"
             icon={<CalendarMonthIcon className="text-grey-500" />}
           />
-          <IconButton
-            href="/my-page/notifications"
-            aria-label="알림"
-            icon={<NotificationIcon className="text-grey-500" />}
-          />
+          <div className="relative">
+            <IconButton
+              href="/my-page/notifications"
+              aria-label="알림"
+              icon={<NotificationIcon className="text-grey-500" />}
+            />
+            <Badge
+              count={props.unreadNotificationCount ?? 0}
+              className="pointer-events-none absolute top-1 right-1"
+            />
+          </div>
           <IconButton
             href="/my-page"
             aria-label="마이페이지"
