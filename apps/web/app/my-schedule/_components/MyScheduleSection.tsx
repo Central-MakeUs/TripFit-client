@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addYears, format, max, parseISO, subDays } from 'date-fns';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import AlertModal from '@/components/alert-modal';
@@ -52,11 +52,21 @@ const MENU_ITEMS = [
 ] as const;
 
 function MyScheduleSection() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   // 구글 캘린더 연동은 페이지 전체 리다이렉트(구글 OAuth) 왕복이 필요해 이 컴포넌트의
   // state가 초기화된다 — 콜백이 이 쿼리를 실어 보내면 캘린더 연동 완료 화면부터
   // 다시 연다.
   const resumeScreen = searchParams.get('resumeScreen');
+
+  // resumeScreen은 최초 진입 시 한 번만 반영돼야 한다 — URL에 계속 남아있으면 연동
+  // 해제 후 재연동처럼 이후에 다시 캘린더 연동 화면을 열 때도 완료 화면부터 잘못 뜬다.
+  useEffect(() => {
+    if (resumeScreen) {
+      router.replace('/my-schedule');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     connectGoogleCalendar,
     isKakaoBrowserAlertOpen,
