@@ -89,7 +89,7 @@ function IndividualScheduleInput({
       )}
       {hasTripChips && (
         <>
-          <div className="fixed inset-x-0 top-11 z-20 mx-auto flex w-full gap-2 border-b border-grey-50 bg-white px-5 py-3 sm:max-w-90">
+          <div className="no-scrollbar fixed inset-x-0 top-11 z-20 mx-auto flex w-full gap-2 overflow-x-auto border-b border-grey-50 bg-white px-5 py-3 sm:max-w-90">
             {tripOptions!.map((trip) => {
               const selected = trip.id === selectedTripId;
               return (
