@@ -18,6 +18,7 @@ import Spinner from '@/components/spinner';
 import { getScheduleCalendar } from '@/apis/getScheduleCalendar';
 import { TripHomeCardT } from '@/apis/getTrips';
 import { useGetTrips } from '@/hooks/useGetTrips';
+import { useGoogleCalendarConnect } from '@/hooks/useGoogleCalendarConnect';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
@@ -28,7 +29,6 @@ import {
   getLeaveNoticeDaysFromRegularSchedules,
   mapRegularScheduleItemToClient,
 } from '@/utils/mapRegularSchedule';
-import { startGoogleCalendarConnect } from '@/utils/googleCalendarAuth';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
 const MENU_ITEMS = [
@@ -55,6 +55,11 @@ function MyScheduleSection() {
   // state가 초기화된다 — 콜백이 이 쿼리를 실어 보내면 캘린더 연동 완료 화면부터
   // 다시 연다.
   const resumeScreen = searchParams.get('resumeScreen');
+  const {
+    connectGoogleCalendar,
+    isKakaoBrowserAlertOpen,
+    closeKakaoBrowserAlert,
+  } = useGoogleCalendarConnect();
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(
     () => resumeScreen === 'calendarConnectComplete',
@@ -181,20 +186,30 @@ function MyScheduleSection() {
 
   if (isCalendarConnectOpen) {
     return (
-      <BasicInfo
-        initialScreen={
-          resumeScreen === 'calendarConnectComplete'
-            ? 'calendarConnectComplete'
-            : 'calendarConnectIntro'
-        }
-        onConnectGoogleCalendar={() =>
-          startGoogleCalendarConnect(
-            '/my-schedule?resumeScreen=calendarConnectComplete',
-          )
-        }
-        onExit={() => setIsCalendarConnectOpen(false)}
-        onComplete={() => setIsCalendarConnectOpen(false)}
-      />
+      <>
+        <BasicInfo
+          initialScreen={
+            resumeScreen === 'calendarConnectComplete'
+              ? 'calendarConnectComplete'
+              : 'calendarConnectIntro'
+          }
+          onConnectGoogleCalendar={() =>
+            connectGoogleCalendar(
+              '/my-schedule?resumeScreen=calendarConnectComplete',
+            )
+          }
+          onExit={() => setIsCalendarConnectOpen(false)}
+          onComplete={() => setIsCalendarConnectOpen(false)}
+        />
+        <AlertModal
+          open={isKakaoBrowserAlertOpen}
+          onOpenChange={(open) => !open && closeKakaoBrowserAlert()}
+          title="다른 브라우저에서 열어주세요"
+          description="우측 상단 메뉴(•••)에서 '다른 브라우저로 열기'를 눌러주세요."
+          primaryText="확인"
+          onPrimaryClick={closeKakaoBrowserAlert}
+        />
+      </>
     );
   }
 

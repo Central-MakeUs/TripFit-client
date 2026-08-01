@@ -10,6 +10,7 @@ import { BasicInfoValue } from '@/components/basic-info/basicInfo.const';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
+import { useGoogleCalendarConnect } from '@/hooks/useGoogleCalendarConnect';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { usePostAuthLogin } from '@/hooks/usePostAuthLogin';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
@@ -19,7 +20,6 @@ import { SocialProviderT } from '@/types/auth';
 import { IndividualScheduleValueT } from '@/types/schedule';
 import { requestAppleIdToken } from '@/utils/appleAuth';
 import { requestGoogleIdToken } from '@/utils/googleAuth';
-import { startGoogleCalendarConnect } from '@/utils/googleCalendarAuth';
 import { requestKakaoToken } from '@/utils/kakaoAuth';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 import { SOCIAL_LOGIN_CANCELLED } from '@/utils/nativeBridge';
@@ -48,6 +48,11 @@ function SignupFlow() {
   // 오인해 그대로 홈으로 튕겨나간다 — 그래서 이번 세션에서 이미 플로우를 진행
   // 중인지를 별도로 기억해뒀다가, 그런 경우엔 재진입 판정을 하지 않는다.
   const hasEnteredFlowRef = useRef(false);
+  const {
+    connectGoogleCalendar,
+    isKakaoBrowserAlertOpen,
+    closeKakaoBrowserAlert,
+  } = useGoogleCalendarConnect();
 
   // 초대 링크 등으로 보호된 페이지에 접근하려다 로그인이 안 돼있어 여기로 온
   // 경우, AuthGuard가 원래 경로를 ?redirect=로 실어 보낸다 — 로그인/회원가입이
@@ -224,30 +229,38 @@ function SignupFlow() {
 
   if (step === 'schedule') {
     return (
-      <BasicInfo
-        allowSkip
-        skipPath={redirectTarget}
-        initialScreen={
-          resumeScreen === 'hasRegularSchedule'
-            ? 'hasRegularSchedule'
-            : 'calendarConnectIntro'
-        }
-        calendarConnectTitle="기본 정보 입력"
-        calendarConnectProgress={PROFILE_STEP_PROGRESS}
-        calendarConnectContinuesToSchedule
-        onConnectGoogleCalendar={() =>
-          startGoogleCalendarConnect(
-            buildScheduleReturnPath('hasRegularSchedule'),
-          )
-        }
-        endsAtIncludeHalfDayHoliday
-        confirmDirectInputOnNoRegularSchedule
-        onExit={() => setStep('profile')}
-        onRegularScheduleNext={handleSaveRegularSchedule}
-        onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
-        onBeforeComplete={handleSaveIndividualSchedule}
-        onComplete={() => router.push(redirectTarget)}
-      />
+      <>
+        <BasicInfo
+          allowSkip
+          skipPath={redirectTarget}
+          initialScreen={
+            resumeScreen === 'hasRegularSchedule'
+              ? 'hasRegularSchedule'
+              : 'calendarConnectIntro'
+          }
+          calendarConnectTitle="기본 정보 입력"
+          calendarConnectProgress={PROFILE_STEP_PROGRESS}
+          calendarConnectContinuesToSchedule
+          onConnectGoogleCalendar={() =>
+            connectGoogleCalendar(buildScheduleReturnPath('hasRegularSchedule'))
+          }
+          endsAtIncludeHalfDayHoliday
+          confirmDirectInputOnNoRegularSchedule
+          onExit={() => setStep('profile')}
+          onRegularScheduleNext={handleSaveRegularSchedule}
+          onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
+          onBeforeComplete={handleSaveIndividualSchedule}
+          onComplete={() => router.push(redirectTarget)}
+        />
+        <AlertModal
+          open={isKakaoBrowserAlertOpen}
+          onOpenChange={(open) => !open && closeKakaoBrowserAlert()}
+          title="다른 브라우저에서 열어주세요"
+          description="우측 상단 메뉴(•••)에서 '다른 브라우저로 열기'를 눌러주세요."
+          primaryText="확인"
+          onPrimaryClick={closeKakaoBrowserAlert}
+        />
+      </>
     );
   }
 

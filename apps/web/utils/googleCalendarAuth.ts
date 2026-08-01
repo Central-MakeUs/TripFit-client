@@ -1,5 +1,6 @@
 import { openExternalUrl } from '@/utils/nativeBridge';
 import { createOAuthReturnPath, createOAuthState } from '@/utils/oauthState';
+import { isAndroid, isKakaoTalkInAppBrowser } from '@/utils/platform';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_CALENDAR_SCOPE =
@@ -11,6 +12,15 @@ const OAUTH_PROVIDER_KEY = 'GOOGLE_CALENDAR';
 
 export const getGoogleCalendarRedirectUri = () =>
   `${window.location.origin}/auth/google-calendar/callback`;
+
+// 카카오톡 인앱 브라우저(환경 B)는 네이티브 브릿지가 없어 openExternalUrl로 탈출시킬 수
+// 없다 — 안드로이드는 intent 스킴으로 감싸면 카카오톡이 시스템 기본 브라우저로 넘겨준다.
+// package를 지정하지 않아 특정 브라우저를 강제하지 않고 사용자의 기본 브라우저를 따른다.
+const buildAndroidBrowserEscapeUrl = (url: string): string => {
+  const parsed = new URL(url);
+  const scheme = parsed.protocol.replace(':', '');
+  return `intent://${parsed.host}${parsed.pathname}${parsed.search}#Intent;scheme=${scheme};end`;
+};
 
 // 이미 로그인된 사용자의 캘린더 읽기 권한 추가 동의라 로그인과 달리 id_token/nonce가 필요
 // 없다. 회원가입/마이페이지 등 여러 화면에서 시작할 수 있어 완료 후 돌아갈 경로(returnPath)를
@@ -40,7 +50,16 @@ export const startGoogleCalendarConnect = (returnPath: string) => {
     state: createOAuthState(OAUTH_PROVIDER_KEY),
   });
 
-  openExternalUrl(`${GOOGLE_AUTH_URL}?${params.toString()}`);
+  const authorizeUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+
+  // 환경 B(카카오 인앱 브라우저) + 안드로이드: intent 스킴으로 시스템 브라우저 탈출.
+  // 환경 A(우리 앱 WebView) + 그 외 일반 브라우저: openExternalUrl에 위임.
+  if (isKakaoTalkInAppBrowser() && isAndroid()) {
+    window.location.href = buildAndroidBrowserEscapeUrl(authorizeUrl);
+    return;
+  }
+
+  openExternalUrl(authorizeUrl);
 };
 
 export const GOOGLE_CALENDAR_OAUTH_PROVIDER_KEY = OAUTH_PROVIDER_KEY;
