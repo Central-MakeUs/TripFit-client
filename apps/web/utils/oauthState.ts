@@ -1,3 +1,5 @@
+import { randomUUID } from '@/utils/uuid';
+
 // 소셜 로그인 리다이렉트(웹 브라우저 플로우 전용, 네이티브 브릿지 플로우는 해당 없음)의
 // 요청↔콜백을 연결하는 CSRF 방지용 state와, ID 토큰 재생 공격을 막는 nonce를 관리한다.
 // 같은 탭에서의 왕복 한 번에만 유효하면 되므로 sessionStorage를 쓴다.
@@ -6,7 +8,7 @@ const NONCE_STORAGE_PREFIX = 'tripfit-oauth-nonce:';
 const RETURN_PATH_STORAGE_PREFIX = 'tripfit-oauth-return-path:';
 
 export const createOAuthState = (provider: string): string => {
-  const state = crypto.randomUUID();
+  const state = randomUUID();
   sessionStorage.setItem(`${STATE_STORAGE_PREFIX}${provider}`, state);
   return state;
 };
@@ -23,7 +25,7 @@ export const consumeOAuthState = (
 };
 
 export const createOAuthNonce = (provider: string): string => {
-  const nonce = crypto.randomUUID();
+  const nonce = randomUUID();
   sessionStorage.setItem(`${NONCE_STORAGE_PREFIX}${provider}`, nonce);
   return nonce;
 };

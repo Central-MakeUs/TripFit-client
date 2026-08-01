@@ -1,5 +1,6 @@
 import { SocialLoginTokenT, SocialProviderT } from '@/types/auth';
 import { isReactNativeWebView } from '@/utils/platform';
+import { randomUUID } from '@/utils/uuid';
 
 // apps/app/utils/socialLogin.ts의 SOCIAL_LOGIN_CANCELLED와 동일한 값이어야 한다 —
 // 사용자가 로그인 자체를 취소했을 때 앱이 보내는 에러 메시지를 나타낸다.
@@ -150,7 +151,7 @@ export const requestNativeSocialLogin = (
 // RN WebView는 플랫폼에 따라 메시지를 window 또는 document에 실어 보내므로 둘 다 구독한다.
 export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
   new Promise((resolve, reject) => {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
 
     const handleMessage = (event: MessageEvent) => {
       const message = parseIncomingMessage(event.data);
