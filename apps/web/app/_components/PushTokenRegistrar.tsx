@@ -13,13 +13,21 @@ function PushTokenRegistrar() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const setPushDeviceToken = useAuthStore((state) => state.setPushDeviceToken);
   const { postDeviceTokenMutation } = usePostDeviceToken();
-  const hasRequestedRef = useRef(false);
+  // boolean이 아니라 처리한 accessToken 값 자체를 기억한다 — 로그아웃 후 /signup(공개 경로)에서도
+  // 이 컴포넌트는 계속 마운트돼 있어서(AuthGuard 참고), boolean이면 최초 로그인 이후 계속 true로
+  // 남아 재로그인 시 새 세션의 토큰 등록이 스킵된다. 세션(토큰) 단위로 묶으면 로그아웃 시
+  // accessToken이 바뀌는 것만으로 자연히 재등록된다.
+  const requestedForTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!accessToken || !isReactNativeWebView() || hasRequestedRef.current) {
+    if (
+      !accessToken ||
+      !isReactNativeWebView() ||
+      requestedForTokenRef.current === accessToken
+    ) {
       return;
     }
-    hasRequestedRef.current = true;
+    requestedForTokenRef.current = accessToken;
 
     requestNativePushToken()
       .then(({ token, deviceType }) => {
