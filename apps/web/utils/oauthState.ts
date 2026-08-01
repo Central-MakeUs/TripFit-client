@@ -1,8 +1,11 @@
+import { randomUUID } from '@/utils/uuid';
+
 // 소셜 로그인 리다이렉트(웹 브라우저 플로우 전용, 네이티브 브릿지 플로우는 해당 없음)의
 // 요청↔콜백을 연결하는 CSRF 방지용 state와, ID 토큰 재생 공격을 막는 nonce를 관리한다.
 // 같은 탭에서의 왕복 한 번에만 유효하면 되므로 sessionStorage를 쓴다.
 const STATE_STORAGE_PREFIX = 'tripfit-oauth-state:';
 const NONCE_STORAGE_PREFIX = 'tripfit-oauth-nonce:';
+const RETURN_PATH_STORAGE_PREFIX = 'tripfit-oauth-return-path:';
 const REDIRECT_TARGET_STORAGE_KEY = 'tripfit-oauth-redirect-target';
 
 // 구글/카카오/애플 로그인은 전체 페이지 이동(리다이렉트) 방식이라, /signup?redirect=...로
@@ -20,7 +23,7 @@ export const consumeOAuthRedirectTarget = (): string => {
 };
 
 export const createOAuthState = (provider: string): string => {
-  const state = crypto.randomUUID();
+  const state = randomUUID();
   sessionStorage.setItem(`${STATE_STORAGE_PREFIX}${provider}`, state);
   return state;
 };
@@ -37,7 +40,7 @@ export const consumeOAuthState = (
 };
 
 export const createOAuthNonce = (provider: string): string => {
-  const nonce = crypto.randomUUID();
+  const nonce = randomUUID();
   sessionStorage.setItem(`${NONCE_STORAGE_PREFIX}${provider}`, nonce);
   return nonce;
 };
@@ -67,4 +70,17 @@ export const consumeOAuthNonce = (
 
   const payload = decodeJwtPayload(idToken);
   return payload?.nonce === savedNonce;
+};
+
+// 구글 캘린더 연동처럼 같은 플로우를 여러 화면(회원가입, 마이페이지 등)에서 시작할 수 있는
+// 경우, 리다이렉트 왕복 동안 "완료 후 어디로 돌아갈지"를 기억해뒀다가 콜백에서 꺼내 쓴다.
+export const createOAuthReturnPath = (provider: string, path: string): void => {
+  sessionStorage.setItem(`${RETURN_PATH_STORAGE_PREFIX}${provider}`, path);
+};
+
+export const consumeOAuthReturnPath = (provider: string): string | null => {
+  const key = `${RETURN_PATH_STORAGE_PREFIX}${provider}`;
+  const path = sessionStorage.getItem(key);
+  sessionStorage.removeItem(key);
+  return path;
 };

@@ -13,6 +13,7 @@ import IconButton from '@/components/icon-button';
 import Modal from '@/components/modal';
 import { RegularScheduleT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
+import { randomUUID } from '@/utils/uuid';
 
 import TimePicker from './TimePicker';
 
@@ -109,7 +110,7 @@ function RegularScheduleDetailStep({
       onChange([
         ...value,
         {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           days: draftDays,
           startTime: draftStartTime,
           endTime: draftEndTime,

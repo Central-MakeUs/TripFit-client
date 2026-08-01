@@ -1,3 +1,6 @@
+import Image from 'next/image';
+
+import calendarConnectIllustration from '@/assets/images/calendar-connect-illustration.png';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
@@ -32,7 +35,12 @@ function CalendarConnectIntroStep({
           간편하게 여행 일정을 추천받으세요.
         </p>
         <div className="flex flex-1 items-start justify-center pt-25">
-          <div className="size-30 rounded-[20px] bg-grey-100" />
+          <Image
+            src={calendarConnectIllustration}
+            alt=""
+            width={168}
+            height={168}
+          />
         </div>
       </div>
       <CtaButtonGroup

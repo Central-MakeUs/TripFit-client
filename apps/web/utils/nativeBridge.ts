@@ -1,5 +1,6 @@
 import { SocialLoginTokenT, SocialProviderT } from '@/types/auth';
 import { isReactNativeWebView } from '@/utils/platform';
+import { randomUUID } from '@/utils/uuid';
 
 // apps/app/utils/socialLogin.ts의 SOCIAL_LOGIN_CANCELLED와 동일한 값이어야 한다 —
 // 사용자가 로그인 자체를 취소했을 때 앱이 보내는 에러 메시지를 나타낸다.
@@ -38,6 +39,10 @@ type NativeBridgeOutgoingMessageT =
   | {
       type: 'PUSH_TOKEN_REQUEST';
       requestId: string;
+    }
+  | {
+      type: 'OPEN_EXTERNAL_URL';
+      url: string;
     };
 
 type NativeBridgeIncomingMessageT =
@@ -68,6 +73,17 @@ type NativeBridgeIncomingMessageT =
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+};
+
+// 구글은 앱 내장 WebView를 "제한된 브라우저"로 감지해 OAuth 동의 화면을 막는다 — 구글 캘린더
+// 연동처럼 WebView 안에서 열면 안 되는 URL은 네이티브에 시스템 브라우저로 열어달라고 위임한다.
+// 일반 브라우저에서는 네이티브 브릿지가 없으니 그냥 같은 탭에서 이동한다.
+export const openExternalUrl = (url: string) => {
+  if (isReactNativeWebView()) {
+    postMessageToNative({ type: 'OPEN_EXTERNAL_URL', url });
+    return;
+  }
+  window.location.href = url;
 };
 
 const INCOMING_MESSAGE_TYPES = [
@@ -135,7 +151,7 @@ export const requestNativeSocialLogin = (
 // RN WebView는 플랫폼에 따라 메시지를 window 또는 document에 실어 보내므로 둘 다 구독한다.
 export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
   new Promise((resolve, reject) => {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUUID();
 
     const handleMessage = (event: MessageEvent) => {
       const message = parseIncomingMessage(event.data);

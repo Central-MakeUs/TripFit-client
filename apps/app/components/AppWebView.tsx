@@ -53,12 +53,22 @@ type OnShouldStartLoadWithRequest = NonNullable<
   WebViewComponentProps['onShouldStartLoadWithRequest']
 >;
 
+// 렌더러가 계속 죽는 기기/상황(예: 지속적인 메모리 부족)에서 매번 재마운트만
+// 반복하며 무한 루프에 빠지지 않도록, 이 횟수를 넘기면 재마운트 대신 에러 화면을
+// 보여준다.
+const MAX_RENDER_PROCESS_GONE_RETRIES = 3;
+
 function AppWebView() {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [uri, setUri] = useState(() => getWebUrl());
+  // onRenderProcessGone 이후의 WebView 인스턴스는 안드로이드 자체 문서에도 명시돼
+  // 있듯 더 이상 안전하게 쓸 수 없다 — 같은 인스턴스에 reload()를 호출하는 대신
+  // key를 바꿔 완전히 새 인스턴스로 강제 재마운트한다.
+  const [webViewKey, setWebViewKey] = useState(0);
+  const renderProcessGoneCountRef = useRef(0);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
@@ -210,6 +220,25 @@ function AppWebView() {
                   : '알림 토큰을 받아오지 못했어요.',
             });
           });
+        return;
+      }
+
+      // 구글은 앱에 내장된 WebView를 "제한된 브라우저"로 감지해 OAuth 동의 화면을 막는다 —
+      // 구글 캘린더 연동처럼 WebView 안에서 그대로 열면 안 되는 URL은 시스템 기본 브라우저로
+      // 대신 열어준다. 이후 콜백은 딥링크(Universal/App Links)로 앱에 다시 들어온다.
+      if (message.type === 'OPEN_EXTERNAL_URL') {
+        Linking.openURL(message.url).catch((error) => {
+          // 브라우저 실행 자체가 실패하면 OAuth가 시작도 못 되는데, 이 실패는 웹 쪽
+          // 응답 계약에 없어 알려줄 방법이 없다 — 최소한 기기 로그로는 남긴다.
+          // client_id/state 등이 담긴 전체 URL은 남기지 않고 origin만 남긴다.
+          let origin = 'unknown';
+          try {
+            origin = new URL(message.url).origin;
+          } catch {
+            // message.url이 유효한 URL이 아니어도 경고 로그 자체는 남겨야 한다.
+          }
+          console.warn('[AppWebView] Linking.openURL 실패:', origin, error);
+        });
       }
     },
     [sendToWeb],
@@ -220,6 +249,10 @@ function AppWebView() {
   // 경우가 있어, 오버레이가 안 걷히고 흰 화면에 멈추는 문제가 있었다.
   const handleLoadFinished = useCallback(() => {
     setIsLoading(false);
+    // 정상적으로 로딩이 끝났다는 건 방금 재마운트한 인스턴스가 살아있다는 뜻이라,
+    // 과거의 렌더러 크래시 횟수를 계속 들고 있을 이유가 없다 — 오래전 크래시 몇 번
+    // 때문에 지금 멀쩡한 세션이 에러 화면으로 잠기는 걸 막는다.
+    renderProcessGoneCountRef.current = 0;
     if (pendingNotificationRef.current) {
       sendToWeb(pendingNotificationRef.current);
       pendingNotificationRef.current = null;
@@ -253,13 +286,39 @@ function AppWebView() {
 
   const handleRetry = () => {
     setHasError(false);
-    webViewRef.current?.reload();
+    // 렌더러가 반복적으로 죽어서 에러 화면까지 온 경우 죽은 인스턴스가 남아있을 수
+    // 있어, reload() 대신 key를 바꿔 새 인스턴스로 시작하고 크래시 횟수도 초기화한다.
+    renderProcessGoneCountRef.current = 0;
+    setWebViewKey((key) => key + 1);
   };
+
+  // 구글 로그인/캘린더 연동처럼 외부 화면(시스템 브라우저, 계정 선택 시트)으로 갔다 돌아올 때
+  // 에뮬레이터·저사양 기기에서는 백그라운드로 밀린 WebView의 렌더러 프로세스를 OS가 강제
+  // 종료시킬 수 있다 — onError와 달리 이 경우는 별도 이벤트로만 감지되고, 방치하면 아무
+  // 안내도 없이 흰 화면인 채로 영원히 멈춘다. 안드로이드는 onRenderProcessGone, iOS는
+  // onContentProcessDidTerminate로 이벤트 이름이 다를 뿐 같은 상황이라 동일하게 처리한다.
+  //
+  // 렌더러가 죽은 뒤의 WebView 인스턴스는 더 이상 안전하게 쓸 수 없어(안드로이드 공식
+  // 문서에도 명시) 같은 ref에 reload()를 호출하지 않는다 — key를 바꿔 완전히 새
+  // 인스턴스로 강제 재마운트한다. 지속적으로 죽는 상황이면 무한 재마운트 대신 에러
+  // 화면으로 전환한다.
+  const handleRenderProcessGone = useCallback(() => {
+    renderProcessGoneCountRef.current += 1;
+    if (renderProcessGoneCountRef.current > MAX_RENDER_PROCESS_GONE_RETRIES) {
+      setHasError(true);
+      return;
+    }
+    // 새 인스턴스의 onLoadStart가 뜨기 전까지 잠깐 빈 화면이 보이지 않도록 미리 켠다.
+    setIsLoading(true);
+    setHasError(false);
+    setWebViewKey((key) => key + 1);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* 에러 시에도 webViewRef가 살아있어야 다시 시도(reload)가 가능하므로 WebView는 항상 마운트해두고 오버레이로만 가린다 */}
+      {/* 에러 시에도 다시 시도(key 변경으로 재마운트) 가능해야 하므로 WebView는 항상 렌더링해두고 오버레이로만 가린다 */}
       <WebView
+        key={webViewKey}
         ref={webViewRef}
         source={{ uri }}
         style={styles.webview}
@@ -272,6 +331,8 @@ function AppWebView() {
         }}
         onLoadEnd={handleLoadFinished}
         onError={() => setHasError(true)}
+        onRenderProcessGone={handleRenderProcessGone}
+        onContentProcessDidTerminate={handleRenderProcessGone}
       />
       {hasError ? (
         <View style={styles.center}>
