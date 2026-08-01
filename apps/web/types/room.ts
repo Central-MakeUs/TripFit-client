@@ -13,8 +13,8 @@ export type RoomT = {
   title: string;
   startDate: string;
   endDate: string;
-  nights: number;
-  days: number;
+  nights: number | null;
+  days: number | null;
   destination: string;
   memberCount: number;
   activeMemberCount: number;

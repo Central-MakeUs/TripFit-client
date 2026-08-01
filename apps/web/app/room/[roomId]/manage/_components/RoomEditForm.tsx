@@ -1,12 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 
+import ErrorIcon from '@/assets/icons/error.svg';
 import Checkbox from '@/components/checkbox';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Input from '@/components/input';
 import { RoomT } from '@/types/room';
+
+import { useTripDurationFields } from '../../../_common/_hooks/useTripDurationFields';
+import { isTripDurationValid } from '../../../_common/_utils/tripDuration';
 
 type RoomEditFormProps = {
   room: RoomT;
@@ -23,30 +27,43 @@ type RoomEditFormProps = {
 const NAME_MAX_LENGTH = 15;
 const DESTINATION_MAX_LENGTH = 15;
 
-const toDigitsOnly = (value: string) => value.replace(/\D/g, '');
-
 function RoomEditForm({ room, onSave }: RoomEditFormProps) {
   const [title, setTitle] = useState(room.title);
-  const [nights, setNights] = useState(String(room.nights));
-  const [days, setDays] = useState(String(room.days));
-  const [isDurationUndecided, setIsDurationUndecided] = useState(false);
+  const [duration, setDuration] = useState({
+    nights: room.nights !== null ? String(room.nights) : '',
+    days: room.days !== null ? String(room.days) : '',
+  });
+  const [isDurationUndecided, setIsDurationUndecided] = useState(
+    room.nights === null || room.days === null,
+  );
   const [destination, setDestination] = useState(room.destination);
   const [isDestinationUndecided, setIsDestinationUndecided] = useState(
     !room.destination,
   );
+  const { handleNightsChange, handleDaysChange } = useTripDurationFields(
+    duration,
+    setDuration,
+  );
 
   const startDate = parseISO(room.startDate);
   const endDate = parseISO(room.endDate);
+  const periodDays = differenceInCalendarDays(endDate, startDate) + 1;
 
   const isTitleValid = !!title.trim();
-  const isDurationValid = isDurationUndecided || (!!nights && !!days);
+  const isDurationValid =
+    isDurationUndecided || isTripDurationValid(duration, periodDays);
   const isDestinationValid = isDestinationUndecided || !!destination.trim();
+
+  const hasDurationError =
+    !isDurationUndecided &&
+    !!duration.nights &&
+    !!duration.days &&
+    !isTripDurationValid(duration, periodDays);
 
   const handleToggleDurationUndecided = (checked: boolean) => {
     setIsDurationUndecided(checked);
     if (checked) {
-      setNights('');
-      setDays('');
+      setDuration({ nights: '', days: '' });
     }
   };
 
@@ -58,8 +75,8 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
   const handleSave = () => {
     onSave({
       title: title.trim(),
-      nights,
-      days,
+      nights: duration.nights,
+      days: duration.days,
       isDurationUndecided,
       destination: isDestinationUndecided ? '' : destination.trim(),
       isDestinationUndecided,
@@ -100,10 +117,9 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
                 type="text"
                 inputMode="numeric"
                 disabled={isDurationUndecided}
-                value={nights}
-                onChange={(event) =>
-                  setNights(toDigitsOnly(event.target.value))
-                }
+                value={duration.nights}
+                onChange={(event) => handleNightsChange(event.target.value)}
+                error={hasDurationError}
                 suffixSlot={
                   <span className="text-body-03 text-grey-300">박</span>
                 }
@@ -115,14 +131,21 @@ function RoomEditForm({ room, onSave }: RoomEditFormProps) {
                 type="text"
                 inputMode="numeric"
                 disabled={isDurationUndecided}
-                value={days}
-                onChange={(event) => setDays(toDigitsOnly(event.target.value))}
+                value={duration.days}
+                onChange={(event) => handleDaysChange(event.target.value)}
+                error={hasDurationError}
                 suffixSlot={
                   <span className="text-body-03 text-grey-300">일</span>
                 }
               />
             </div>
           </div>
+          {hasDurationError && (
+            <span className="text-caption-02 mt-1 flex items-center gap-1 text-red-300">
+              <ErrorIcon className="h-4 w-4" />
+              여행 일수를 다시 확인해주세요
+            </span>
+          )}
           <label className="flex w-fit items-center gap-2">
             <Checkbox
               checked={isDurationUndecided}

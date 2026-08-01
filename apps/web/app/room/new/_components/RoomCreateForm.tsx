@@ -33,15 +33,16 @@ import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
+import {
+  isTripDurationValid,
+  TripDurationValue,
+} from '../../_common/_utils/tripDuration';
 import { usePostRoom } from '../_hooks/usePostRoom';
 import CompleteStep from './steps/CompleteStep';
 import DestinationStep from './steps/DestinationStep';
 import ParticipantCountStep from './steps/ParticipantCountStep';
 import RoomNameStep from './steps/RoomNameStep';
-import TripDurationStep, {
-  isTripDurationValid,
-  TripDurationValue,
-} from './steps/TripDurationStep';
+import TripDurationStep from './steps/TripDurationStep';
 import TripPeriodStep, { TripPeriodValue } from './steps/TripPeriodStep';
 
 const TOTAL_STEPS = 6;

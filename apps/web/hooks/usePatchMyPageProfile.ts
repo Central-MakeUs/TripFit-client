@@ -1,9 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { patchMyPageProfile } from '@/apis/patchMyPageProfile';
 import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
 import { useAuthStore } from '@/stores/authStore';
-
-import { patchMyPageProfile } from '../_apis/patchMyPageProfile';
 
 export const usePatchMyPageProfile = () => {
   const setProfile = useAuthStore((state) => state.setProfile);
@@ -11,6 +10,7 @@ export const usePatchMyPageProfile = () => {
 
   const {
     mutate: patchMyPageProfileMutation,
+    mutateAsync: patchMyPageProfileMutationAsync,
     isPending: isPatchMyPageProfilePending,
     error: patchMyPageProfileError,
   } = useMutation({
@@ -26,6 +26,7 @@ export const usePatchMyPageProfile = () => {
 
   return {
     patchMyPageProfileMutation,
+    patchMyPageProfileMutationAsync,
     isPatchMyPageProfilePending,
     patchMyPageProfileError,
   };

@@ -144,6 +144,10 @@ export const requestNativeSocialLogin = (
     postMessageToNative({ type: 'SOCIAL_LOGIN_REQUEST', provider });
   });
 
+// 네이티브가 브릿지 메시지 자체를 못 보내는 경우(RN 쪽 크래시, 메시지 유실 등)까지 대비한
+// 상한선. OS 권한 다이얼로그에 사용자가 응답할 시간은 충분히 줘야 해서 넉넉하게 잡는다.
+const PUSH_TOKEN_REQUEST_TIMEOUT_MS = 30_000;
+
 // origin 검증이 불가능한 채널이라(RN WebView 브릿지는 event.origin/source로 네이티브 응답과
 // 다른 출처의 메시지를 구분할 수 없다), 카카오/구글 SDK가 띄우는 iframe 등 제3자 스크립트가
 // window.postMessage로 위조된 PUSH_TOKEN_READY를 먼저 보내면 그대로 수락되어 공격자의 토큰이
@@ -152,6 +156,12 @@ export const requestNativeSocialLogin = (
 export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
   new Promise((resolve, reject) => {
     const requestId = randomUUID();
+
+    const cleanup = () => {
+      window.removeEventListener('message', handleMessage);
+      document.removeEventListener('message', handleMessage as EventListener);
+      clearTimeout(timeoutId);
+    };
 
     const handleMessage = (event: MessageEvent) => {
       const message = parseIncomingMessage(event.data);
@@ -164,8 +174,7 @@ export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
         return;
       }
 
-      window.removeEventListener('message', handleMessage);
-      document.removeEventListener('message', handleMessage as EventListener);
+      cleanup();
 
       if (message.type === 'PUSH_TOKEN_READY') {
         resolve({ token: message.token, deviceType: message.deviceType });
@@ -173,6 +182,13 @@ export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
         reject(new Error(message.message));
       }
     };
+
+    // 네이티브가 끝내 응답하지 않으면 이 Promise가 영원히 pending 상태로 남아
+    // 호출부(알림 토글 등)가 계속 잠긴 채로 남는다 — 시간 초과 시 명시적으로 reject한다.
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error('알림 권한 요청이 응답하지 않았어요.'));
+    }, PUSH_TOKEN_REQUEST_TIMEOUT_MS);
 
     window.addEventListener('message', handleMessage);
     document.addEventListener('message', handleMessage as EventListener);

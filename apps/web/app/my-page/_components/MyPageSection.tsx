@@ -9,14 +9,18 @@ import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import Profile from '@/components/profile';
 import Toggle from '@/components/toggle';
+import { usePatchMyPageProfile } from '@/hooks/usePatchMyPageProfile';
+import { usePostDeviceToken } from '@/hooks/usePostDeviceToken';
 import {
   clearAuthGuardRedirectSuppression,
   suppressNextAuthGuardRedirectOnce,
   useAuthStore,
 } from '@/stores/authStore';
+import { requestNativePushToken } from '@/utils/nativeBridge';
+import { isReactNativeWebView } from '@/utils/platform';
 
+import { useDeleteDeviceToken } from '../_hooks/useDeleteDeviceToken';
 import { useDeleteUser } from '../_hooks/useDeleteUser';
-import { usePatchMyPageProfile } from '../_hooks/usePatchMyPageProfile';
 import { usePostLogout } from '../_hooks/usePostLogout';
 import ProfileEditNameView from './ProfileEditNameView';
 import WithdrawConfirmView from './WithdrawConfirmView';
@@ -31,12 +35,20 @@ function MyPageSection() {
   const email = useAuthStore((state) => state.email);
   const firstName = useAuthStore((state) => state.firstName);
   const lastName = useAuthStore((state) => state.lastName);
-  // 알림 허용은 아직 백엔드에 반영하지 않고 로컬 상태로만 토글한다.
+  const pushDeviceToken = useAuthStore((state) => state.pushDeviceToken);
+  const setPushDeviceToken = useAuthStore((state) => state.setPushDeviceToken);
   const [notificationEnabled, setNotificationEnabled] = useState(
     useAuthStore.getState().notificationEnabled,
   );
+  // 알림 토글 하나(PATCH+POST/DELETE)가 끝날 때까지 다음 토글 조작을 막는다 —
+  // 아니면 빠르게 껐다 켰다 할 때 요청들이 뒤섞여서 최신 선택과 다른 상태로
+  // 끝나버릴 수 있다.
+  const [isTogglingNotification, setIsTogglingNotification] = useState(false);
 
-  const { patchMyPageProfileMutation } = usePatchMyPageProfile();
+  const { patchMyPageProfileMutation, patchMyPageProfileMutationAsync } =
+    usePatchMyPageProfile();
+  const { postDeviceTokenMutationAsync } = usePostDeviceToken();
+  const { deleteDeviceTokenMutationAsync } = useDeleteDeviceToken();
   const { deleteUserMutation } = useDeleteUser();
   const { postLogoutMutation } = usePostLogout();
 
@@ -56,8 +68,53 @@ function MyPageSection() {
     );
   };
 
-  const handleToggleNotification = (checked: boolean) => {
+  // 토글은 OS 알림 권한 자체를 켜고 끄지 않는다(기기 설정에서 거부한 건 앱이 되돌릴 수
+  // 없음) — 대신 이 기기의 FCM 토큰을 서버에 등록/해제해 실제 수신 여부를 제어한다.
+  //
+  // PATCH(프로필)·POST/DELETE(디바이스 토큰)를 병렬로 쏘거나 완료를 기다리지 않고 다음
+  // 조작을 허용하면, 빠르게 껐다 켰다 할 때 요청 완료 순서가 뒤바뀌어 방금 등록한
+  // 토큰을 이전 DELETE가 지워버리거나 서버 notificationEnabled 값이 마지막 선택과
+  // 달라질 수 있다 — 하나의 직렬 async 작업으로 묶고, 끝날 때까지 토글을 잠근다.
+  const handleToggleNotification = async (checked: boolean) => {
+    if (isTogglingNotification) return;
+
+    const previousNotificationEnabled = notificationEnabled;
+    const previousPushDeviceToken = pushDeviceToken;
+
+    setIsTogglingNotification(true);
     setNotificationEnabled(checked);
+
+    try {
+      if (!checked) {
+        if (previousPushDeviceToken) {
+          await deleteDeviceTokenMutationAsync(previousPushDeviceToken);
+          setPushDeviceToken(null);
+        }
+        await patchMyPageProfileMutationAsync({ notificationEnabled: false });
+        return;
+      }
+
+      if (!isReactNativeWebView()) {
+        await patchMyPageProfileMutationAsync({ notificationEnabled: true });
+        return;
+      }
+
+      const { token, deviceType } = await requestNativePushToken();
+      await postDeviceTokenMutationAsync({ token, deviceType });
+      setPushDeviceToken(token);
+      await patchMyPageProfileMutationAsync({ notificationEnabled: true });
+    } catch {
+      // 실패하면 낙관적으로 바꿔둔 로컬 상태를 원래대로 되돌린다.
+      setNotificationEnabled(previousNotificationEnabled);
+      setPushDeviceToken(previousPushDeviceToken);
+      setErrorMessage(
+        checked
+          ? '알림 권한이 필요해요. 기기 설정에서 알림을 허용해주세요.'
+          : '알림 설정을 저장하지 못했어요. 잠시 후 다시 시도해주세요.',
+      );
+    } finally {
+      setIsTogglingNotification(false);
+    }
   };
 
   const handleWithdraw = () => {
@@ -139,6 +196,7 @@ function MyPageSection() {
             <Toggle
               checked={notificationEnabled}
               onCheckedChange={handleToggleNotification}
+              disabled={isTogglingNotification}
               aria-label="알림 허용"
             />
           </div>

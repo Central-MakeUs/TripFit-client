@@ -100,6 +100,8 @@ function GroupCalendarSection({
   const [scheduleErrorMessage, setScheduleErrorMessage] = useState<
     string | null
   >(null);
+  const [isDurationRequiredModalOpen, setIsDurationRequiredModalOpen] =
+    useState(false);
 
   const {
     regularSchedulesData,
@@ -164,6 +166,18 @@ function GroupCalendarSection({
   };
 
   const respondedCount = room.activeMemberCount;
+  // 여행 일수(nights/days)가 정해지지 않은 방은 추천 일정 계산 자체가 불가능하다.
+  // 확정된 일정은 확정 시점에 이미 일수가 존재하므로 isConfirmed일 때는 체크하지 않는다.
+  const isTripDurationUndecided =
+    !isConfirmed && (room.nights === null || room.days === null);
+
+  const handleShowRecommendation = () => {
+    if (isTripDurationUndecided) {
+      setIsDurationRequiredModalOpen(true);
+      return;
+    }
+    onShowRecommendation();
+  };
 
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData
@@ -387,7 +401,7 @@ function GroupCalendarSection({
                 isConfirmed ? '확정된 일정 확인하기' : '추천 일정 확인하기'
               }
               primaryColor="secondary"
-              onPrimaryClick={onShowRecommendation}
+              onPrimaryClick={handleShowRecommendation}
             />
           </div>
           <div aria-hidden className="h-15 w-full shrink-0" />
@@ -417,6 +431,25 @@ function GroupCalendarSection({
         buttonTitle="응답하기"
         onShare={() => {
           setIsRequestResponseOpen(false);
+        }}
+      />
+
+      <AlertModal
+        open={isDurationRequiredModalOpen}
+        onOpenChange={setIsDurationRequiredModalOpen}
+        title="여행 일수를 먼저 정해주세요"
+        description={
+          <>
+            여행 일수가 정해지지 않으면
+            <br />
+            추천 일정을 확인할 수 없어요.
+          </>
+        }
+        primaryText="여행방 관리로 이동"
+        primaryColor="primary"
+        onPrimaryClick={() => {
+          setIsDurationRequiredModalOpen(false);
+          router.push(`/room/${room.id}/manage`);
         }}
       />
 

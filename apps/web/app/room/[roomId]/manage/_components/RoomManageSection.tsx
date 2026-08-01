@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
+// 알림 끄기 버튼과 함께 주석 처리 — 재연동 시 되살릴 것
+// import NotificationsOffIcon from '@/assets/icons/notifications-off.svg';
 import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
-import IconButton from '@/components/icon-button';
+// import IconButton from '@/components/icon-button';
 import Spinner from '@/components/spinner';
 
 import ShareSheet from '../../../_common/_components/ShareSheet';
@@ -82,17 +83,18 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
         variant="page"
         title={mode === 'view' ? '여행방 상세' : '여행방 편집'}
         onBack={mode === 'edit' ? () => setMode('view') : undefined}
-        rightSlot={
-          mode === 'view' ? (
-            <IconButton
-              aria-label="알림 끄기"
-              icon={<NotificationsOffIcon className="text-grey-500" />}
-              onClick={() => {
-                // TODO: 여행방 알림 끄기 API 연동
-              }}
-            />
-          ) : undefined
-        }
+        // 알림 끄기 API 연동 전까지 버튼을 숨겨둔다.
+        // rightSlot={
+        //   mode === 'view' ? (
+        //     <IconButton
+        //       aria-label="알림 끄기"
+        //       icon={<NotificationsOffIcon className="text-grey-500" />}
+        //       onClick={() => {
+        //         // TODO: 여행방 알림 끄기 API 연동
+        //       }}
+        //     />
+        //   ) : undefined
+        // }
       />
 
       {mode === 'view' ? (
