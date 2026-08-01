@@ -10,6 +10,7 @@ import Header from '@/components/header';
 import Profile from '@/components/profile';
 import Toggle from '@/components/toggle';
 import {
+  clearAuthGuardRedirectSuppression,
   suppressNextAuthGuardRedirectOnce,
   useAuthStore,
 } from '@/stores/authStore';
@@ -66,7 +67,13 @@ function MyPageSection() {
     suppressNextAuthGuardRedirectOnce();
     deleteUserMutation(undefined, {
       onSuccess: () => router.push('/signup'),
-      onError: (error) => setErrorMessage(error.message),
+      // 요청 자체가 실패하면 accessToken이 안 지워져 AuthGuard가 이번엔
+      // 반응하지 않으므로, 켜둔 억제 플래그가 다음(무관한) 차단 때 잘못
+      // 소비되지 않도록 꺼둔다.
+      onError: (error) => {
+        clearAuthGuardRedirectSuppression();
+        setErrorMessage(error.message);
+      },
     });
   };
 
@@ -74,7 +81,10 @@ function MyPageSection() {
     suppressNextAuthGuardRedirectOnce();
     postLogoutMutation(undefined, {
       onSuccess: () => router.push('/signup'),
-      onError: (error) => setErrorMessage(error.message),
+      onError: (error) => {
+        clearAuthGuardRedirectSuppression();
+        setErrorMessage(error.message);
+      },
     });
   };
 

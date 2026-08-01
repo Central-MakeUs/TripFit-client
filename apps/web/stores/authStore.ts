@@ -90,6 +90,14 @@ export const consumeAuthGuardRedirectSuppression = (): boolean => {
   return shouldSuppress;
 };
 
+// 로그아웃/탈퇴 요청 자체가 실패하면(네트워크 오류 등) accessToken이 안 지워져
+// AuthGuard가 이번엔 반응하지 않지만, 켜둔 플래그는 그대로 남는다 — 나중에 전혀
+// 무관한 이유로 AuthGuard가 차단될 때 그 플래그가 잘못 소비되어, 그때는 꼭
+// 필요한 리다이렉트 목적지 보존이 누락될 수 있다. 실패 시 반드시 꺼둔다.
+export const clearAuthGuardRedirectSuppression = () => {
+  suppressNextAuthGuardRedirect = false;
+};
+
 export const useAuthStore = create<AuthStateT>()(
   persist(
     (set) => ({
