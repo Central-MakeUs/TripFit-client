@@ -137,7 +137,11 @@ function DayDetailView({
         submitDisabled={isScheduleUnchanged || isPatchPersonalSchedulePending}
         onSubmit={() => {
           patchPersonalScheduleMutation(
-            { date: format(selectedDate, 'yyyy-MM-dd'), value: scheduleValue },
+            {
+              date: format(selectedDate, 'yyyy-MM-dd'),
+              value: scheduleValue,
+              baseline: initialScheduleValue,
+            },
             {
               onSuccess: () => {
                 setIsEditOpen(false);

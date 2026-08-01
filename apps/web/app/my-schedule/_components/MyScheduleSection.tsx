@@ -1,26 +1,33 @@
 'use client';
 
 import { useState } from 'react';
+import { addYears, format, max, parseISO, subDays } from 'date-fns';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
-import { DEFAULT_BASIC_INFO_VALUE } from '@/components/basic-info/basicInfo.const';
+import {
+  BasicInfoValue,
+  DEFAULT_BASIC_INFO_VALUE,
+} from '@/components/basic-info/basicInfo.const';
+import CheckCompleteStep from '@/components/check-complete-step';
 import Header from '@/components/header';
 import IndividualScheduleInput from '@/components/individual-schedule-input';
-import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
+import Spinner from '@/components/spinner';
+import { getScheduleCalendar } from '@/apis/getScheduleCalendar';
+import { TripHomeCardT } from '@/apis/getTrips';
+import { useGetTrips } from '@/hooks/useGetTrips';
+import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
+import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
+import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { IndividualScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
-
-// TODO: 참여 중인 여행 목록 조회 API 연동 전까지 임시로 고정
-const MOCK_TRIP_OPTIONS = [
-  { id: '1', title: '제주도 여행' },
-  { id: '2', title: '나트랑 여행' },
-  { id: '3', title: '전주 여행' },
-];
-
-// TODO: 근무 일정 저장 여부 조회 API 연동 후 실제 저장된 값으로 대체
-const MOCK_SAVED_REGULAR_SCHEDULES: RegularScheduleT[] = [
-  { id: 'mock-1', days: [1, 2, 3], startTime: '09:30', endTime: '18:00' },
-];
+import {
+  getIncludeHalfDayHolidayFromRegularSchedules,
+  getLeaveNoticeDaysFromRegularSchedules,
+  mapRegularScheduleItemToClient,
+} from '@/utils/mapRegularSchedule';
+import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
 const MENU_ITEMS = [
   {
@@ -45,9 +52,123 @@ function MyScheduleSection() {
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(false);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
-  const [individualScheduleValue, setIndividualScheduleValue] =
+  const [isIndividualScheduleComplete, setIsIndividualScheduleComplete] =
+    useState(false);
+  const [individualSchedule, setIndividualSchedule] =
     useState<IndividualScheduleValueT>({});
-  const [selectedTripId, setSelectedTripId] = useState('1');
+  const [individualScheduleBackdrop, setIndividualScheduleBackdrop] =
+    useState<IndividualScheduleValueT>({});
+  // 여행 칩은 별도 API를 호출하는 게 아니라, 같은 개인 일정 달력을 어느 여행
+  // 기간부터 보여줄지 정하는 화면 전용 선택 상태다 — 이 화면 밖에서 쓰이지
+  // 않으므로 전역 상태(zustand)로 뺄 이유 없이 로컬 state로 충분하다.
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const { tripsData } = useGetTrips({ scope: 'ongoing' });
+  const tripOptions = (tripsData ?? []).map((trip) => ({
+    id: trip.tripId,
+    title: trip.name,
+  }));
+  const selectedTrip =
+    tripsData?.find((trip) => trip.tripId === selectedTripId) ??
+    tripsData?.[0] ??
+    null;
+
+  const {
+    regularSchedulesData,
+    isRegularSchedulesLoading,
+    saveRegularSchedule,
+  } = useSaveRegularSchedule();
+  const { refreshScheduleStatus } = useRefreshScheduleStatus();
+  const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
+
+  const today = new Date();
+
+  // 칩으로 고른 여행 기간에 맞춰 그때그때 새로 조회한다 — 개인 일정 달력
+  // API는 오늘~오늘+2년-1일까지만 허용하지만, 그 여행의 희망 기간 종료일이
+  // 그보다 뒤면 그 날짜까지 상한이 늘어난다. 이미 불러온 다른 기간의
+  // baseline은 덮어쓰지 않고 합쳐서, 그 기간에 입력해둔 편집이 나중에
+  // 저장할 때도 올바른 기준값으로 비교되게 한다.
+  const loadScheduleCalendarForTrip = async (
+    trip: TripHomeCardT | null,
+  ): Promise<boolean> => {
+    const defaultEnd = subDays(addYears(today, 2), 1);
+    const endDate = trip
+      ? max([defaultEnd, parseISO(trip.endRange)])
+      : defaultEnd;
+    try {
+      const data = await getScheduleCalendar({
+        startDate: format(today, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
+      });
+      setIndividualScheduleBackdrop((prev) => ({
+        ...prev,
+        ...mapScheduleCalendarToIndividualScheduleValue(data.days),
+      }));
+      return true;
+    } catch (error) {
+      // 기준값 조회가 실패한 채로 진행하면 모든 날짜가 기본값(가능)으로
+      // 취급돼, 실제 서버 상태와 다른 기준으로 편집·저장될 수 있다.
+      setErrorMessage(
+        error instanceof Error ? error.message : '일정을 불러오지 못했어요.',
+      );
+      return false;
+    }
+  };
+
+  const handleSelectTrip = (tripId: string) => {
+    setSelectedTripId(tripId);
+    const trip = tripsData?.find((item) => item.tripId === tripId) ?? null;
+    loadScheduleCalendarForTrip(trip);
+  };
+
+  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+    try {
+      await saveRegularSchedule(value);
+      await refreshScheduleStatus();
+      return true;
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return false;
+    }
+  };
+
+  const handleOpenIndividualSchedule = async () => {
+    setIndividualSchedule({});
+    setIndividualScheduleBackdrop({});
+    const defaultTrip = tripsData?.[0] ?? null;
+    setSelectedTripId(defaultTrip?.tripId ?? null);
+    // 기준값 조회에 실패하면 잘못된(전부 가능 처리된) 기준으로 편집하게 되므로,
+    // 조회가 끝나 성공했을 때만 입력 화면으로 들어간다.
+    const success = await loadScheduleCalendarForTrip(defaultTrip);
+    if (success) {
+      setIsIndividualScheduleOpen(true);
+    }
+  };
+
+  const handleSaveIndividualSchedule = async () => {
+    try {
+      if (Object.keys(individualSchedule).length > 0) {
+        await patchPersonalScheduleMutation({
+          value: individualSchedule,
+          mergedStatus: individualScheduleBackdrop,
+        });
+        await refreshScheduleStatus();
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+      );
+      return;
+    }
+    setIsIndividualScheduleComplete(true);
+  };
+
+  const calendarStartDate = selectedTrip
+    ? max([today, parseISO(selectedTrip.startRange)])
+    : today;
 
   if (isCalendarConnectOpen) {
     return (
@@ -60,40 +181,103 @@ function MyScheduleSection() {
   }
 
   if (isIndividualScheduleOpen) {
+    if (isIndividualScheduleComplete) {
+      return (
+        <CheckCompleteStep
+          showHeader
+          title="내 일정 입력하기"
+          onBack={() => {
+            setIsIndividualScheduleComplete(false);
+            setIsIndividualScheduleOpen(false);
+          }}
+          heading="일정 입력이 완료되었어요!"
+          primaryText="확인"
+          onPrimaryClick={() => {
+            setIsIndividualScheduleComplete(false);
+            setIsIndividualScheduleOpen(false);
+          }}
+        />
+      );
+    }
+
     return (
-      <IndividualScheduleInput
-        tripOptions={MOCK_TRIP_OPTIONS}
-        selectedTripId={selectedTripId}
-        onSelectTrip={setSelectedTripId}
-        value={individualScheduleValue}
-        onChange={setIndividualScheduleValue}
-        onBack={() => setIsIndividualScheduleOpen(false)}
-        onNext={() => {
-          // TODO: 개별 일정 저장 API 연동
-          setIsIndividualScheduleOpen(false);
-        }}
-      />
+      <>
+        <IndividualScheduleInput
+          tripOptions={tripOptions}
+          selectedTripId={selectedTrip?.tripId}
+          onSelectTrip={handleSelectTrip}
+          initialYear={calendarStartDate.getFullYear()}
+          initialMonth={calendarStartDate.getMonth() + 1}
+          heading={
+            <>
+              여행 기간 중 여행이 어렵거나
+              <br />
+              확실하지 않은 날짜를 알려주세요.
+            </>
+          }
+          description="앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요."
+          value={individualSchedule}
+          onChange={setIndividualSchedule}
+          mergedStatus={individualScheduleBackdrop}
+          onBack={() => setIsIndividualScheduleOpen(false)}
+          onNext={handleSaveIndividualSchedule}
+        />
+        <AlertModal
+          open={errorMessage !== null}
+          onOpenChange={(open) => !open && setErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={errorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setErrorMessage(null)}
+        />
+      </>
     );
   }
 
   if (isBasicInfoOpen) {
+    if (isRegularSchedulesLoading) {
+      return (
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+      );
+    }
+
+    const items = regularSchedulesData ?? [];
     return (
-      <BasicInfo
-        allowSkip={false}
-        title="기본 정보 관리"
-        initialScreen="regularScheduleDetail"
-        initialValue={{
-          ...DEFAULT_BASIC_INFO_VALUE,
-          hasRegularSchedule: true,
-          regularSchedules: MOCK_SAVED_REGULAR_SCHEDULES,
-        }}
-        endsAtIncludeHalfDayHoliday
-        onExit={() => setIsBasicInfoOpen(false)}
-        onRegularScheduleNext={() => {
-          // TODO: 기본 정보(정기 일정/연차 조건) 저장 API 연동
-        }}
-        onComplete={() => setIsBasicInfoOpen(false)}
-      />
+      <>
+        <BasicInfo
+          allowSkip={false}
+          title="기본 정보 관리"
+          initialScreen="regularScheduleDetail"
+          initialValue={{
+            ...DEFAULT_BASIC_INFO_VALUE,
+            hasRegularSchedule: items.length > 0,
+            regularSchedules: items.map(mapRegularScheduleItemToClient),
+            annualLeaveCount: items[0]?.maxVacationDays ?? null,
+            leaveNoticeDays: getLeaveNoticeDaysFromRegularSchedules(items),
+            includeHalfDayHoliday:
+              getIncludeHalfDayHolidayFromRegularSchedules(items),
+          }}
+          endsAtIncludeHalfDayHoliday
+          onExit={() => setIsBasicInfoOpen(false)}
+          onRegularScheduleNext={handleSaveRegularSchedule}
+          onComplete={() => setIsBasicInfoOpen(false)}
+          completeTitle="기본 정보 관리"
+          completeHeading="기본 정보 수정이 완료되었어요!"
+          completePrimaryText="확인"
+        />
+        <AlertModal
+          open={errorMessage !== null}
+          onOpenChange={(open) => !open && setErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={errorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setErrorMessage(null)}
+        />
+      </>
     );
   }
 
@@ -107,7 +291,7 @@ function MyScheduleSection() {
       return;
     }
     if (key === 'schedule') {
-      setIsIndividualScheduleOpen(true);
+      handleOpenIndividualSchedule();
       return;
     }
   };
@@ -139,6 +323,15 @@ function MyScheduleSection() {
           ))}
         </ul>
       </div>
+      <AlertModal
+        open={errorMessage !== null}
+        onOpenChange={(open) => !open && setErrorMessage(null)}
+        variant="danger"
+        title="문제가 발생했어요"
+        description={errorMessage ?? ''}
+        primaryText="확인"
+        onPrimaryClick={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

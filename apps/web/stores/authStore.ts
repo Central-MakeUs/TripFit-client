@@ -47,6 +47,10 @@ export type AuthStateT = {
     notificationEnabled?: boolean;
   }) => void;
   setPushDeviceToken: (pushDeviceToken: string | null) => void;
+  setScheduleStatus: (status: {
+    hasPreSchedule: boolean;
+    isAllFree: boolean;
+  }) => void;
   clear: () => void;
 };
 
@@ -76,6 +80,7 @@ export const useAuthStore = create<AuthStateT>()(
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
       setPushDeviceToken: (pushDeviceToken) => set({ pushDeviceToken }),
+      setScheduleStatus: (status) => set(status),
       clear: () => set(INITIAL_AUTH_STATE),
     }),
     {

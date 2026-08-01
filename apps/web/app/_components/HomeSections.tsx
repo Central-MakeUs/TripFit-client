@@ -15,7 +15,7 @@ import Spinner from '@/components/spinner';
 import TextButton from '@/components/text-button';
 import { cn } from '@/utils/cn';
 
-import { useGetTrips } from '../_hooks/useGetTrips';
+import { useGetTrips } from '@/hooks/useGetTrips';
 import { usePatchTripPin } from '../_hooks/usePatchTripPin';
 import {
   getTripDateRange,

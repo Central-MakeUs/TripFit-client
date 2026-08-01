@@ -2,9 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthenticatedMutationFn } from '@/hooks/useAuthenticatedMutationFn';
 
-import { GetTripsResponseT } from '../_apis/getTrips';
+import { GetTripsResponseT } from '@/apis/getTrips';
+import { TRIPS_QUERY_KEY } from '@/hooks/useGetTrips';
+
 import { patchTripPin } from '../_apis/patchTripPin';
-import { TRIPS_QUERY_KEY } from './useGetTrips';
 
 export const usePatchTripPin = () => {
   const queryClient = useQueryClient();

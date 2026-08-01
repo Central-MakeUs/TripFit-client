@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 
-import { TripHomeCardT } from '../_apis/getTrips';
+import { TripHomeCardT } from '@/apis/getTrips';
 
 type StatusTagT = { text: string; type: 'secondary' | 'tertiary' };
 

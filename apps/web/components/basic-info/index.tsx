@@ -3,11 +3,14 @@
 import { ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import CloseIcon from '@/assets/icons/close.svg';
 import AlertModal from '@/components/alert-modal';
 import CheckCompleteStep from '@/components/check-complete-step';
 import Header from '@/components/header';
+import IconButton from '@/components/icon-button';
 import IndividualScheduleInput from '@/components/individual-schedule-input';
 import ProgressBar from '@/components/progress-bar';
+import { IndividualScheduleValueT } from '@/types/schedule';
 
 import {
   BASIC_INFO_PROGRESS_STEPS,
@@ -31,12 +34,25 @@ type BasicInfoProps = {
   onRegularScheduleNext?: (
     value: BasicInfoValue,
   ) => boolean | void | Promise<boolean | void>;
-  /** 개별 일정 입력 마지막 "다음"에서, 완료 화면으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 개별 일정 저장, 여행방 confirm처럼 완료 화면 도달 전에 처리해야 하는 동작에 사용. false를 반환하면 완료 화면으로 넘어가지 않음 (반환값 없으면 true로 간주) */
+  /** 개별 일정 화면 진입 직전(정기 일정 없음 확정 시 또는 반차/공휴일 스텝 다음)에 호출됨 — 반환값이 있으면 개별 일정 초기값을 그 값으로 교체함(예: 방금 저장된 정기 일정을 반영한 병합 캘린더로 갱신) */
+  onBeforeIndividualSchedule?: () =>
+    | Promise<IndividualScheduleValueT | void>
+    | IndividualScheduleValueT
+    | void;
+  /** 개별 일정 입력 마지막 "다음"에서, 완료 화면으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 개별 일정 저장, 여행방 confirm처럼 완료 화면 도달 전에 처리해야 하는 동작에 사용. false를 반환하면 완료 화면으로 넘어가지 않음 (반환값 없으면 true로 간주). 두 번째 인자는 개별 일정 화면의 배경값(정기 일정 등을 합친 병합 캘린더)으로, 슬롯이 이 값과 같은 날짜인지 판단해 uncertain만 보낼지 결정하는 데 사용 */
   onBeforeComplete?: (
     value: BasicInfoValue,
+    individualScheduleBackdrop: IndividualScheduleValueT,
   ) => boolean | void | Promise<boolean | void>;
   allowSkip?: boolean;
+  /** "건너뛰기" 시 이동할 경로 — 미지정 시 홈("/"). 초대 링크로 들어온 회원가입처럼
+   * 완료 후 원래 가려던 곳으로 이어져야 하는 플로우에서 사용 */
+  skipPath?: string;
   onExit?: () => void;
+  /** 지정하면 위저드 전 화면(완료 화면 포함) 헤더 오른쪽에 전체 닫기(X) 버튼을
+   * 보여줌 — 자유롭게 나갈 수 있는 임의 편집 플로우에서만 쓰고, 반드시 완료해야
+   * 하는 필수 입력 플로우(allowSkip={false}인 최초 일정 입력 등)에는 넘기지 않는다 */
+  onClose?: () => void;
   /** 위저드 메인 화면의 헤더 타이틀 — 미지정 시 "일정 입력하기" */
   title?: string;
   /** 캘린더 연동 스텝의 헤더 타이틀 — 미지정 시 "캘린더 연동하기" */
@@ -47,6 +63,10 @@ type BasicInfoProps = {
   calendarConnectContinuesToSchedule?: boolean;
   /** true면 반차/공휴일 포함 여부 스텝이 마지막 스텝이 되어 개별 일정 입력 없이 바로 완료됨 (내 일정 관리처럼 개별 일정을 별도 메뉴로 다루는 플로우에 사용) */
   endsAtIncludeHalfDayHoliday?: boolean;
+  /** true면 "정기 일정 없어요" 선택 시 "여행이 어려운 날짜를 직접 입력하시겠어요?"
+   * 확인 모달을 띄운다. "직접 입력"을 고르면 연차/공휴일 스텝을 건너뛰고 바로
+   * 개별 일정 입력으로 이동하고, "건너뛰기"를 고르면 홈으로 나간다(회원가입 전용) */
+  confirmDirectInputOnNoRegularSchedule?: boolean;
   /** 완료 화면의 헤더 타이틀 — 미지정 시 "기본 정보 입력" */
   completeTitle?: string;
   /** 완료 화면 헤딩 — 미지정 시 "기본 정보 등록이 완료되었습니다!" */
@@ -68,14 +88,18 @@ function BasicInfo({
   initialScreen = 'hasRegularSchedule',
   onComplete,
   onRegularScheduleNext,
+  onBeforeIndividualSchedule,
   onBeforeComplete,
   allowSkip = true,
+  skipPath = '/',
   onExit,
+  onClose,
   title = '일정 입력하기',
   calendarConnectTitle,
   calendarConnectProgress,
   calendarConnectContinuesToSchedule = false,
   endsAtIncludeHalfDayHoliday = false,
+  confirmDirectInputOnNoRegularSchedule = false,
   completeTitle,
   completeHeading,
   completeDescription,
@@ -89,7 +113,14 @@ function BasicInfo({
     initialScreen,
   ]);
   const [value, setValue] = useState<BasicInfoValue>(initialValue);
-  const [isNoScheduleConfirmOpen, setIsNoScheduleConfirmOpen] = useState(false);
+  // 정기 일정 등을 합쳐 계산된 읽기 전용 배경값 — 캘린더에 보여주기만 하고
+  // value.individualSchedule(실제 저장 대상)과는 분리해서 들고 있는다. 합쳐서
+  // 들고 있으면 사용자가 건드리지 않은, 정기 패턴 때문일 뿐인 날짜까지 개별
+  // 오버라이드로 저장돼버려서 이후 정기 패턴이 바뀌어도 그 값에 고정되어버린다.
+  const [individualScheduleBackdrop, setIndividualScheduleBackdrop] =
+    useState<IndividualScheduleValueT>({});
+  const [isDirectInputConfirmOpen, setIsDirectInputConfirmOpen] =
+    useState(false);
 
   const screen =
     screenHistory[screenHistory.length - 1] ?? 'hasRegularSchedule';
@@ -122,20 +153,33 @@ function BasicInfo({
       hasRegularSchedule,
       regularSchedules: hasRegularSchedule ? prev.regularSchedules : [],
     }));
-    if (hasRegularSchedule) {
-      navigateTo('regularScheduleDetail');
+    if (!hasRegularSchedule && confirmDirectInputOnNoRegularSchedule) {
+      setIsDirectInputConfirmOpen(true);
       return;
     }
-    setIsNoScheduleConfirmOpen(true);
+    navigateTo(
+      hasRegularSchedule ? 'regularScheduleDetail' : 'annualLeaveCount',
+    );
   };
 
-  const handleConfirmNoSchedule = () => {
-    setIsNoScheduleConfirmOpen(false);
+  const handleConfirmDirectInput = () => {
+    setIsDirectInputConfirmOpen(false);
+    enterIndividualSchedule();
+  };
+
+  const enterIndividualSchedule = async () => {
+    // 아직 저장(onBeforeComplete)까지 가지 않고 뒤로 나갔다가 이 스텝을 다시
+    // 통과하는 경우, 이전에 추가만 해두고 제출하지 않은 값은 버려야 한다.
+    setValue((prev) => ({ ...prev, individualSchedule: {} }));
+    const mergedIndividualSchedule = await onBeforeIndividualSchedule?.();
+    if (mergedIndividualSchedule) {
+      setIndividualScheduleBackdrop(mergedIndividualSchedule);
+    }
     navigateTo('individualSchedule');
   };
 
   const handleSkip = () => {
-    router.push('/');
+    router.push(skipPath);
   };
 
   const handleRegularScheduleDetailNext = () => {
@@ -153,11 +197,16 @@ function BasicInfo({
   const handleIncludeHalfDayHolidayNext = async () => {
     const canProceed = (await onRegularScheduleNext?.(value)) ?? true;
     if (!canProceed) return;
-    navigateTo(endsAtIncludeHalfDayHoliday ? 'complete' : 'individualSchedule');
+    if (endsAtIncludeHalfDayHoliday) {
+      navigateTo('complete');
+      return;
+    }
+    await enterIndividualSchedule();
   };
 
   const handleIndividualScheduleNext = async () => {
-    const canProceed = (await onBeforeComplete?.(value)) ?? true;
+    const canProceed =
+      (await onBeforeComplete?.(value, individualScheduleBackdrop)) ?? true;
     if (!canProceed) return;
     navigateTo('complete');
   };
@@ -223,6 +272,7 @@ function BasicInfo({
         onChange={(individualSchedule) =>
           setValue((prev) => ({ ...prev, individualSchedule }))
         }
+        mergedStatus={individualScheduleBackdrop}
         onNext={handleIndividualScheduleNext}
       />
     );
@@ -250,13 +300,27 @@ function BasicInfo({
         }
         showHeader
         onBack={handleBack}
+        onClose={onClose}
       />
     );
   }
 
   return (
     <div className="flex w-full flex-1 flex-col">
-      <Header variant="page" title={title} onBack={handleBack} />
+      <Header
+        variant="page"
+        title={title}
+        onBack={handleBack}
+        rightSlot={
+          onClose && (
+            <IconButton
+              onClick={onClose}
+              aria-label="닫기"
+              icon={<CloseIcon className="text-grey-500" />}
+            />
+          )
+        }
+      />
       <div className="px-5 py-1">
         <ProgressBar size="sm" value={progress} />
       </div>
@@ -317,8 +381,8 @@ function BasicInfo({
         )}
       </div>
       <AlertModal
-        open={isNoScheduleConfirmOpen}
-        onOpenChange={setIsNoScheduleConfirmOpen}
+        open={isDirectInputConfirmOpen}
+        onOpenChange={setIsDirectInputConfirmOpen}
         icon={null}
         title={
           <>
@@ -329,10 +393,10 @@ function BasicInfo({
         }
         description="입력한 날짜는 제외하고 추천할게요"
         secondaryText="건너뛰기"
-        onSecondaryClick={handleConfirmNoSchedule}
+        onSecondaryClick={handleSkip}
         primaryText="직접 입력"
         primaryColor="primary"
-        onPrimaryClick={handleConfirmNoSchedule}
+        onPrimaryClick={handleConfirmDirectInput}
       />
     </div>
   );

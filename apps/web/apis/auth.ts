@@ -19,3 +19,7 @@ export const postAuthLogin = (requestBody: PostAuthLoginRequestT) =>
     method: 'POST',
     data: requestBody,
   });
+
+export type GetAuthMeResponseT = UserSummaryT;
+
+export const getAuthMe = () => request<GetAuthMeResponseT>('/api/v1/auth/me');
