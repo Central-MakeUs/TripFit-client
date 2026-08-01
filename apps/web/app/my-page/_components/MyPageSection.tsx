@@ -9,7 +9,10 @@ import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import Profile from '@/components/profile';
 import Toggle from '@/components/toggle';
-import { useAuthStore } from '@/stores/authStore';
+import {
+  suppressNextAuthGuardRedirectOnce,
+  useAuthStore,
+} from '@/stores/authStore';
 
 import { useDeleteUser } from '../_hooks/useDeleteUser';
 import { usePatchMyPageProfile } from '../_hooks/usePatchMyPageProfile';
@@ -57,6 +60,10 @@ function MyPageSection() {
   };
 
   const handleWithdraw = () => {
+    // clear()로 accessToken이 지워지는 시점과 아래 router.push가 실제로 반영되는
+    // 시점 사이의 찰나에 AuthGuard가 먼저 반응해 "방금 있던 페이지로 돌아오라"는
+    // 리다이렉트를 만들어버릴 수 있어, 그걸 이번 한 번은 건너뛰라고 미리 표시해둔다.
+    suppressNextAuthGuardRedirectOnce();
     deleteUserMutation(undefined, {
       onSuccess: () => router.push('/signup'),
       onError: (error) => setErrorMessage(error.message),
@@ -64,6 +71,7 @@ function MyPageSection() {
   };
 
   const handleLogout = () => {
+    suppressNextAuthGuardRedirectOnce();
     postLogoutMutation(undefined, {
       onSuccess: () => router.push('/signup'),
       onError: (error) => setErrorMessage(error.message),

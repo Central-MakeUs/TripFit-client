@@ -67,6 +67,25 @@ const INITIAL_AUTH_STATE = {
   notificationEnabled: false,
 };
 
+// 로그아웃/탈퇴처럼 사용자가 의도적으로 인증을 끝낸 경우를 표시해두는 플래그.
+// clear() 호출로 accessToken이 지워지는 순간과 그 화면을 벗어나는 router 이동
+// 사이에는 렌더링 타이밍상 미세한 간격이 있어서, 그 사이에 AuthGuard가 먼저
+// 반응해 "지금 있던 페이지로 돌아오라"는 리다이렉트를 만들어버릴 수 있다 —
+// 의도적으로 로그아웃/탈퇴하는 경우엔 그 리다이렉트가 필요 없으므로, 이 플래그로
+// AuthGuard에게 이번 한 번은 건너뛰라고 미리 알려준다. React state가 아니라 순수
+// 모듈 변수라 렌더 타이밍과 무관하게 즉시 반영된다.
+let suppressNextAuthGuardRedirect = false;
+
+export const suppressNextAuthGuardRedirectOnce = () => {
+  suppressNextAuthGuardRedirect = true;
+};
+
+export const consumeAuthGuardRedirectSuppression = (): boolean => {
+  const shouldSuppress = suppressNextAuthGuardRedirect;
+  suppressNextAuthGuardRedirect = false;
+  return shouldSuppress;
+};
+
 export const useAuthStore = create<AuthStateT>()(
   persist(
     (set) => ({
