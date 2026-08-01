@@ -22,9 +22,13 @@ function PushTokenRegistrar() {
   const requestedForTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // notificationEnabled를 구독하지 않고 실행 시점에 한 번만 읽는다 — 구독하면 아래
+    // patchMyPageProfileMutation 성공으로 그 값이 바뀔 때마다 이 effect가 다시 돌아
+    // 불필요하게(또는 무한히) 재등록을 시도하게 된다.
     if (
       !accessToken ||
       !isReactNativeWebView() ||
+      !useAuthStore.getState().notificationEnabled ||
       requestedForTokenRef.current === accessToken
     ) {
       return;
