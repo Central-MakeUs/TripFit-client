@@ -385,7 +385,16 @@ function MyScheduleSection() {
 
   return (
     <div className="flex w-full flex-1 flex-col bg-grey-20">
-      <Header variant="page" title="내 일정 관리" background="grey-20" />
+      <Header
+        variant="page"
+        title="내 일정 관리"
+        background="grey-20"
+        // 기본 뒤로가기(router.back())는 브라우저 히스토리를 그대로 따라가는데,
+        // 캘린더 연동을 거치고 온 경우 구글 자신의 페이지(계정 선택·동의 화면)가
+        // 히스토리에 남아있어 그리로 가버린다 — /my-schedule은 홈에서만 진입하는
+        // 경로라 항상 홈으로 고정한다.
+        onBack={() => router.push('/')}
+      />
       <div className="flex w-full flex-1 flex-col px-5 py-3">
         <ul className="flex w-full flex-col overflow-hidden rounded-2xl">
           {menuItems.map((item, index) => (
