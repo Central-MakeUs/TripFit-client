@@ -195,13 +195,15 @@ function AppWebView() {
       }
 
       if (message.type === 'PUSH_TOKEN_REQUEST') {
+        const { requestId } = message;
         requestNativePushToken()
           .then((result) => {
-            sendToWeb({ type: 'PUSH_TOKEN_READY', ...result });
+            sendToWeb({ type: 'PUSH_TOKEN_READY', requestId, ...result });
           })
           .catch((error) => {
             sendToWeb({
               type: 'PUSH_TOKEN_ERROR',
+              requestId,
               message:
                 error instanceof Error
                   ? error.message

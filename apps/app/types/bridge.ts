@@ -33,6 +33,7 @@ export type BridgeOutgoingMessage =
     }
   | {
       type: 'PUSH_TOKEN_REQUEST';
+      requestId: string;
     };
 
 export type BridgeIncomingMessage =
@@ -50,9 +51,11 @@ export type BridgeIncomingMessage =
     }
   | ({
       type: 'PUSH_TOKEN_READY';
+      requestId: string;
     } & NativePushTokenResult)
   | {
       type: 'PUSH_TOKEN_ERROR';
+      requestId: string;
       message: string;
     }
   | ({
@@ -74,7 +77,11 @@ export const parseBridgeMessage = (
     ) {
       return parsed as BridgeOutgoingMessage;
     }
-    if (parsed && parsed.type === 'PUSH_TOKEN_REQUEST') {
+    if (
+      parsed &&
+      parsed.type === 'PUSH_TOKEN_REQUEST' &&
+      typeof parsed.requestId === 'string'
+    ) {
       return parsed as BridgeOutgoingMessage;
     }
   } catch {

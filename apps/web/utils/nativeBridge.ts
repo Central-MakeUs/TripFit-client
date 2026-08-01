@@ -37,6 +37,7 @@ type NativeBridgeOutgoingMessageT =
     }
   | {
       type: 'PUSH_TOKEN_REQUEST';
+      requestId: string;
     };
 
 type NativeBridgeIncomingMessageT =
@@ -51,9 +52,11 @@ type NativeBridgeIncomingMessageT =
     }
   | ({
       type: 'PUSH_TOKEN_READY';
+      requestId: string;
     } & NativePushTokenResultT)
   | {
       type: 'PUSH_TOKEN_ERROR';
+      requestId: string;
       message: string;
     }
   | ({
@@ -125,15 +128,22 @@ export const requestNativeSocialLogin = (
     postMessageToNative({ type: 'SOCIAL_LOGIN_REQUEST', provider });
   });
 
+// origin 검증이 불가능한 채널이라(RN WebView 브릿지는 event.origin/source로 네이티브 응답과
+// 다른 출처의 메시지를 구분할 수 없다), 카카오/구글 SDK가 띄우는 iframe 등 제3자 스크립트가
+// window.postMessage로 위조된 PUSH_TOKEN_READY를 먼저 보내면 그대로 수락되어 공격자의 토큰이
+// 인증된 계정에 등록될 수 있었다 — 요청마다 예측 불가능한 requestId를 발급해 응답과 대조한다.
 // RN WebView는 플랫폼에 따라 메시지를 window 또는 document에 실어 보내므로 둘 다 구독한다.
 export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
   new Promise((resolve, reject) => {
+    const requestId = crypto.randomUUID();
+
     const handleMessage = (event: MessageEvent) => {
       const message = parseIncomingMessage(event.data);
       if (
         !message ||
         (message.type !== 'PUSH_TOKEN_READY' &&
-          message.type !== 'PUSH_TOKEN_ERROR')
+          message.type !== 'PUSH_TOKEN_ERROR') ||
+        message.requestId !== requestId
       ) {
         return;
       }
@@ -150,7 +160,7 @@ export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
 
     window.addEventListener('message', handleMessage);
     document.addEventListener('message', handleMessage as EventListener);
-    postMessageToNative({ type: 'PUSH_TOKEN_REQUEST' });
+    postMessageToNative({ type: 'PUSH_TOKEN_REQUEST', requestId });
   });
 
 // 로그인 요청과 달리 앱이 언제든(백그라운드 복귀·콜드 스타트) 먼저 보낼 수 있는
