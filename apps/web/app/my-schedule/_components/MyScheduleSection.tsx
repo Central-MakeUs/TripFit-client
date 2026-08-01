@@ -17,11 +17,13 @@ import IndividualScheduleInput from '@/components/individual-schedule-input';
 import Spinner from '@/components/spinner';
 import { getScheduleCalendar } from '@/apis/getScheduleCalendar';
 import { TripHomeCardT } from '@/apis/getTrips';
+import { useDeleteGoogleCalendar } from '@/hooks/useDeleteGoogleCalendar';
 import { useGetTrips } from '@/hooks/useGetTrips';
 import { useGoogleCalendarConnect } from '@/hooks/useGoogleCalendarConnect';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
 import {
@@ -60,6 +62,14 @@ function MyScheduleSection() {
     isKakaoBrowserAlertOpen,
     closeKakaoBrowserAlert,
   } = useGoogleCalendarConnect();
+  const isGoogleCalendarConnected = useAuthStore(
+    (state) => state.isGoogleCalendarConnected,
+  );
+  const setGoogleCalendarConnected = useAuthStore(
+    (state) => state.setGoogleCalendarConnected,
+  );
+  const { deleteGoogleCalendarMutation } = useDeleteGoogleCalendar();
+  const [isDisconnectConfirmOpen, setIsDisconnectConfirmOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(
     () => resumeScreen === 'calendarConnectComplete',
@@ -320,6 +330,10 @@ function MyScheduleSection() {
       return;
     }
     if (key === 'calendar') {
+      if (isGoogleCalendarConnected) {
+        setIsDisconnectConfirmOpen(true);
+        return;
+      }
       setIsCalendarConnectOpen(true);
       return;
     }
@@ -329,19 +343,42 @@ function MyScheduleSection() {
     }
   };
 
+  const handleDisconnectCalendar = () => {
+    deleteGoogleCalendarMutation(undefined, {
+      onSuccess: () => {
+        setGoogleCalendarConnected(false);
+        setIsDisconnectConfirmOpen(false);
+      },
+      onError: (error) => {
+        setIsDisconnectConfirmOpen(false);
+        setErrorMessage(error.message);
+      },
+    });
+  };
+
+  const menuItems = MENU_ITEMS.map((item) =>
+    item.key === 'calendar' && isGoogleCalendarConnected
+      ? {
+          ...item,
+          title: '구글 캘린더 연동됨',
+          description: '연동을 해제하려면 눌러주세요',
+        }
+      : item,
+  );
+
   return (
     <div className="flex w-full flex-1 flex-col bg-grey-20">
       <Header variant="page" title="내 일정 관리" background="grey-20" />
       <div className="flex w-full flex-1 flex-col px-5 py-3">
         <ul className="flex w-full flex-col overflow-hidden rounded-2xl">
-          {MENU_ITEMS.map((item, index) => (
+          {menuItems.map((item, index) => (
             <li key={item.key}>
               <button
                 type="button"
                 onClick={() => handleClickItem(item.key)}
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-1 bg-white p-4',
-                  index < MENU_ITEMS.length - 1 && 'border-b border-grey-50',
+                  index < menuItems.length - 1 && 'border-b border-grey-50',
                 )}
               >
                 <div className="flex flex-1 flex-col items-start gap-0.5 text-left">
@@ -356,6 +393,17 @@ function MyScheduleSection() {
           ))}
         </ul>
       </div>
+      <AlertModal
+        open={isDisconnectConfirmOpen}
+        onOpenChange={setIsDisconnectConfirmOpen}
+        title="구글 캘린더 연동을 해제할까요?"
+        description="연동을 해제하면 캘린더 기반 일정 반영이 중단돼요"
+        secondaryText="취소"
+        onSecondaryClick={() => setIsDisconnectConfirmOpen(false)}
+        primaryText="해제"
+        primaryColor="primary"
+        onPrimaryClick={handleDisconnectCalendar}
+      />
       <AlertModal
         open={errorMessage !== null}
         onOpenChange={(open) => !open && setErrorMessage(null)}
