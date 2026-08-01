@@ -59,14 +59,6 @@ function MyScheduleSection() {
   // 다시 연다.
   const resumeScreen = searchParams.get('resumeScreen');
 
-  // resumeScreen은 최초 진입 시 한 번만 반영돼야 한다 — URL에 계속 남아있으면 연동
-  // 해제 후 재연동처럼 이후에 다시 캘린더 연동 화면을 열 때도 완료 화면부터 잘못 뜬다.
-  useEffect(() => {
-    if (resumeScreen) {
-      router.replace('/my-schedule');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const {
     connectGoogleCalendar,
     isKakaoBrowserAlertOpen,
@@ -87,9 +79,18 @@ function MyScheduleSection() {
     'confirm' | 'success' | null
   >(null);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
-  const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(
-    () => resumeScreen === 'calendarConnectComplete',
-  );
+  const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(false);
+
+  // resumeScreen을 마운트 시점 lazy state로만 반영하면, 이 컴포넌트가 resumeScreen
+  // 없이 먼저 한 번 렌더링되는 경우(예: 캘린더 연동 콜백이 도착하기 전 중간 렌더) 그
+  // 시점에 이 state가 false로 고정돼버려, 나중에 resumeScreen이 붙어도 이미 마운트된
+  // state라 반영이 안 된다 — 값이 바뀔 때마다 반응하도록 만들고, 한 번 반영한 뒤에는
+  // URL에서 지워 재연동 시 완료 화면이 잘못 뜨는 것도 막는다.
+  useEffect(() => {
+    if (resumeScreen !== 'calendarConnectComplete') return;
+    setIsCalendarConnectOpen(true);
+    router.replace('/my-schedule');
+  }, [resumeScreen, router]);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
   const [isIndividualScheduleComplete, setIsIndividualScheduleComplete] =
