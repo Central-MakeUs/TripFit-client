@@ -5,6 +5,7 @@ export type PostAuthLoginRequestT = {
   provider: SocialProviderT;
   token: string;
   authorizationCode?: string;
+  redirectUri?: string;
 };
 
 export type PostAuthLoginResponseT = {

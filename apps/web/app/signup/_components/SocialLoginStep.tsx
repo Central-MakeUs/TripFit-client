@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 import AppleIcon from '@/assets/icons/apple.svg';
 import GoogleIcon from '@/assets/icons/google.svg';
@@ -34,41 +35,52 @@ function SocialLoginStep({
         </p>
       </div>
 
-      <div className="flex w-full flex-col gap-3 px-5 pb-8">
-        <button
-          type="button"
-          onClick={onSelectGoogle}
-          className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] border border-grey-100 bg-white"
-        >
-          <span className="absolute inset-y-0 left-3.5 flex items-center">
-            <GoogleIcon className="size-5" />
-          </span>
-          <span className="text-body-03 text-[#1f1f1f]">Google로 시작하기</span>
-        </button>
-
-        {showApple && (
+      <div className="flex w-full flex-col items-center gap-5 px-5 pb-8">
+        <div className="flex w-full flex-col gap-3">
           <button
             type="button"
-            onClick={onSelectApple}
-            className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] bg-black"
+            onClick={onSelectGoogle}
+            className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] border border-grey-100 bg-white"
           >
             <span className="absolute inset-y-0 left-3.5 flex items-center">
-              <AppleIcon className="size-5 text-white" />
+              <GoogleIcon className="size-5" />
             </span>
-            <span className="text-body-03 text-white">Apple로 시작하기</span>
+            <span className="text-body-03 text-[#1f1f1f]">
+              Google로 시작하기
+            </span>
           </button>
-        )}
 
-        <button
-          type="button"
-          onClick={onSelectKakao}
-          className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] bg-[#fee500]"
+          {showApple && (
+            <button
+              type="button"
+              onClick={onSelectApple}
+              className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] bg-black"
+            >
+              <span className="absolute inset-y-0 left-3.5 flex items-center">
+                <AppleIcon className="size-5 text-white" />
+              </span>
+              <span className="text-body-03 text-white">Apple로 시작하기</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onSelectKakao}
+            className="relative flex h-12 w-full cursor-pointer items-center justify-center rounded-[14px] bg-[#fee500]"
+          >
+            <span className="absolute inset-y-0 left-3.5 flex items-center">
+              <KakaoIcon className="size-4.5 text-black/85" />
+            </span>
+            <span className="text-body-03 text-black/85">Kakao로 시작하기</span>
+          </button>
+        </div>
+
+        <Link
+          href="/privacy-policy"
+          className="text-caption-01 cursor-pointer rounded-xl p-2 text-grey-300 underline"
         >
-          <span className="absolute inset-y-0 left-3.5 flex items-center">
-            <KakaoIcon className="size-4.5 text-black/85" />
-          </span>
-          <span className="text-body-03 text-black/85">Kakao로 시작하기</span>
-        </button>
+          개인정보 처리방침
+        </Link>
       </div>
     </div>
   );

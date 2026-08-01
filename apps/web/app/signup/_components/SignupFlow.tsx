@@ -23,6 +23,7 @@ import { requestGoogleIdToken } from '@/utils/googleAuth';
 import { requestKakaoToken } from '@/utils/kakaoAuth';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 import { SOCIAL_LOGIN_CANCELLED } from '@/utils/nativeBridge';
+import { saveOAuthRedirectTarget } from '@/utils/oauthState';
 
 import { usePatchOnboardingName } from '../_hooks/usePatchOnboardingName';
 import ProfileNameStep from './ProfileNameStep';
@@ -157,6 +158,11 @@ function SignupFlow() {
 
   const handleSelectSocial = async (provider: SocialProviderT) => {
     try {
+      // 구글/카카오/애플 웹 로그인은 이 시점에 페이지가 완전히 떠나버려서(전체 페이지
+      // 리다이렉트) 지금 갖고 있는 redirectTarget이 사라진다 — 콜백 처리가 끝난 뒤
+      // 다시 꺼내 쓸 수 있도록 떠나기 직전에 저장해둔다.
+      saveOAuthRedirectTarget(redirectTarget);
+
       const result =
         provider === 'GOOGLE'
           ? await requestGoogleIdToken()
