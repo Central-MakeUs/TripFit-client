@@ -105,6 +105,16 @@ function AppWebView() {
     { type: 'NOTIFICATION_OPENED' }
   > | null>(null);
 
+  // handleNotificationOpened의 아이덴티티가 isLoading에 따라 바뀌면 아래 리스너 등록
+  // useEffect가 매번 재실행되어 getInitialNotification()도 반복 호출된다 — 이 API는 같은
+  // 세션에서 여러 번 호출해도 이전 알림을 다시 반환할 수 있어, WebView가 재로딩될 때마다
+  // 이미 처리한 알림으로 강제 재이동하는 버그가 생긴다. isLoading은 ref로 참조해 콜백
+  // 아이덴티티를 고정한다.
+  const isLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
   const handleNotificationOpened = useCallback(
     (landing: PushLandingData | null) => {
       if (!landing) return;
@@ -112,13 +122,13 @@ function AppWebView() {
         type: 'NOTIFICATION_OPENED',
         ...landing,
       };
-      if (isLoading) {
+      if (isLoadingRef.current) {
         pendingNotificationRef.current = message;
       } else {
         sendToWeb(message);
       }
     },
-    [isLoading, sendToWeb],
+    [sendToWeb],
   );
 
   useEffect(() => {
