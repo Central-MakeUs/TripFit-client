@@ -120,7 +120,17 @@ function DayDetailView({
         <CtaButtonGroup
           primaryText="일정 수정하기"
           primaryColor="secondary"
-          onPrimaryClick={() => setIsEditOpen(true)}
+          onPrimaryClick={() => {
+            // scheduleValue/initialScheduleValue는 selectedDate가 바뀔 때만
+            // 갱신된다 — 같은 날짜에서 저장한 직후 시트를 다시 열면 기준값이
+            // 갱신 전 값 그대로라, 실제로는 이미 반영된 변경을 "변경 없음"으로
+            // 잘못 판단해 저장 버튼이 막히거나 반영 안 된 것처럼 보인다. 여는
+            // 시점에 항상 최신 값을 다시 읽는다.
+            const freshValue = getMyDaySchedule(selectedDate);
+            setScheduleValue(freshValue);
+            setInitialScheduleValue(freshValue);
+            setIsEditOpen(true);
+          }}
         />
       </div>
       <div aria-hidden className="h-14.5 w-full shrink-0 bg-grey-20" />
