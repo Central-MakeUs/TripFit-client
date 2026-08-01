@@ -3,6 +3,21 @@
 // 같은 탭에서의 왕복 한 번에만 유효하면 되므로 sessionStorage를 쓴다.
 const STATE_STORAGE_PREFIX = 'tripfit-oauth-state:';
 const NONCE_STORAGE_PREFIX = 'tripfit-oauth-nonce:';
+const REDIRECT_TARGET_STORAGE_KEY = 'tripfit-oauth-redirect-target';
+
+// 구글/카카오/애플 로그인은 전체 페이지 이동(리다이렉트) 방식이라, /signup?redirect=...로
+// 들어온 뒤 로그인 버튼을 누르면 그 쿼리 파라미터가 사라진 채(/auth/{provider}/callback)로
+// 돌아온다 — 그 사이에도 원래 목적지를 잃지 않도록 페이지를 떠나기 직전에 저장해두고,
+// 콜백 처리가 끝난 뒤 꺼내 쓴다.
+export const saveOAuthRedirectTarget = (target: string) => {
+  sessionStorage.setItem(REDIRECT_TARGET_STORAGE_KEY, target);
+};
+
+export const consumeOAuthRedirectTarget = (): string => {
+  const target = sessionStorage.getItem(REDIRECT_TARGET_STORAGE_KEY);
+  sessionStorage.removeItem(REDIRECT_TARGET_STORAGE_KEY);
+  return target ?? '/';
+};
 
 export const createOAuthState = (provider: string): string => {
   const state = crypto.randomUUID();

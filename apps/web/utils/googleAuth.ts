@@ -25,6 +25,10 @@ const redirectToGoogleAuthorize = async (): Promise<SocialLoginTokenT> => {
     redirect_uri: getGoogleRedirectUri(),
     response_type: 'code id_token',
     scope: 'openid email profile',
+    // 백엔드가 로그인 계정 탈퇴 시 구글 연동을 해제(revoke)하려면 refresh_token이
+    // 필요한데, authorize 요청에 이 값이 없으면 사용자가 아무리 새로 동의해도
+    // Google이 refresh_token을 절대 내려주지 않는다(prompt=consent와는 별개 파라미터).
+    access_type: 'offline',
     nonce: createOAuthNonce('GOOGLE'),
     state: createOAuthState('GOOGLE'),
     prompt: 'select_account',
