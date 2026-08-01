@@ -100,7 +100,9 @@ function RoomInfoView({
           <div className="flex items-center gap-4">
             <span className="w-9 text-caption-02 text-grey-400">일정</span>
             <span className="text-body-05 text-grey-800">
-              {room.nights}박 {room.days}일
+              {room.nights !== null && room.days !== null
+                ? `${room.nights}박 ${room.days}일`
+                : '미정'}
             </span>
           </div>
           <div className="flex items-center gap-4">

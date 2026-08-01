@@ -27,9 +27,13 @@ const toDigitsOnly = (value: string) => value.replace(/\D/g, '');
 
 function RoomEditForm({ room, onSave }: RoomEditFormProps) {
   const [title, setTitle] = useState(room.title);
-  const [nights, setNights] = useState(String(room.nights));
-  const [days, setDays] = useState(String(room.days));
-  const [isDurationUndecided, setIsDurationUndecided] = useState(false);
+  const [nights, setNights] = useState(
+    room.nights !== null ? String(room.nights) : '',
+  );
+  const [days, setDays] = useState(room.days !== null ? String(room.days) : '');
+  const [isDurationUndecided, setIsDurationUndecided] = useState(
+    room.nights === null || room.days === null,
+  );
   const [destination, setDestination] = useState(room.destination);
   const [isDestinationUndecided, setIsDestinationUndecided] = useState(
     !room.destination,
