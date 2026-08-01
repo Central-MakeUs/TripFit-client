@@ -76,8 +76,10 @@ function RoomInfoView({
   return (
     <div className="flex w-full flex-1 flex-col px-5">
       <div className="flex flex-col gap-4 pt-4 pb-5">
-        <div className="flex items-center justify-between">
-          <h1 className="text-body-01 text-black">{room.title}</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="min-w-0 flex-1 truncate text-body-01 text-black">
+            {room.title}
+          </h1>
           {isHost && room.status === 'ONGOING' && (
             <Button
               text="편집하기"
@@ -87,6 +89,7 @@ function RoomInfoView({
               icon={<ModifyIcon className="size-4" />}
               iconPosition="right"
               onClick={onEdit}
+              className="shrink-0"
             />
           )}
         </div>
