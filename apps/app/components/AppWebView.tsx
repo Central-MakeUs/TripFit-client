@@ -264,6 +264,14 @@ function AppWebView() {
     webViewRef.current?.reload();
   };
 
+  // 구글 로그인/캘린더 연동처럼 외부 화면(시스템 브라우저, 계정 선택 시트)으로 갔다 돌아올 때
+  // 에뮬레이터·저사양 기기에서는 백그라운드로 밀린 WebView의 렌더러 프로세스를 OS가 강제
+  // 종료시킬 수 있다 — onError와 달리 이 경우는 별도 이벤트로만 감지되고, 방치하면 아무
+  // 안내도 없이 흰 화면인 채로 영원히 멈춘다.
+  const handleRenderProcessGone = useCallback(() => {
+    webViewRef.current?.reload();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* 에러 시에도 webViewRef가 살아있어야 다시 시도(reload)가 가능하므로 WebView는 항상 마운트해두고 오버레이로만 가린다 */}
@@ -280,6 +288,7 @@ function AppWebView() {
         }}
         onLoadEnd={handleLoadFinished}
         onError={() => setHasError(true)}
+        onRenderProcessGone={handleRenderProcessGone}
       />
       {hasError ? (
         <View style={styles.center}>
