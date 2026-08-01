@@ -1,0 +1,121 @@
+import { type ReactNode } from 'react';
+
+import Button from '@/components/button';
+import TextButton from '@/components/text-button';
+import { cn } from '@/utils/cn';
+
+import { ctaButtonGroupStyle } from './ctaButtonGroup.style';
+
+type CtaButtonGroupProps = {
+  className?: string;
+  onPrimaryClick?: () => void;
+  onSecondaryClick?: () => void;
+  primaryColor?: 'primary' | 'secondary';
+  primaryDisabled?: boolean;
+  primaryText: string;
+  secondaryColor?: 'primary' | 'secondary';
+  secondaryIcon?: ReactNode;
+  secondaryText?: string;
+  secondaryVariant?: 'button-horizontal' | 'button-vertical' | 'text-link';
+};
+
+function CtaButtonGroup({
+  className,
+  onPrimaryClick,
+  onSecondaryClick,
+  primaryColor = 'primary',
+  primaryDisabled = false,
+  primaryText,
+  secondaryColor = 'primary',
+  secondaryIcon = null,
+  secondaryText,
+  secondaryVariant = 'button-horizontal',
+}: CtaButtonGroupProps) {
+  if (!secondaryText) {
+    return (
+      <div className={cn(ctaButtonGroupStyle({ layout: 'single' }), className)}>
+        <Button
+          text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
+          onClick={onPrimaryClick}
+          className="w-full"
+        />
+      </div>
+    );
+  }
+
+  if (secondaryVariant === 'text-link') {
+    return (
+      <div
+        className={cn(ctaButtonGroupStyle({ layout: 'text-link' }), className)}
+      >
+        <Button
+          text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
+          onClick={onPrimaryClick}
+          className="w-full"
+        />
+        <TextButton
+          size="M"
+          text={secondaryText}
+          onClick={onSecondaryClick}
+          icon={secondaryIcon}
+        />
+      </div>
+    );
+  }
+
+  if (secondaryVariant === 'button-vertical') {
+    return (
+      <div
+        className={cn(
+          ctaButtonGroupStyle({ layout: 'button-vertical' }),
+          className,
+        )}
+      >
+        <Button
+          text={primaryText}
+          type={primaryColor}
+          disabled={primaryDisabled}
+          onClick={onPrimaryClick}
+          className="w-full"
+        />
+        <Button
+          text={secondaryText}
+          style="weak"
+          type={secondaryColor}
+          onClick={onSecondaryClick}
+          className="w-full"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        ctaButtonGroupStyle({ layout: 'button-horizontal' }),
+        className,
+      )}
+    >
+      <Button
+        text={secondaryText}
+        style="weak"
+        type={secondaryColor}
+        onClick={onSecondaryClick}
+        className="flex-1"
+      />
+      <Button
+        text={primaryText}
+        type={primaryColor}
+        disabled={primaryDisabled}
+        onClick={onPrimaryClick}
+        className="flex-1"
+      />
+    </div>
+  );
+}
+
+export default CtaButtonGroup;
