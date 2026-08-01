@@ -55,6 +55,11 @@ type BasicInfoProps = {
   onClose?: () => void;
   /** 위저드 메인 화면의 헤더 타이틀 — 미지정 시 "일정 입력하기" */
   title?: string;
+  /** 개별 일정 입력 화면의 안내 문구 — 미지정 시 "날짜를 클릭해 스케줄을 입력해주세요"
+   * (여행방 생성/입장 전 일정 입력용). 회원가입처럼 다른 문구가 필요한 곳에서만 넘긴다 */
+  individualScheduleHeading?: ReactNode;
+  /** 개별 일정 입력 화면의 보조 설명 — 미지정 시 표시 안 함 */
+  individualScheduleDescription?: ReactNode;
   /** 캘린더 연동 스텝의 헤더 타이틀 — 미지정 시 "캘린더 연동하기" */
   calendarConnectTitle?: string;
   /** 캘린더 연동 스텝의 프로그레스바 값 — 미지정 시 프로그레스바 숨김 */
@@ -100,6 +105,8 @@ function BasicInfo({
   onExit,
   onClose,
   title = '일정 입력하기',
+  individualScheduleHeading = '날짜를 클릭해 스케줄을 입력해주세요',
+  individualScheduleDescription,
   calendarConnectTitle,
   calendarConnectProgress,
   calendarConnectContinuesToSchedule = false,
@@ -267,7 +274,8 @@ function BasicInfo({
         title={title}
         onBack={handleBack}
         progress={progress}
-        heading="날짜를 클릭해 스케줄을 입력해주세요"
+        heading={individualScheduleHeading}
+        description={individualScheduleDescription}
         value={value.individualSchedule}
         onChange={(individualSchedule) =>
           setValue((prev) => ({ ...prev, individualSchedule }))

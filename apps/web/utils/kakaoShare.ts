@@ -1,7 +1,10 @@
 import { ensureKakaoInitialized } from '@/utils/kakaoAuth';
 import { isReactNativeWebView } from '@/utils/platform';
 
-const APP_SWITCH_TIMEOUT_MS = 1500;
+// 카카오톡이 백그라운드에 없어서 콜드 스타트(처음 실행)로 열리는 경우 앱 전환
+// 자체는 성공해도 몇 초씩 걸릴 수 있다 — 너무 짧으면 실제로는 성공한 공유를
+// "카카오톡 미설치"로 오판해버리므로 넉넉하게 잡는다.
+const APP_SWITCH_TIMEOUT_MS = 4000;
 
 // 일반 웹 브라우저에서는 카카오톡 앱이 없어도 Kakao SDK가 알아서 카카오톡 웹
 // 공유 화면으로 보내주므로 실패로 취급하면 안 된다 — 네이티브 앱(WebView)
@@ -46,13 +49,21 @@ export type KakaoShareContentT = {
   buttonTitle?: string;
 };
 
+/** 'shared'면 카카오톡 앱 전환까지 확인됨, 'appSwitchNotConfirmed'면 확인이
+ * 안 돼 호출부가 대안(링크 복사 등)을 안내해야 함 — 여기서 바로 클립보드에
+ * 복사하지 않는 이유: 타임아웃(비동기) 이후의 호출은 사용자 제스처와 무관해져,
+ * iOS WebKit에서는 그 시점의 navigator.clipboard.writeText()가 대부분 막힌다.
+ * 실제 복사는 호출부가 이 결과를 받은 뒤 사용자가 직접 누르는 새 클릭 안에서
+ * 해야 모든 플랫폼에서 신뢰할 수 있다. */
+export type KakaoShareResultT = 'shared' | 'appSwitchNotConfirmed';
+
 export const shareToKakao = async ({
   title,
   description,
   imageUrl,
   linkUrl,
   buttonTitle,
-}: KakaoShareContentT): Promise<void> => {
+}: KakaoShareContentT): Promise<KakaoShareResultT> => {
   const kakao = await ensureKakaoInitialized();
 
   // sendDefault()가 카카오톡 전환을 동기적으로(호출 직후) 일으킬 수 있으므로,
@@ -79,6 +90,8 @@ export const shareToKakao = async ({
   });
 
   if (appSwitchResult && !(await appSwitchResult)) {
-    throw new Error('카카오톡이 설치되어 있지 않아 공유할 수 없어요.');
+    return 'appSwitchNotConfirmed';
   }
+
+  return 'shared';
 };

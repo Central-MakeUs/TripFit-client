@@ -32,6 +32,7 @@ import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapSchedul
 import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal';
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
 import ShareSheet from '../../_common/_components/ShareSheet';
+import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
 import {
   isTripDurationValid,
@@ -75,6 +76,11 @@ function RoomCreateForm() {
   >(null);
 
   const { postRoomMutation, isPostRoomPending } = usePostRoom();
+  // postRoom 응답엔 inviteCode가 없어, 방 생성 직후 "참여자 초대하기" 공유 링크에
+  // 실을 inviteCode는 별도로 조회해서 가져온다.
+  const { roomData: createdRoomData } = useGetRoom(createdRoomId ?? '', {
+    enabled: !!createdRoomId,
+  });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
@@ -269,6 +275,24 @@ function RoomCreateForm() {
                 }
               : undefined
           }
+          // '정기 일정 있나요' 질문부터 새로 시작하면(=사전 일정 등록이 아예 안 된 신규
+          // 유저) 개별 일정 화면도 원래 안내 문구를 그대로 쓰고, regularScheduleDetail로
+          // 바로 시작하면(=이미 저장된 일정을 고치는 '일정 수정' 진입) 어떤 날짜를
+          // 다시 확인해야 하는지 알려주는 문구로 바꾼다.
+          individualScheduleHeading={
+            basicInfoInitialScreen === 'regularScheduleDetail' ? (
+              <>
+                여행 기간 중 여행이 어렵거나
+                <br />
+                확실하지 않은 날짜를 알려주세요.
+              </>
+            ) : undefined
+          }
+          individualScheduleDescription={
+            basicInfoInitialScreen === 'regularScheduleDetail'
+              ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
+              : undefined
+          }
           onExit={() => setIsBasicInfoOpen(false)}
           onRegularScheduleNext={handleSaveRegularSchedule}
           onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
@@ -299,9 +323,11 @@ function RoomCreateForm() {
             open={isInviteSheetOpen}
             onOpenChange={setIsInviteSheetOpen}
             title="참여자 초대하기"
-            initialTitleValue={`${roomName}에 초대할게!`}
+            initialTitleValue={`${roomName} 초대`}
             initialDescriptionValue="일정 입력하고 같이 여행 떠나자!"
-            linkPath={`/room/${createdRoomId}`}
+            // 초대 코드는 화면에 노출하지 않고 쿼리 파라미터로만 실어 보낸다 — 방
+            // 상세 화면이 이 코드로 POST /api/v1/trips/join을 호출해 참여 처리한다.
+            linkPath={`/room/${createdRoomId}${createdRoomData ? `?inviteCode=${createdRoomData.inviteCode}` : ''}`}
             buttonTitle="여행방 참여하기"
             onShare={() => {
               setIsInviteSheetOpen(false);

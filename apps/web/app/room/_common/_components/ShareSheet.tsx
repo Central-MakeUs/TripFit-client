@@ -10,7 +10,7 @@ import CtaButtonGroup from '@/components/cta-button-group';
 import Input from '@/components/input';
 import Textarea from '@/components/textarea';
 import { ensureKakaoInitialized } from '@/utils/kakaoAuth';
-import { shareToKakao } from '@/utils/kakaoShare';
+import { KakaoShareResultT, shareToKakao } from '@/utils/kakaoShare';
 
 type ShareSheetProps = {
   open: boolean;
@@ -46,6 +46,15 @@ function ShareSheet({
   const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(
     null,
   );
+  // 카카오톡 앱 전환이 확인 안 된 링크 — null이 아니면 "링크 복사하기" 확인
+  // 모달을 띄운다. 여기서 바로 복사하지 않고 사용자가 그 모달의 버튼을 직접
+  // 눌러야 복사하는 이유: iOS WebKit은 진짜 사용자 클릭 안에서 동기적으로
+  // 호출된 navigator.clipboard.writeText()만 신뢰하고, 타임아웃(비동기) 이후의
+  // 자동 호출은 대부분 막는다.
+  const [pendingCopyLinkUrl, setPendingCopyLinkUrl] = useState<string | null>(
+    null,
+  );
+  const [isLinkCopiedAlertOpen, setIsLinkCopiedAlertOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -60,9 +69,10 @@ function ShareSheet({
 
   const handleShare = async () => {
     const linkUrl = `${window.location.origin}${linkPath}`;
+    let result: KakaoShareResultT;
 
     try {
-      await shareToKakao({
+      result = await shareToKakao({
         title: titleValue,
         description: descriptionValue,
         imageUrl: `${window.location.origin}${shareSheetBanner.src}`,
@@ -78,6 +88,33 @@ function ShareSheet({
       return;
     }
 
+    if (result === 'appSwitchNotConfirmed') {
+      setPendingCopyLinkUrl(linkUrl);
+      return;
+    }
+
+    onShare({ title: titleValue, description: descriptionValue });
+  };
+
+  // AlertModal의 "링크 복사하기" 버튼 클릭이라는 새 사용자 제스처 안에서 곧바로
+  // 호출해야 iOS에서도 신뢰할 수 있다 — await 앞에 다른 비동기 작업이 없어야 함.
+  const handleCopyLink = async () => {
+    if (!pendingCopyLinkUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(pendingCopyLinkUrl);
+    } catch {
+      setPendingCopyLinkUrl(null);
+      // 특정 서드파티 앱이 없어서 기능이 막힌 것처럼 보이면 안 되므로 일시적
+      // 오류로만 안내한다(앱 심사 등 카카오톡이 없는 환경 고려).
+      setShareErrorMessage(
+        '지금은 공유할 수 없어요. 잠시 후 다시 시도해주세요.',
+      );
+      return;
+    }
+
+    setPendingCopyLinkUrl(null);
+    setIsLinkCopiedAlertOpen(true);
     onShare({ title: titleValue, description: descriptionValue });
   };
 
@@ -134,6 +171,24 @@ function ShareSheet({
         description={shareErrorMessage ?? ''}
         primaryText="확인"
         onPrimaryClick={() => setShareErrorMessage(null)}
+      />
+      <AlertModal
+        open={pendingCopyLinkUrl !== null}
+        onOpenChange={(open) => !open && setPendingCopyLinkUrl(null)}
+        title="카카오톡을 확인하지 못했어요"
+        description="대신 링크를 복사해서 공유할 수 있어요."
+        primaryText="링크 복사하기"
+        onPrimaryClick={handleCopyLink}
+        secondaryText="취소"
+        onSecondaryClick={() => setPendingCopyLinkUrl(null)}
+      />
+      <AlertModal
+        open={isLinkCopiedAlertOpen}
+        onOpenChange={setIsLinkCopiedAlertOpen}
+        title="링크가 복사됐어요"
+        description="원하는 곳에 붙여넣어 공유해주세요."
+        primaryText="확인"
+        onPrimaryClick={() => setIsLinkCopiedAlertOpen(false)}
       />
     </BottomSheet>
   );

@@ -8,7 +8,6 @@ import { formatDateLabel } from '../_utils/formatDateLabel';
 import RecommendationStatBox from './_components/RecommendationStatBox';
 
 type RecommendationConfirmedStepProps = {
-  roomId: string;
   roomName: string;
   startDate: string;
   endDate: string;
@@ -20,7 +19,6 @@ type RecommendationConfirmedStepProps = {
 };
 
 function RecommendationConfirmedStep({
-  roomId,
   roomName,
   startDate,
   endDate,
@@ -77,7 +75,8 @@ function RecommendationConfirmedStep({
         title="확정 일정 공유하기"
         initialTitleValue={`${roomName} 날짜 확정됐어!`}
         initialDescriptionValue={`${formatDateLabel(startDate)} ~ ${formatDateLabel(endDate)} 이 날짜 비워둬!`}
-        linkPath={`/room/${roomId}`}
+        linkPath="/"
+        buttonTitle="자세히 보기"
         onShare={() => {
           setIsShareOpen(false);
         }}
