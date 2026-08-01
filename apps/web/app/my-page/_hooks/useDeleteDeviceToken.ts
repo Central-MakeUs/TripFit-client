@@ -8,8 +8,13 @@ export const useDeleteDeviceToken = () => {
 
   const {
     mutate: deleteDeviceTokenMutation,
+    mutateAsync: deleteDeviceTokenMutationAsync,
     isPending: isDeleteDeviceTokenPending,
   } = useMutation({ mutationFn });
 
-  return { deleteDeviceTokenMutation, isDeleteDeviceTokenPending };
+  return {
+    deleteDeviceTokenMutation,
+    deleteDeviceTokenMutationAsync,
+    isDeleteDeviceTokenPending,
+  };
 };

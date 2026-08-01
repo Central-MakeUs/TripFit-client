@@ -9,8 +9,13 @@ export const usePostDeviceToken = () => {
 
   const {
     mutate: postDeviceTokenMutation,
+    mutateAsync: postDeviceTokenMutationAsync,
     isPending: isPostDeviceTokenPending,
   } = useMutation({ mutationFn });
 
-  return { postDeviceTokenMutation, isPostDeviceTokenPending };
+  return {
+    postDeviceTokenMutation,
+    postDeviceTokenMutationAsync,
+    isPostDeviceTokenPending,
+  };
 };

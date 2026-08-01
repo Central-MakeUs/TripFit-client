@@ -10,6 +10,7 @@ export const usePatchMyPageProfile = () => {
 
   const {
     mutate: patchMyPageProfileMutation,
+    mutateAsync: patchMyPageProfileMutationAsync,
     isPending: isPatchMyPageProfilePending,
     error: patchMyPageProfileError,
   } = useMutation({
@@ -25,6 +26,7 @@ export const usePatchMyPageProfile = () => {
 
   return {
     patchMyPageProfileMutation,
+    patchMyPageProfileMutationAsync,
     isPatchMyPageProfilePending,
     patchMyPageProfileError,
   };
