@@ -61,6 +61,11 @@ type BasicInfoProps = {
   calendarConnectProgress?: number;
   /** true면 캘린더 연동/건너뛰기 모두 완료 화면 없이 바로 정기 일정 스텝으로 이어짐 (회원가입처럼 더 큰 플로우에 얹을 때 사용) */
   calendarConnectContinuesToSchedule?: boolean;
+  /** "구글 캘린더 연동하기" 클릭 시 호출됨 — 실제 구글 OAuth 동의 화면으로 이동시키는 건
+   * 페이지 전체 리다이렉트라 부모(회원가입/마이페이지)가 돌아올 경로를 알아야 하므로,
+   * 이 컴포넌트 내부에서 완결하지 않고 부모에 위임한다. 리다이렉트 이후 컴포넌트 상태가
+   * 초기화되므로, 완료 화면 표시는 부모가 initialScreen으로 복원해서 처리한다 */
+  onConnectGoogleCalendar?: () => void;
   /** true면 반차/공휴일 포함 여부 스텝이 마지막 스텝이 되어 개별 일정 입력 없이 바로 완료됨 (내 일정 관리처럼 개별 일정을 별도 메뉴로 다루는 플로우에 사용) */
   endsAtIncludeHalfDayHoliday?: boolean;
   /** true면 "정기 일정 없어요" 선택 시 "여행이 어려운 날짜를 직접 입력하시겠어요?"
@@ -98,6 +103,7 @@ function BasicInfo({
   calendarConnectTitle,
   calendarConnectProgress,
   calendarConnectContinuesToSchedule = false,
+  onConnectGoogleCalendar,
   endsAtIncludeHalfDayHoliday = false,
   confirmDirectInputOnNoRegularSchedule = false,
   completeTitle,
@@ -227,13 +233,7 @@ function BasicInfo({
         title={calendarConnectTitle}
         progress={calendarConnectProgress}
         onBack={handleBack}
-        onConnect={() =>
-          navigateTo(
-            calendarConnectContinuesToSchedule
-              ? 'hasRegularSchedule'
-              : 'calendarConnectComplete',
-          )
-        }
+        onConnect={() => onConnectGoogleCalendar?.()}
         onSkip={
           calendarConnectContinuesToSchedule
             ? () => navigateTo('hasRegularSchedule')

@@ -19,6 +19,7 @@ import { SocialProviderT } from '@/types/auth';
 import { IndividualScheduleValueT } from '@/types/schedule';
 import { requestAppleIdToken } from '@/utils/appleAuth';
 import { requestGoogleIdToken } from '@/utils/googleAuth';
+import { startGoogleCalendarConnect } from '@/utils/googleCalendarAuth';
 import { requestKakaoToken } from '@/utils/kakaoAuth';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 import { SOCIAL_LOGIN_CANCELLED } from '@/utils/nativeBridge';
@@ -58,21 +59,37 @@ function SignupFlow() {
       ? rawRedirect
       : '/';
 
+  // 구글 캘린더 연동은 페이지 전체 리다이렉트(구글 OAuth) 왕복이 필요해 이 컴포넌트의
+  // step 상태가 초기화된다 — 콜백이 이 쿼리로 "스케줄 단계의 어느 화면으로 돌아가야
+  // 하는지"를 알려주면, 재진입 판정을 우회하고 그 화면부터 다시 시작한다.
+  const resumeScreen = searchParams.get('resumeScreen');
+  const buildScheduleReturnPath = (screen: string) => {
+    const params = new URLSearchParams({ resumeScreen: screen });
+    if (rawRedirect) params.set('redirect', rawRedirect);
+    return `/signup?${params.toString()}`;
+  };
+
   // 카카오/구글은 리다이렉트 방식이라 로그인 완료 후 이 페이지가 새로 로드된다 —
   // 로그인이 이미 완료돼 accessToken이 저장돼 있으면(하이드레이션 이후 반영되는 경우 포함)
   // 소셜 로그인 단계를 건너뛰고 바로 이름 입력 단계로 진입한다.
   // 이미 이름까지 입력을 마친(hasName) 유저가 /signup으로 다시 들어온 경우는
-  // 이름을 덮어쓰지 않도록 회원가입 플로우 자체를 건너뛰고 홈으로 보낸다.
+  // 이름을 덮어쓰지 않도록 회원가입 플로우 자체를 건너뛰고 홈으로 보낸다 — 단, 캘린더
+  // 연동 후 돌아온 재진입(resumeScreen 있음)은 예외로 스케줄 단계를 이어간다.
   useEffect(() => {
     if (!accessToken) return;
     if (hasName) {
       if (hasEnteredFlowRef.current) return;
+      if (resumeScreen) {
+        hasEnteredFlowRef.current = true;
+        setStep('schedule');
+        return;
+      }
       router.replace(redirectTarget);
       return;
     }
     hasEnteredFlowRef.current = true;
     setStep('profile');
-  }, [accessToken, hasName, router, redirectTarget]);
+  }, [accessToken, hasName, router, redirectTarget, resumeScreen]);
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   // 카카오/구글 리다이렉트 콜백이 실패하면 /signup?error=메시지 로 돌아온다 —
@@ -210,10 +227,19 @@ function SignupFlow() {
       <BasicInfo
         allowSkip
         skipPath={redirectTarget}
-        initialScreen="calendarConnectIntro"
+        initialScreen={
+          resumeScreen === 'hasRegularSchedule'
+            ? 'hasRegularSchedule'
+            : 'calendarConnectIntro'
+        }
         calendarConnectTitle="기본 정보 입력"
         calendarConnectProgress={PROFILE_STEP_PROGRESS}
         calendarConnectContinuesToSchedule
+        onConnectGoogleCalendar={() =>
+          startGoogleCalendarConnect(
+            buildScheduleReturnPath('hasRegularSchedule'),
+          )
+        }
         endsAtIncludeHalfDayHoliday
         confirmDirectInputOnNoRegularSchedule
         onExit={() => setStep('profile')}

@@ -27,6 +27,7 @@ export const usePostAuthLogin = () => {
         hasPreSchedule: data.user.hasPreSchedule,
         isAllFree: data.user.isAllFree,
         notificationEnabled: data.user.notificationEnabled,
+        isGoogleCalendarConnected: data.user.isGoogleCalendarConnected,
       });
     },
   });

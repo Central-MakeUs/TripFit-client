@@ -38,6 +38,10 @@ type NativeBridgeOutgoingMessageT =
   | {
       type: 'PUSH_TOKEN_REQUEST';
       requestId: string;
+    }
+  | {
+      type: 'OPEN_EXTERNAL_URL';
+      url: string;
     };
 
 type NativeBridgeIncomingMessageT =
@@ -68,6 +72,17 @@ type NativeBridgeIncomingMessageT =
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+};
+
+// 구글은 앱 내장 WebView를 "제한된 브라우저"로 감지해 OAuth 동의 화면을 막는다 — 구글 캘린더
+// 연동처럼 WebView 안에서 열면 안 되는 URL은 네이티브에 시스템 브라우저로 열어달라고 위임한다.
+// 일반 브라우저에서는 네이티브 브릿지가 없으니 그냥 같은 탭에서 이동한다.
+export const openExternalUrl = (url: string) => {
+  if (isReactNativeWebView()) {
+    postMessageToNative({ type: 'OPEN_EXTERNAL_URL', url });
+    return;
+  }
+  window.location.href = url;
 };
 
 const INCOMING_MESSAGE_TYPES = [

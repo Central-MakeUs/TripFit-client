@@ -3,6 +3,7 @@
 // 같은 탭에서의 왕복 한 번에만 유효하면 되므로 sessionStorage를 쓴다.
 const STATE_STORAGE_PREFIX = 'tripfit-oauth-state:';
 const NONCE_STORAGE_PREFIX = 'tripfit-oauth-nonce:';
+const RETURN_PATH_STORAGE_PREFIX = 'tripfit-oauth-return-path:';
 
 export const createOAuthState = (provider: string): string => {
   const state = crypto.randomUUID();
@@ -52,4 +53,17 @@ export const consumeOAuthNonce = (
 
   const payload = decodeJwtPayload(idToken);
   return payload?.nonce === savedNonce;
+};
+
+// 구글 캘린더 연동처럼 같은 플로우를 여러 화면(회원가입, 마이페이지 등)에서 시작할 수 있는
+// 경우, 리다이렉트 왕복 동안 "완료 후 어디로 돌아갈지"를 기억해뒀다가 콜백에서 꺼내 쓴다.
+export const createOAuthReturnPath = (provider: string, path: string): void => {
+  sessionStorage.setItem(`${RETURN_PATH_STORAGE_PREFIX}${provider}`, path);
+};
+
+export const consumeOAuthReturnPath = (provider: string): string | null => {
+  const key = `${RETURN_PATH_STORAGE_PREFIX}${provider}`;
+  const path = sessionStorage.getItem(key);
+  sessionStorage.removeItem(key);
+  return path;
 };

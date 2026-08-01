@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { addYears, format, max, parseISO, subDays } from 'date-fns';
+import { useSearchParams } from 'next/navigation';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import AlertModal from '@/components/alert-modal';
@@ -27,6 +28,7 @@ import {
   getLeaveNoticeDaysFromRegularSchedules,
   mapRegularScheduleItemToClient,
 } from '@/utils/mapRegularSchedule';
+import { startGoogleCalendarConnect } from '@/utils/googleCalendarAuth';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
 const MENU_ITEMS = [
@@ -48,8 +50,15 @@ const MENU_ITEMS = [
 ] as const;
 
 function MyScheduleSection() {
+  const searchParams = useSearchParams();
+  // 구글 캘린더 연동은 페이지 전체 리다이렉트(구글 OAuth) 왕복이 필요해 이 컴포넌트의
+  // state가 초기화된다 — 콜백이 이 쿼리를 실어 보내면 캘린더 연동 완료 화면부터
+  // 다시 연다.
+  const resumeScreen = searchParams.get('resumeScreen');
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
-  const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(false);
+  const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(
+    () => resumeScreen === 'calendarConnectComplete',
+  );
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
   const [isIndividualScheduleComplete, setIsIndividualScheduleComplete] =
@@ -173,7 +182,16 @@ function MyScheduleSection() {
   if (isCalendarConnectOpen) {
     return (
       <BasicInfo
-        initialScreen="calendarConnectIntro"
+        initialScreen={
+          resumeScreen === 'calendarConnectComplete'
+            ? 'calendarConnectComplete'
+            : 'calendarConnectIntro'
+        }
+        onConnectGoogleCalendar={() =>
+          startGoogleCalendarConnect(
+            '/my-schedule?resumeScreen=calendarConnectComplete',
+          )
+        }
         onExit={() => setIsCalendarConnectOpen(false)}
         onComplete={() => setIsCalendarConnectOpen(false)}
       />

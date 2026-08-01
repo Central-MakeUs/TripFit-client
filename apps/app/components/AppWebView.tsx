@@ -210,6 +210,14 @@ function AppWebView() {
                   : '알림 토큰을 받아오지 못했어요.',
             });
           });
+        return;
+      }
+
+      // 구글은 앱에 내장된 WebView를 "제한된 브라우저"로 감지해 OAuth 동의 화면을 막는다 —
+      // 구글 캘린더 연동처럼 WebView 안에서 그대로 열면 안 되는 URL은 시스템 기본 브라우저로
+      // 대신 열어준다. 이후 콜백은 딥링크(Universal/App Links)로 앱에 다시 들어온다.
+      if (message.type === 'OPEN_EXTERNAL_URL') {
+        Linking.openURL(message.url).catch(() => {});
       }
     },
     [sendToWeb],

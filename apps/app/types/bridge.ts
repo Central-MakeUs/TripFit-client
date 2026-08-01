@@ -34,6 +34,10 @@ export type BridgeOutgoingMessage =
   | {
       type: 'PUSH_TOKEN_REQUEST';
       requestId: string;
+    }
+  | {
+      type: 'OPEN_EXTERNAL_URL';
+      url: string;
     };
 
 export type BridgeIncomingMessage =
@@ -81,6 +85,13 @@ export const parseBridgeMessage = (
       parsed &&
       parsed.type === 'PUSH_TOKEN_REQUEST' &&
       typeof parsed.requestId === 'string'
+    ) {
+      return parsed as BridgeOutgoingMessage;
+    }
+    if (
+      parsed &&
+      parsed.type === 'OPEN_EXTERNAL_URL' &&
+      typeof parsed.url === 'string'
     ) {
       return parsed as BridgeOutgoingMessage;
     }
