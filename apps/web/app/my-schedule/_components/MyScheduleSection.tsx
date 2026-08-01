@@ -79,7 +79,13 @@ function MyScheduleSection() {
     (state) => state.setGoogleCalendarConnected,
   );
   const { deleteGoogleCalendarMutation } = useDeleteGoogleCalendar();
-  const [isDisconnectConfirmOpen, setIsDisconnectConfirmOpen] = useState(false);
+  // 해제 성공은 메뉴 항목 문구가 조용히 바뀌는 것 말고는 눈에 띄는 피드백이 없어서,
+  // 실제로 해제됐는지 사용자가 확신하기 어려웠다 — 그렇다고 확인 모달을 닫고 별도의
+  // 완료 모달을 새로 여는 건 두 모달이 연달아 여닫히며 전환이 뚝뚝 끊겨 보인다.
+  // 같은 모달 인스턴스를 열어둔 채 내용만 확인→완료로 바꿔치기한다.
+  const [disconnectModalStep, setDisconnectModalStep] = useState<
+    'confirm' | 'success' | null
+  >(null);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(
     () => resumeScreen === 'calendarConnectComplete',
@@ -341,7 +347,7 @@ function MyScheduleSection() {
     }
     if (key === 'calendar') {
       if (isGoogleCalendarConnected) {
-        setIsDisconnectConfirmOpen(true);
+        setDisconnectModalStep('confirm');
         return;
       }
       setIsCalendarConnectOpen(true);
@@ -357,10 +363,10 @@ function MyScheduleSection() {
     deleteGoogleCalendarMutation(undefined, {
       onSuccess: () => {
         setGoogleCalendarConnected(false);
-        setIsDisconnectConfirmOpen(false);
+        setDisconnectModalStep('success');
       },
       onError: (error) => {
-        setIsDisconnectConfirmOpen(false);
+        setDisconnectModalStep(null);
         setErrorMessage(error.message);
       },
     });
@@ -403,17 +409,34 @@ function MyScheduleSection() {
           ))}
         </ul>
       </div>
-      <AlertModal
-        open={isDisconnectConfirmOpen}
-        onOpenChange={setIsDisconnectConfirmOpen}
-        title="구글 캘린더 연동을 해제할까요?"
-        description="연동을 해제하면 캘린더 기반 일정 반영이 중단돼요"
-        secondaryText="취소"
-        onSecondaryClick={() => setIsDisconnectConfirmOpen(false)}
-        primaryText="해제"
-        primaryColor="primary"
-        onPrimaryClick={handleDisconnectCalendar}
-      />
+      {disconnectModalStep === 'confirm' ? (
+        <AlertModal
+          open
+          onOpenChange={(open) => !open && setDisconnectModalStep(null)}
+          title="구글 캘린더 연동을 해제할까요?"
+          description={
+            <>
+              연동을 해제하면 캘린더 기반
+              <br />
+              일정 반영이 중단돼요
+            </>
+          }
+          secondaryText="취소"
+          onSecondaryClick={() => setDisconnectModalStep(null)}
+          primaryText="해제"
+          primaryColor="primary"
+          onPrimaryClick={handleDisconnectCalendar}
+        />
+      ) : (
+        <AlertModal
+          open={disconnectModalStep === 'success'}
+          onOpenChange={(open) => !open && setDisconnectModalStep(null)}
+          title="구글 캘린더 연동이 해제됐어요"
+          description="캘린더 기반 일정 반영이 중단됐어요"
+          primaryText="확인"
+          onPrimaryClick={() => setDisconnectModalStep(null)}
+        />
+      )}
       <AlertModal
         open={errorMessage !== null}
         onOpenChange={(open) => !open && setErrorMessage(null)}
