@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { addYears, format, subDays } from 'date-fns';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
@@ -22,8 +22,9 @@ import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequi
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
-import { useGetRoom } from '../_common/_hooks/useGetRoom';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
+import { useGetRoom } from '../../_common/_hooks/useGetRoom';
+import { usePostTripsJoin } from '../_common/_hooks/usePostTripsJoin';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
 import RecommendationSection from './recommendation/RecommendationSection';
 
@@ -35,26 +36,36 @@ type SectionT = 'calendar' | 'recommendation';
 
 function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // 초대 링크(카카오톡 공유 등)에 화면 노출 없이 실어 보낸 초대 코드 — 초대
+  // 받은 사람이 아직 이 방 멤버가 아닐 때만 참여 처리에 쓰인다.
+  const inviteCode = searchParams.get('inviteCode');
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [scheduleErrorMessage, setScheduleErrorMessage] = useState<
     string | null
   >(null);
+  const [joinErrorMessage, setJoinErrorMessage] = useState<string | null>(null);
+  // 초대 코드가 있으면 아직 이 방 멤버가 아닐 수 있으니, 실패가 뻔한 조회부터
+  // 하지 않고 join을 먼저 시도한 뒤에야 방/멤버 조회를 켠다. 초대 코드가
+  // 없는 일반 진입(이미 멤버)은 처음부터 그대로 조회한다.
+  const [enableRoomQueries, setEnableRoomQueries] = useState(() => !inviteCode);
   const {
     roomData,
     isGetRoomLoading,
     isGetRoomError,
     getRoomError,
     refetchRoom,
-  } = useGetRoom(roomId);
+  } = useGetRoom(roomId, { enabled: enableRoomQueries });
   const {
     roomMembersData,
     isGetRoomMembersLoading,
     isGetRoomMembersError,
     refetchRoomMembers,
-  } = useGetRoomMembers(roomId);
+  } = useGetRoomMembers(roomId, { enabled: enableRoomQueries });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
+  const { postTripsJoinMutation } = usePostTripsJoin();
 
   const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
   const isAllFree = useAuthStore((state) => state.isAllFree);
@@ -78,16 +89,56 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const isHost =
     tripsData?.find((trip) => trip.tripId === roomId)?.myRole === 'OWNER';
 
+  // 초대 코드가 있는데 아직 방/멤버 조회를 안 켠 상태 — 이 방 멤버인지 여부를
+  // 미리 알 수 없으니, join을 먼저 시도(또는 그 전에 일정 입력부터)해야 한다.
+  // 방 조회 자체에서 나는 TRIP_ACCESS_DENIED(이미 멤버인 줄 알았는데 아니었던
+  // 경우 등 예외 상황)까지 함께 대비한다.
+  const needsJoin =
+    hasHydrated &&
+    !!inviteCode &&
+    (!enableRoomQueries || getRoomError?.code === 'TRIP_ACCESS_DENIED');
+
   // 일정을 아직 못 쓰는 상태(한 번도 입력 안 함 또는 이 트립 활성화 전)는
   // 전부 하나로 묶어서 일정 입력 마법사로 보낸다. 백엔드가 이 코드를 안
   // 내려주는 경우까지 대비해, 정기/개별 일정을 한 번도 입력한 적 없는
   // (hasPreSchedule/isAllFree 둘 다 false) 사용자는 방 조회가 성공했더라도
   // 클라이언트 쪽에서 한 번 더 막는다. 다른 에러(권한 없음 등)일 때까지
   // 이걸로 덮어버리면 안 되므로 getRoomError가 없을 때만 적용한다.
+  // 초대 링크로 처음 들어온 신규 유저(아직 일정 자체가 없는 경우)도 참여
+  // 전에 일정 입력부터 마쳐야 하므로 같은 마법사로 보낸다.
   const needsScheduleEntry =
     getRoomError?.code === 'SCHEDULE_ENTRY_REQUIRED' ||
     getRoomError?.code === 'SCHEDULE_ACTIVATION_REQUIRED' ||
-    (!isGetRoomError && !hasPreSchedule && !isAllFree);
+    (needsJoin && !hasPreSchedule && !isAllFree) ||
+    (enableRoomQueries && !isGetRoomError && !hasPreSchedule && !isAllFree);
+
+  // 이미 일정을 입력해둔 사용자가 초대 링크로 새 방에 들어온 경우 — 일정
+  // 입력 마법사 없이 초대 코드로 바로 참여 처리만 하면 된다.
+  const needsJoinOnly = needsJoin && !needsScheduleEntry;
+
+  const handleJoinTrip = async (): Promise<boolean> => {
+    if (!inviteCode) return true;
+    try {
+      await postTripsJoinMutation({ inviteCode });
+      return true;
+    } catch (error) {
+      setJoinErrorMessage(
+        error instanceof Error ? error.message : '참여하지 못했어요.',
+      );
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!needsJoinOnly) return;
+    handleJoinTrip().then((joined) => {
+      if (joined) setEnableRoomQueries(true);
+    });
+    // handleJoinTrip은 매 렌더마다 새로 만들어지는 클로저라 의존성에 넣으면
+    // needsJoinOnly가 안 바뀌어도 재실행된다 — 이 값이 바뀔 때만(참여 시도가
+    // 필요해졌을 때만) 한 번 실행하면 되므로 제외한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsJoinOnly]);
 
   const { saveRegularSchedule } = useSaveRegularSchedule({ enabled: false });
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
@@ -137,6 +188,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       );
       return false;
     }
+    // 초대 링크로 들어온 신규 유저는 일정 입력을 마친 뒤에야 초대 코드로
+    // 참여 처리를 한다 — 참여 자체가 실패하면 완료 화면으로 넘어가지 않는다.
+    if (needsJoin && !(await handleJoinTrip())) return false;
     // activate는 방장 전용이라, 방장이 처음 일정을 입력하는 경우에만 여기서
     // 트립을 활성화한다. 참여자는 자기 일정 저장만으로 완료 화면으로 넘어간다.
     return isHost ? confirmSchedule(roomId) : true;
@@ -162,6 +216,33 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     );
   }
 
+  if (needsJoinOnly) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header
+          variant="page"
+          title="여행방 상세"
+          onBack={() => router.push('/')}
+        />
+        <div className="flex w-full flex-1 items-center justify-center">
+          <Spinner />
+        </div>
+        <AlertModal
+          open={joinErrorMessage !== null}
+          onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+          variant="danger"
+          title="참여하지 못했어요"
+          description={joinErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => {
+            setJoinErrorMessage(null);
+            router.push('/');
+          }}
+        />
+      </div>
+    );
+  }
+
   if (needsScheduleEntry) {
     if (isBasicInfoOpen) {
       return (
@@ -170,6 +251,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             allowSkip={false}
             onComplete={() => {
               setIsBasicInfoOpen(false);
+              setEnableRoomQueries(true);
               refetchRoom();
               refetchRoomMembers();
             }}
@@ -189,6 +271,15 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             description={scheduleErrorMessage ?? ''}
             primaryText="확인"
             onPrimaryClick={() => setScheduleErrorMessage(null)}
+          />
+          <AlertModal
+            open={joinErrorMessage !== null}
+            onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+            variant="danger"
+            title="참여하지 못했어요"
+            description={joinErrorMessage ?? ''}
+            primaryText="확인"
+            onPrimaryClick={() => setJoinErrorMessage(null)}
           />
         </>
       );
@@ -264,7 +355,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           title="응답 요청하기"
           initialTitleValue={`${room.title} 일정 입력 요청`}
           initialDescriptionValue={SCHEDULE_REQUEST_SHARE_DESCRIPTION}
-          linkPath={`/room/${roomId}`}
+          linkPath={`/room/${roomId}?inviteCode=${room.inviteCode}`}
           buttonTitle="응답하기"
           onShare={() => {
             setIsRequestResponseOpen(false);
