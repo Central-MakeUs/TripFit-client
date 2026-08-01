@@ -53,12 +53,22 @@ type OnShouldStartLoadWithRequest = NonNullable<
   WebViewComponentProps['onShouldStartLoadWithRequest']
 >;
 
+// 렌더러가 계속 죽는 기기/상황(예: 지속적인 메모리 부족)에서 매번 재마운트만
+// 반복하며 무한 루프에 빠지지 않도록, 이 횟수를 넘기면 재마운트 대신 에러 화면을
+// 보여준다.
+const MAX_RENDER_PROCESS_GONE_RETRIES = 3;
+
 function AppWebView() {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [uri, setUri] = useState(() => getWebUrl());
+  // onRenderProcessGone 이후의 WebView 인스턴스는 안드로이드 자체 문서에도 명시돼
+  // 있듯 더 이상 안전하게 쓸 수 없다 — 같은 인스턴스에 reload()를 호출하는 대신
+  // key를 바꿔 완전히 새 인스턴스로 강제 재마운트한다.
+  const [webViewKey, setWebViewKey] = useState(0);
+  const renderProcessGoneCountRef = useRef(0);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
@@ -239,6 +249,10 @@ function AppWebView() {
   // 경우가 있어, 오버레이가 안 걷히고 흰 화면에 멈추는 문제가 있었다.
   const handleLoadFinished = useCallback(() => {
     setIsLoading(false);
+    // 정상적으로 로딩이 끝났다는 건 방금 재마운트한 인스턴스가 살아있다는 뜻이라,
+    // 과거의 렌더러 크래시 횟수를 계속 들고 있을 이유가 없다 — 오래전 크래시 몇 번
+    // 때문에 지금 멀쩡한 세션이 에러 화면으로 잠기는 걸 막는다.
+    renderProcessGoneCountRef.current = 0;
     if (pendingNotificationRef.current) {
       sendToWeb(pendingNotificationRef.current);
       pendingNotificationRef.current = null;
@@ -272,21 +286,38 @@ function AppWebView() {
 
   const handleRetry = () => {
     setHasError(false);
-    webViewRef.current?.reload();
+    // 렌더러가 반복적으로 죽어서 에러 화면까지 온 경우 죽은 인스턴스가 남아있을 수
+    // 있어, reload() 대신 key를 바꿔 새 인스턴스로 시작하고 크래시 횟수도 초기화한다.
+    renderProcessGoneCountRef.current = 0;
+    setWebViewKey((key) => key + 1);
   };
 
   // 구글 로그인/캘린더 연동처럼 외부 화면(시스템 브라우저, 계정 선택 시트)으로 갔다 돌아올 때
   // 에뮬레이터·저사양 기기에서는 백그라운드로 밀린 WebView의 렌더러 프로세스를 OS가 강제
   // 종료시킬 수 있다 — onError와 달리 이 경우는 별도 이벤트로만 감지되고, 방치하면 아무
   // 안내도 없이 흰 화면인 채로 영원히 멈춘다.
+  //
+  // 렌더러가 죽은 뒤의 WebView 인스턴스는 더 이상 안전하게 쓸 수 없어(안드로이드 공식
+  // 문서에도 명시) 같은 ref에 reload()를 호출하지 않는다 — key를 바꿔 완전히 새
+  // 인스턴스로 강제 재마운트한다. 지속적으로 죽는 상황이면 무한 재마운트 대신 에러
+  // 화면으로 전환한다.
   const handleRenderProcessGone = useCallback(() => {
-    webViewRef.current?.reload();
+    renderProcessGoneCountRef.current += 1;
+    if (renderProcessGoneCountRef.current > MAX_RENDER_PROCESS_GONE_RETRIES) {
+      setHasError(true);
+      return;
+    }
+    // 새 인스턴스의 onLoadStart가 뜨기 전까지 잠깐 빈 화면이 보이지 않도록 미리 켠다.
+    setIsLoading(true);
+    setHasError(false);
+    setWebViewKey((key) => key + 1);
   }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* 에러 시에도 webViewRef가 살아있어야 다시 시도(reload)가 가능하므로 WebView는 항상 마운트해두고 오버레이로만 가린다 */}
+      {/* 에러 시에도 다시 시도(key 변경으로 재마운트) 가능해야 하므로 WebView는 항상 렌더링해두고 오버레이로만 가린다 */}
       <WebView
+        key={webViewKey}
         ref={webViewRef}
         source={{ uri }}
         style={styles.webview}
