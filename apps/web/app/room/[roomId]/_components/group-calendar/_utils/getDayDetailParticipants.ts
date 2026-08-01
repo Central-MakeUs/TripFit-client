@@ -15,9 +15,6 @@ type DayDetailParticipantsT = {
   available: ParticipantStatusT[];
 };
 
-const getUncertainDayCount = (member: RoomScheduleMemberT) =>
-  member.days.filter((day) => day.uncertain).length;
-
 // 불가능한 시간대만 모아 "불가능(오전, 오후)"처럼 조합한다 — 세 시간대가 모두
 // 불가능한 경우엔 "불가능(오전, 오후, 저녁)" 대신 "불가능(종일)"로 줄인다.
 const buildImpossibleLabel = (day: RoomScheduleDayT): string => {
@@ -71,12 +68,7 @@ export const getDayDetailParticipants = (
         }
         return acc;
       }
-      acc.needsAttention.push(
-        toParticipantStatus(member, {
-          label: '불확실 일정',
-          days: getUncertainDayCount(member),
-        }),
-      );
+      acc.needsAttention.push(toParticipantStatus(member, { label: '불확실' }));
       return acc;
     },
     { needsAttention: [], available: [] },
