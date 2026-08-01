@@ -295,7 +295,8 @@ function AppWebView() {
   // 구글 로그인/캘린더 연동처럼 외부 화면(시스템 브라우저, 계정 선택 시트)으로 갔다 돌아올 때
   // 에뮬레이터·저사양 기기에서는 백그라운드로 밀린 WebView의 렌더러 프로세스를 OS가 강제
   // 종료시킬 수 있다 — onError와 달리 이 경우는 별도 이벤트로만 감지되고, 방치하면 아무
-  // 안내도 없이 흰 화면인 채로 영원히 멈춘다.
+  // 안내도 없이 흰 화면인 채로 영원히 멈춘다. 안드로이드는 onRenderProcessGone, iOS는
+  // onContentProcessDidTerminate로 이벤트 이름이 다를 뿐 같은 상황이라 동일하게 처리한다.
   //
   // 렌더러가 죽은 뒤의 WebView 인스턴스는 더 이상 안전하게 쓸 수 없어(안드로이드 공식
   // 문서에도 명시) 같은 ref에 reload()를 호출하지 않는다 — key를 바꿔 완전히 새
@@ -331,6 +332,7 @@ function AppWebView() {
         onLoadEnd={handleLoadFinished}
         onError={() => setHasError(true)}
         onRenderProcessGone={handleRenderProcessGone}
+        onContentProcessDidTerminate={handleRenderProcessGone}
       />
       {hasError ? (
         <View style={styles.center}>
