@@ -62,7 +62,7 @@ function Header(props: HeaderProps) {
             />
             <Badge
               count={props.unreadNotificationCount ?? 0}
-              className="absolute top-1 right-1"
+              className="pointer-events-none absolute top-1 right-1"
             />
           </div>
           <IconButton
