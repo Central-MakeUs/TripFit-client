@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
+import Spinner from '@/components/spinner';
 import { useSocialLoginCallback } from '@/hooks/useSocialLoginCallback';
 import { SocialProviderT } from '@/types/auth';
 import { getGoogleRedirectUri } from '@/utils/googleAuth';
@@ -99,7 +100,14 @@ function AuthCallbackForProvider({
     };
   });
 
-  return null;
+  // 로그인 처리(토큰 교환, 로그인 API 호출)가 끝나기 전까지는 화면이 아무것도
+  // 안 보여줘서, 응답이 조금만 늦어져도 사용자가 멈춘 건지 로그인 중인 건지
+  // 구분할 수 없었다 — 처리 중임을 알 수 있도록 스피너를 보여준다.
+  return (
+    <div className="flex w-full flex-1 items-center justify-center">
+      <Spinner />
+    </div>
+  );
 }
 
 export default AuthCallbackPage;

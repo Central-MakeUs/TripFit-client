@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import AppleIcon from '@/assets/icons/apple.svg';
 import GoogleIcon from '@/assets/icons/google.svg';
 import KakaoIcon from '@/assets/icons/kakao.svg';
 import LogoIcon from '@/assets/icons/logo.svg';
+import TextButton from '@/components/text-button';
 import { isIOS, isReactNativeWebView } from '@/utils/platform';
 
 type SocialLoginStepProps = {
@@ -18,6 +19,7 @@ function SocialLoginStep({
   onSelectApple,
   onSelectKakao,
 }: SocialLoginStepProps) {
+  const router = useRouter();
   // 일반 웹에서는 항상 노출, RN 앱(WebView) 안에서는 iOS에서만 노출한다
   // — 서버 렌더링 시점엔 판단 불가하므로 마운트 후에만 켠다
   const [showApple, setShowApple] = useState(false);
@@ -35,7 +37,7 @@ function SocialLoginStep({
         </p>
       </div>
 
-      <div className="flex w-full flex-col items-center gap-5 px-5 pb-8">
+      <div className="flex w-full flex-col items-center gap-5 px-5">
         <div className="flex w-full flex-col gap-3">
           <button
             type="button"
@@ -75,12 +77,12 @@ function SocialLoginStep({
           </button>
         </div>
 
-        <Link
-          href="/privacy-policy"
-          className="text-caption-01 cursor-pointer rounded-xl p-2 text-grey-300 underline"
-        >
-          개인정보 처리방침
-        </Link>
+        <TextButton
+          text="개인정보 처리방침"
+          icon={null}
+          onClick={() => router.push('/privacy-policy')}
+          className="text-caption-01 text-grey-300 underline"
+        />
       </div>
     </div>
   );
