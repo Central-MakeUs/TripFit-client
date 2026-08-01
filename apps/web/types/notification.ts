@@ -1,25 +1,24 @@
+export type DeviceTypeT = 'ANDROID' | 'IOS' | 'WEB';
+
+export type LandingTypeT = 'TRAVEL_ROOM_DETAIL' | 'SCHEDULE_MANAGEMENT';
+
 export type NotificationTypeT =
-  | 'PARTICIPANT_JOINED'
-  | 'ALL_SCHEDULES_SUBMITTED'
-  | 'TRIP_INFO_UPDATED'
-  | 'SCHEDULE_CONFIRMED'
-  | 'SCHEDULE_UPDATE_REMINDER'
-  | 'SCHEDULE_CONFIRM_CANCELED';
+  | 'JOIN_COMPLETED'
+  | 'ALL_MEMBERS_SUBMITTED'
+  | 'TRIP_INFO_CHANGED'
+  | 'TRIP_CONFIRMED'
+  | 'TRIP_CONFIRM_CANCELED'
+  | 'SCHEDULE_REMINDER';
 
-type NotificationBaseT = {
+export type NotificationT = {
   id: string;
-  roomName: string;
-  message: string;
-  createdAt: string;
+  type: NotificationTypeT;
+  title: string;
+  body: string;
+  landingType: LandingTypeT;
+  // 여행방과 무관한 알림(정기 리마인드)은 tripId/roomName이 null이다.
+  tripId: string | null;
+  roomName: string | null;
   isRead: boolean;
+  sentAt: string;
 };
-
-export type NotificationT =
-  | (NotificationBaseT & {
-      type: Exclude<NotificationTypeT, 'SCHEDULE_UPDATE_REMINDER'>;
-      roomId: string;
-    })
-  | (NotificationBaseT & {
-      type: 'SCHEDULE_UPDATE_REMINDER';
-      roomId: null;
-    });

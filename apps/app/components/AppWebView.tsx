@@ -14,10 +14,29 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { getApp } from '@react-native-firebase/app';
+import {
+  getInitialNotification,
+  getMessaging,
+  onMessage,
+  onNotificationOpenedApp,
+} from '@react-native-firebase/messaging';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
-import { BridgeIncomingMessage, parseBridgeMessage } from '../types/bridge';
+import {
+  BridgeIncomingMessage,
+  parseBridgeMessage,
+  PushLandingData,
+} from '../types/bridge';
+import {
+  configureForegroundNotificationHandler,
+  getPushLandingData,
+  getPushLandingDataFromLocalNotification,
+  requestNativePushToken,
+  showForegroundNotification,
+} from '../utils/pushNotifications';
 import { requestNativeSocialLoginToken } from '../utils/socialLogin';
 import {
   getPathFromDeepLink,
@@ -79,6 +98,76 @@ function AppWebView() {
     webViewRef.current?.postMessage(JSON.stringify(message));
   }, []);
 
+  // 알림 탭으로 앱이 콜드 스타트된 경우, WebView가 메시지 리스너를 등록하기 전에
+  // postMessage를 보내면 유실된다 — 로딩이 끝날 때까지 대기시켰다가 보낸다.
+  const pendingNotificationRef = useRef<Extract<
+    BridgeIncomingMessage,
+    { type: 'NOTIFICATION_OPENED' }
+  > | null>(null);
+
+  // handleNotificationOpened의 아이덴티티가 isLoading에 따라 바뀌면 아래 리스너 등록
+  // useEffect가 매번 재실행되어 getInitialNotification()도 반복 호출된다 — 이 API는 같은
+  // 세션에서 여러 번 호출해도 이전 알림을 다시 반환할 수 있어, WebView가 재로딩될 때마다
+  // 이미 처리한 알림으로 강제 재이동하는 버그가 생긴다. isLoading은 ref로 참조해 콜백
+  // 아이덴티티를 고정한다.
+  const isLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  const handleNotificationOpened = useCallback(
+    (landing: PushLandingData | null) => {
+      if (!landing) return;
+      const message: BridgeIncomingMessage = {
+        type: 'NOTIFICATION_OPENED',
+        ...landing,
+      };
+      if (isLoadingRef.current) {
+        pendingNotificationRef.current = message;
+      } else {
+        sendToWeb(message);
+      }
+    },
+    [sendToWeb],
+  );
+
+  useEffect(() => {
+    configureForegroundNotificationHandler();
+
+    const messaging = getMessaging(getApp());
+
+    getInitialNotification(messaging).then((remoteMessage) => {
+      if (remoteMessage) {
+        handleNotificationOpened(getPushLandingData(remoteMessage));
+      }
+    });
+
+    // 앱이 열려 있는 동안 도착한 메시지는 OS가 배너를 자동으로 띄워주지 않아 직접 띄운다.
+    // 홈 화면을 보고 있는 동안 도착한 경우 알림센터 뱃지가 갱신되도록 웹에도 알려준다.
+    const unsubscribeOnMessage = onMessage(messaging, (remoteMessage) => {
+      showForegroundNotification(remoteMessage);
+      sendToWeb({ type: 'NOTIFICATION_RECEIVED' });
+    });
+    const unsubscribeOnOpenedApp = onNotificationOpenedApp(
+      messaging,
+      (remoteMessage) => {
+        handleNotificationOpened(getPushLandingData(remoteMessage));
+      },
+    );
+    // 위에서 직접 띄운 로컬 알림을 탭한 경우는 FCM 경로가 아니라 이 리스너로 들어온다.
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data;
+        handleNotificationOpened(getPushLandingDataFromLocalNotification(data));
+      });
+
+    return () => {
+      unsubscribeOnMessage();
+      unsubscribeOnOpenedApp();
+      responseSubscription.remove();
+    };
+  }, [handleNotificationOpened, sendToWeb]);
+
   const handleMessage: OnMessage = useCallback(
     (event) => {
       if (!isWebOrigin(event.nativeEvent.url)) return;
@@ -86,33 +175,63 @@ function AppWebView() {
       const message = parseBridgeMessage(event.nativeEvent.data);
       if (!message) return;
 
-      requestNativeSocialLoginToken(message.provider)
-        .then((result) => {
-          sendToWeb({
-            type: 'SOCIAL_LOGIN_SUCCESS',
-            provider: message.provider,
-            ...result,
+      if (message.type === 'SOCIAL_LOGIN_REQUEST') {
+        const { provider } = message;
+        requestNativeSocialLoginToken(provider)
+          .then((result) => {
+            sendToWeb({ type: 'SOCIAL_LOGIN_SUCCESS', provider, ...result });
+          })
+          .catch((error) => {
+            sendToWeb({
+              type: 'SOCIAL_LOGIN_ERROR',
+              provider,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : '로그인 중 문제가 발생했어요.',
+            });
           });
-        })
-        .catch((error) => {
-          sendToWeb({
-            type: 'SOCIAL_LOGIN_ERROR',
-            provider: message.provider,
-            message:
-              error instanceof Error
-                ? error.message
-                : '로그인 중 문제가 발생했어요.',
+        return;
+      }
+
+      if (message.type === 'PUSH_TOKEN_REQUEST') {
+        const { requestId } = message;
+        requestNativePushToken()
+          .then((result) => {
+            sendToWeb({ type: 'PUSH_TOKEN_READY', requestId, ...result });
+          })
+          .catch((error) => {
+            sendToWeb({
+              type: 'PUSH_TOKEN_ERROR',
+              requestId,
+              message:
+                error instanceof Error
+                  ? error.message
+                  : '알림 토큰을 받아오지 못했어요.',
+            });
           });
-        });
+      }
     },
     [sendToWeb],
   );
 
+  // 로딩 종료 시점은 onLoadEnd 대신 이 값을 기준으로 삼는다 — Android에서는 클라이언트
+  // 사이드 라우팅(예: 로그인 안 된 상태의 /signup 리다이렉트) 시 onLoadEnd가 불리지 않는
+  // 경우가 있어, 오버레이가 안 걷히고 흰 화면에 멈추는 문제가 있었다.
+  const handleLoadFinished = useCallback(() => {
+    setIsLoading(false);
+    if (pendingNotificationRef.current) {
+      sendToWeb(pendingNotificationRef.current);
+      pendingNotificationRef.current = null;
+    }
+  }, [sendToWeb]);
+
   const handleNavigationStateChange: OnNavigationStateChange = useCallback(
     (navState) => {
       setCanGoBack(navState.canGoBack);
+      if (!navState.loading) handleLoadFinished();
     },
-    [],
+    [handleLoadFinished],
   );
 
   // 카카오톡 공유(Kakao.Share.sendDefault)처럼 웹 페이지가 kakaotalk:// 같은
@@ -151,7 +270,7 @@ function AppWebView() {
           setIsLoading(true);
           setHasError(false);
         }}
-        onLoadEnd={() => setIsLoading(false)}
+        onLoadEnd={handleLoadFinished}
         onError={() => setHasError(true)}
       />
       {hasError ? (

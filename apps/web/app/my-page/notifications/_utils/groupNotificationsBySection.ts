@@ -20,13 +20,13 @@ export const groupNotificationsBySection = (
   const recent7Days: NotificationT[] = [];
 
   notifications.forEach((notification) => {
-    const createdAt = parseISO(notification.createdAt);
-    if (isToday(createdAt)) {
+    const sentAt = parseISO(notification.sentAt);
+    if (isToday(sentAt)) {
       today.push(notification);
-    } else if (isYesterday(createdAt)) {
+    } else if (isYesterday(sentAt)) {
       yesterday.push(notification);
     } else {
-      const daysAgo = differenceInCalendarDays(new Date(), createdAt);
+      const daysAgo = differenceInCalendarDays(new Date(), sentAt);
       if (daysAgo >= 2 && daysAgo <= 7) {
         recent7Days.push(notification);
       }
