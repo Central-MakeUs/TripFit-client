@@ -1,3 +1,5 @@
+// Expo config plugin은 CommonJS(require/module.exports)로 작성해야 로더가 읽을 수 있다.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { withProjectBuildGradle } = require('expo/config-plugins');
 
 // com.kakao.sdk:* 아티팩트는 Google/Maven Central/JitPack이 아니라 카카오 자체
