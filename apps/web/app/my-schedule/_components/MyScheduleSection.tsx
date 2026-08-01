@@ -70,7 +70,8 @@ function MyScheduleSection() {
   const setGoogleCalendarConnected = useAuthStore(
     (state) => state.setGoogleCalendarConnected,
   );
-  const { deleteGoogleCalendarMutation } = useDeleteGoogleCalendar();
+  const { deleteGoogleCalendarMutation, isDeleteGoogleCalendarPending } =
+    useDeleteGoogleCalendar();
   // 해제 성공은 메뉴 항목 문구가 조용히 바뀌는 것 말고는 눈에 띄는 피드백이 없어서,
   // 실제로 해제됐는지 사용자가 확신하기 어려웠다 — 그렇다고 확인 모달을 닫고 별도의
   // 완료 모달을 새로 여는 건 두 모달이 연달아 여닫히며 전환이 뚝뚝 끊겨 보인다.
@@ -361,6 +362,9 @@ function MyScheduleSection() {
   };
 
   const handleDisconnectCalendar = () => {
+    // AlertModal은 버튼 비활성화 prop이 없어, "해제"를 빠르게 두 번 누르면 요청이
+    // 중복 전송될 수 있다 — 첫 요청이 아직 진행 중이면 무시한다.
+    if (isDeleteGoogleCalendarPending) return;
     deleteGoogleCalendarMutation(undefined, {
       onSuccess: () => {
         setGoogleCalendarConnected(false);
