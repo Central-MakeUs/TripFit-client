@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
 import { useSocialLoginCallback } from '@/hooks/useSocialLoginCallback';
 import { SocialProviderT } from '@/types/auth';
+import { getGoogleRedirectUri } from '@/utils/googleAuth';
 import { exchangeKakaoCodeForToken } from '@/utils/kakaoAuth';
 import { consumeOAuthNonce, consumeOAuthState } from '@/utils/oauthState';
 
@@ -82,6 +83,8 @@ function AuthCallbackForProvider({
     }
     // 하이브리드 플로우(response_type=code id_token)라서 id_token과 authorization
     // code가 같은 프래그먼트에 함께 돌아온다 — code 자체의 교환은 백엔드가 한다.
+    // redirectUri는 그 code를 발급받을 때 실제로 쓴 값(환경마다 origin이 달라 동적)이라,
+    // 백엔드가 토큰 교환 시 이 값을 그대로 써야 code와 일치해 정상 교환된다.
     const hashParams = new URLSearchParams(window.location.hash.slice(1));
     const idToken = hashParams.get('id_token');
     const code = hashParams.get('code');
@@ -90,7 +93,9 @@ function AuthCallbackForProvider({
     if (!consumeOAuthNonce('GOOGLE', idToken)) return null;
     return {
       token: idToken,
-      ...(code ? { authorizationCode: code } : {}),
+      ...(code
+        ? { authorizationCode: code, redirectUri: getGoogleRedirectUri() }
+        : {}),
     };
   });
 
