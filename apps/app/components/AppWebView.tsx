@@ -217,7 +217,18 @@ function AppWebView() {
       // 구글 캘린더 연동처럼 WebView 안에서 그대로 열면 안 되는 URL은 시스템 기본 브라우저로
       // 대신 열어준다. 이후 콜백은 딥링크(Universal/App Links)로 앱에 다시 들어온다.
       if (message.type === 'OPEN_EXTERNAL_URL') {
-        Linking.openURL(message.url).catch(() => {});
+        Linking.openURL(message.url).catch((error) => {
+          // 브라우저 실행 자체가 실패하면 OAuth가 시작도 못 되는데, 이 실패는 웹 쪽
+          // 응답 계약에 없어 알려줄 방법이 없다 — 최소한 기기 로그로는 남긴다.
+          // client_id/state 등이 담긴 전체 URL은 남기지 않고 origin만 남긴다.
+          let origin = 'unknown';
+          try {
+            origin = new URL(message.url).origin;
+          } catch {
+            // message.url이 유효한 URL이 아니어도 경고 로그 자체는 남겨야 한다.
+          }
+          console.warn('[AppWebView] Linking.openURL 실패:', origin, error);
+        });
       }
     },
     [sendToWeb],
