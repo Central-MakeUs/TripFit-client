@@ -9,14 +9,18 @@ import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
 import Profile from '@/components/profile';
 import Toggle from '@/components/toggle';
+import { usePatchMyPageProfile } from '@/hooks/usePatchMyPageProfile';
+import { usePostDeviceToken } from '@/hooks/usePostDeviceToken';
 import {
   clearAuthGuardRedirectSuppression,
   suppressNextAuthGuardRedirectOnce,
   useAuthStore,
 } from '@/stores/authStore';
+import { requestNativePushToken } from '@/utils/nativeBridge';
+import { isReactNativeWebView } from '@/utils/platform';
 
+import { useDeleteDeviceToken } from '../_hooks/useDeleteDeviceToken';
 import { useDeleteUser } from '../_hooks/useDeleteUser';
-import { usePatchMyPageProfile } from '../_hooks/usePatchMyPageProfile';
 import { usePostLogout } from '../_hooks/usePostLogout';
 import ProfileEditNameView from './ProfileEditNameView';
 import WithdrawConfirmView from './WithdrawConfirmView';
@@ -31,12 +35,16 @@ function MyPageSection() {
   const email = useAuthStore((state) => state.email);
   const firstName = useAuthStore((state) => state.firstName);
   const lastName = useAuthStore((state) => state.lastName);
-  // 알림 허용은 아직 백엔드에 반영하지 않고 로컬 상태로만 토글한다.
+  const pushDeviceToken = useAuthStore((state) => state.pushDeviceToken);
+  const setPushDeviceToken = useAuthStore((state) => state.setPushDeviceToken);
   const [notificationEnabled, setNotificationEnabled] = useState(
     useAuthStore.getState().notificationEnabled,
   );
+  const [isRequestingPushToken, setIsRequestingPushToken] = useState(false);
 
   const { patchMyPageProfileMutation } = usePatchMyPageProfile();
+  const { postDeviceTokenMutation } = usePostDeviceToken();
+  const { deleteDeviceTokenMutation } = useDeleteDeviceToken();
   const { deleteUserMutation } = useDeleteUser();
   const { postLogoutMutation } = usePostLogout();
 
@@ -56,8 +64,50 @@ function MyPageSection() {
     );
   };
 
+  // 토글은 OS 알림 권한 자체를 켜고 끄지 않는다(기기 설정에서 거부한 건 앱이 되돌릴 수
+  // 없음) — 대신 이 기기의 FCM 토큰을 서버에 등록/해제해 실제 수신 여부를 제어한다.
   const handleToggleNotification = (checked: boolean) => {
-    setNotificationEnabled(checked);
+    if (!checked) {
+      setNotificationEnabled(false);
+      patchMyPageProfileMutation({ notificationEnabled: false });
+      if (pushDeviceToken) {
+        deleteDeviceTokenMutation(pushDeviceToken, {
+          onSuccess: () => setPushDeviceToken(null),
+        });
+      }
+      return;
+    }
+
+    if (!isReactNativeWebView()) {
+      setNotificationEnabled(true);
+      patchMyPageProfileMutation({ notificationEnabled: true });
+      return;
+    }
+
+    setIsRequestingPushToken(true);
+    requestNativePushToken()
+      .then(({ token, deviceType }) => {
+        postDeviceTokenMutation(
+          { token, deviceType },
+          {
+            onSuccess: () => {
+              setPushDeviceToken(token);
+              setNotificationEnabled(true);
+              patchMyPageProfileMutation({ notificationEnabled: true });
+            },
+            onError: () =>
+              setErrorMessage(
+                '알림 등록에 실패했어요. 잠시 후 다시 시도해주세요.',
+              ),
+          },
+        );
+      })
+      .catch(() =>
+        setErrorMessage(
+          '알림 권한이 필요해요. 기기 설정에서 알림을 허용해주세요.',
+        ),
+      )
+      .finally(() => setIsRequestingPushToken(false));
   };
 
   const handleWithdraw = () => {
@@ -139,6 +189,7 @@ function MyPageSection() {
             <Toggle
               checked={notificationEnabled}
               onCheckedChange={handleToggleNotification}
+              disabled={isRequestingPushToken}
               aria-label="알림 허용"
             />
           </div>
