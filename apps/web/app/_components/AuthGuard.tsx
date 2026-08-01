@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { useAuthStore } from '@/stores/authStore';
+import {
+  consumeAuthGuardRedirectSuppression,
+  useAuthStore,
+} from '@/stores/authStore';
 
 // 로그인 없이 접근 가능한 화면. 그 외 모든 화면은 로그인 화면(/signup)으로 리다이렉트된다.
 // 소셜 로그인 리다이렉트 콜백은 전부 /auth/* 아래에 있어서 provider가 늘어나도 따로 추가할 필요 없다.
@@ -31,16 +34,28 @@ function AuthGuard({ children }: AuthGuardProps) {
     return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
   }, []);
 
+  // isPublicPath는 로그인 여부와 무관하게 항상 예외여야 한다 — 특히 /auth/* 콜백
+  // 페이지는 소셜 로그인 처리 도중 accessToken은 이미 생겼지만 hasName은 아직
+  // false인 순간이 있는데, 이 체크가 accessToken 분기 안에만 있으면 그 찰나에
+  // AuthGuard가 콜백 페이지 자신의 경로(pathname)로 또 리다이렉트를 걸어버려
+  // 원래 저장해둔 목적지를 덮어써버린다(콜백 페이지 자체가 최종 리다이렉트를
+  // 이미 책임지고 처리하므로 AuthGuard가 끼어들 필요가 없다).
   const isBlocked =
     hasHydrated &&
-    (!accessToken
-      ? !isPublicPath(pathname)
-      : !hasName && pathname !== '/signup');
+    !isPublicPath(pathname) &&
+    (!accessToken || (!hasName && pathname !== '/signup'));
 
   useEffect(() => {
     if (!isBlocked) return;
-    // 로그인/회원가입 완료 후 원래 가려던 페이지(초대 링크로 들어온 여행방 등)로
-    // 바로 이어질 수 있도록, 지금 있던 경로를 쿼리로 들려보낸다.
+    // 로그아웃/탈퇴처럼 사용자가 의도적으로 인증을 끝낸 직후라면, 방금 있던
+    // 페이지로 돌아오라는 리다이렉트가 필요 없으므로 그냥 /signup으로만 보낸다.
+    if (consumeAuthGuardRedirectSuppression()) {
+      router.replace('/signup');
+      return;
+    }
+    // 그 외의 경우(로그인 안 된 채 보호된 페이지 접근 등)는 로그인/회원가입 완료 후
+    // 원래 가려던 페이지(초대 링크로 들어온 여행방 등)로 바로 이어질 수 있도록,
+    // 지금 있던 경로를 쿼리로 들려보낸다.
     router.replace(`/signup?redirect=${encodeURIComponent(pathname)}`);
   }, [isBlocked, pathname, router]);
 

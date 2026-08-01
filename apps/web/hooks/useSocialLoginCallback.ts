@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { usePostAuthLogin } from '@/hooks/usePostAuthLogin';
 import { SocialLoginTokenT, SocialProviderT } from '@/types/auth';
+import { consumeOAuthRedirectTarget } from '@/utils/oauthState';
 
 // 소셜 로그인 리다이렉트 콜백 페이지들의 공통 로직. provider마다 다른 건
 // "토큰(또는 토큰으로 교환할 code)을 어떻게 얻는지"뿐이고, 얻은 토큰으로
@@ -35,7 +36,13 @@ export const useSocialLoginCallback = (
         postAuthLoginMutation(
           { provider, ...result },
           {
-            onSuccess: () => router.replace('/signup'),
+            // 로그인 시작 시 저장해둔 원래 목적지를 다시 /signup의 redirect
+            // 쿼리로 실어 보낸다 — SignupFlow가 이 값을 보고 기존/신규 유저
+            // 분기에 맞게 최종적으로 그 경로까지 이어준다.
+            onSuccess: () =>
+              router.replace(
+                `/signup?redirect=${encodeURIComponent(consumeOAuthRedirectTarget())}`,
+              ),
             onError: (error) => replaceWithError(error.message),
           },
         );
