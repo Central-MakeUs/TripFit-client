@@ -87,19 +87,27 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
 // 계정 선택 화면이 뜨는 전체 동의(signIn) 플로우를 쓴다. 캘린더 전용 클라이언트로 잠깐
 // 바꿔 code를 발급받고, 끝나면 로그인용 기본 설정으로 되돌려 다음 로그인이 캘린더
 // 스코프를 물려받지 않게 한다.
+//
+// forceCodeForRefreshToken(안드로이드 전용)이 꼭 필요하다 — 구글은 같은
+// (구글 계정, client_id) 조합에 이미 offline 권한을 한 번 준 적이 있으면 재동의 시
+// refresh_token을 재발급하지 않는 게 기본 동작이라(최초 grant 때만 줌), 이게 없으면
+// "이미 다른 TripFit 계정이 이 구글 계정으로 연동한 적 있음" 같은 상황에서 서버가
+// refresh_token 없는 응답을 받아 연동에 실패한다. 이 값을 true로 강제하면 매번 새
+// refresh_token을 재발급받는다.
 const requestGoogleCalendarConnectCodeLocked = async (): Promise<string> => {
   try {
     GoogleSignin.configure({
       ...BASE_GOOGLE_SIGNIN_CONFIG,
       webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
       scopes: [GOOGLE_CALENDAR_SCOPE],
+      forceCodeForRefreshToken: true,
     });
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     // signIn()이 기기에 캐시된 이전 세션을 그대로 돌려주면 계정 선택 화면 없이 조용히
-    // 끝나버릴 수 있고, 이미 소비된(1회용) 인가 코드가 재사용돼 백엔드 교환이 실패할
-    // 위험이 있다 — 매번 실제로 새로 동의받도록 직전에 캐시를 비운다. 로그인 세션이
-    // 없어 signOut이 실패해도(가입 시 로그인을 구글이 아닌 다른 provider로 한 경우 등)
-    // 무시하고 계속 진행한다.
+    // 끝나버릴 수 있다 — 로그인 계정과 다른 구글 계정으로 캘린더를 연동하고 싶을 때도
+    // 매번 실제로 새로 선택/동의받도록 직전에 캐시를 비운다. 로그인 세션이 없어 signOut이
+    // 실패해도(가입 시 로그인을 구글이 아닌 다른 provider로 한 경우 등) 무시하고 계속
+    // 진행한다.
     await GoogleSignin.signOut().catch(() => {});
     const response = await GoogleSignin.signIn();
 
