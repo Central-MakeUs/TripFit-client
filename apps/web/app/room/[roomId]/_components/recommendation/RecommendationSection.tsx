@@ -22,6 +22,7 @@ import RecommendationTypeStep from './steps/RecommendationTypeStep';
 type RecommendationSectionProps = {
   roomId: string;
   roomName: string;
+  inviteCode: string;
   myName: string;
   isHost: boolean;
   onExit: () => void;
@@ -39,6 +40,7 @@ type RecommendationSectionProps = {
 function RecommendationSection({
   roomId,
   roomName,
+  inviteCode,
   myName,
   isHost,
   onExit,
@@ -120,7 +122,9 @@ function RecommendationSection({
         <div className="flex w-full flex-1 flex-col px-5">
           {confirmedStartDate && confirmedEndDate && (
             <RecommendationConfirmedStep
+              roomId={roomId}
               roomName={roomName}
+              inviteCode={inviteCode}
               startDate={confirmedStartDate}
               endDate={confirmedEndDate}
               attendCount={confirmedAttendCount ?? 0}
@@ -232,7 +236,9 @@ function RecommendationSection({
         )}
         {step === 4 && confirmedCandidate && (
           <RecommendationConfirmedStep
+            roomId={roomId}
             roomName={roomName}
+            inviteCode={inviteCode}
             startDate={confirmedCandidate.startDate}
             endDate={confirmedCandidate.endDate}
             attendCount={

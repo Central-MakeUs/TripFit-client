@@ -336,6 +336,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         <RecommendationSection
           roomId={roomId}
           roomName={room.title}
+          inviteCode={room.inviteCode}
           myName={myName}
           isHost={isHost}
           onExit={() => setSection('calendar')}
