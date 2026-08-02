@@ -11,7 +11,12 @@ import {
   GOOGLE_CALENDAR_OAUTH_PROVIDER_KEY,
   getGoogleCalendarRedirectUri,
 } from '@/utils/googleCalendarAuth';
-import { consumeOAuthReturnPath, consumeOAuthState } from '@/utils/oauthState';
+import {
+  consumeOAuthReturnPath,
+  consumeOAuthState,
+  consumePendingCalendarConnectResumeScreen,
+  setCalendarConnectResumeScreen,
+} from '@/utils/oauthState';
 
 type ConnectStatusT = 'loading' | 'error';
 
@@ -71,6 +76,12 @@ function GoogleCalendarCallbackHandler() {
     })
       .then(() => {
         setGoogleCalendarConnected(true);
+        // 연동이 실제로 성공했을 때만 완료 화면 신호를 최종 적용한다 — 리다이렉트를
+        // 시작할 때 미리 저장해둔 pending 값을 여기서 처음 소비/승격시킨다.
+        const pendingResumeScreen = consumePendingCalendarConnectResumeScreen();
+        if (pendingResumeScreen) {
+          setCalendarConnectResumeScreen(pendingResumeScreen);
+        }
         router.replace(returnPathRef.current);
       })
       .catch(() => setStatus('error'));

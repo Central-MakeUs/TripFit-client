@@ -2,7 +2,7 @@ import { openExternalUrl } from '@/utils/nativeBridge';
 import {
   createOAuthReturnPath,
   createOAuthState,
-  setCalendarConnectResumeScreen,
+  savePendingCalendarConnectResumeScreen,
 } from '@/utils/oauthState';
 import { isAndroid, isKakaoTalkInAppBrowser } from '@/utils/platform';
 
@@ -48,8 +48,10 @@ export const startGoogleCalendarConnect = (
   createOAuthReturnPath(OAUTH_PROVIDER_KEY, returnPath);
   // returnPath 자체에 이미 resumeScreen을 쿼리로 심어 쓰는 기존 호출부(회원가입)와
   // 호환되도록 이 인자는 선택적이다 — 새로 넘기는 호출부만 세션 저장소 방식을 탄다.
+  // 아직 연동 성공 여부를 모르는 시점이라 pending으로만 저장해두고, 콜백이 성공을
+  // 확인한 뒤에야 실제로 적용한다(취소/실패 시 엉뚱하게 완료 화면이 뜨는 걸 방지).
   if (resumeScreen) {
-    setCalendarConnectResumeScreen(resumeScreen);
+    savePendingCalendarConnectResumeScreen(resumeScreen);
   }
 
   const params = new URLSearchParams({
