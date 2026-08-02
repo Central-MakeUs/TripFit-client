@@ -1,5 +1,9 @@
 import { openExternalUrl } from '@/utils/nativeBridge';
-import { createOAuthReturnPath, createOAuthState } from '@/utils/oauthState';
+import {
+  createOAuthReturnPath,
+  createOAuthState,
+  setCalendarConnectResumeScreen,
+} from '@/utils/oauthState';
 import { isAndroid, isKakaoTalkInAppBrowser } from '@/utils/platform';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -32,13 +36,21 @@ const buildAndroidBrowserEscapeUrl = (url: string): string => {
 //   재로그인 UX를 위해 의도적으로 이 옵션을 안 쓰지만, 캘린더는 필수).
 // - 구글이 앱 내장 WebView를 "제한된 브라우저"로 감지해 동의 화면을 막을 수 있어, 이 URL은
 //   WebView 안에서 직접 열지 않고 시스템 기본 브라우저로 열도록 위임한다.
-export const startGoogleCalendarConnect = (returnPath: string) => {
+export const startGoogleCalendarConnect = (
+  returnPath: string,
+  resumeScreen?: string,
+) => {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_CLIENT_ID;
   if (!clientId) {
     throw new Error('구글 캘린더 연동 설정이 올바르지 않습니다.');
   }
 
   createOAuthReturnPath(OAUTH_PROVIDER_KEY, returnPath);
+  // returnPath 자체에 이미 resumeScreen을 쿼리로 심어 쓰는 기존 호출부(회원가입)와
+  // 호환되도록 이 인자는 선택적이다 — 새로 넘기는 호출부만 세션 저장소 방식을 탄다.
+  if (resumeScreen) {
+    setCalendarConnectResumeScreen(resumeScreen);
+  }
 
   const params = new URLSearchParams({
     client_id: clientId,

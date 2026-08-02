@@ -28,7 +28,10 @@ export const useGoogleCalendarConnect = () => {
   // 네이티브 SDK로 code를 즉시 받아 그 자리에서 백엔드 연동까지 끝내므로 성공 여부를
   // boolean으로 바로 알려줄 수 있다 — redirect_uri 없이 authorizationCode만 보내는
   // 것도 이 경로라서 가능한 것(브라우저 리다이렉트 방식만 redirectUri가 필요).
-  const connectGoogleCalendar = (returnPath: string): Promise<boolean> => {
+  const connectGoogleCalendar = (
+    returnPath: string,
+    resumeScreen?: string,
+  ): Promise<boolean> => {
     if (isKakaoTalkInAppBrowser() && isIOS()) {
       setIsKakaoBrowserAlertOpen(true);
       return Promise.resolve(false);
@@ -54,7 +57,7 @@ export const useGoogleCalendarConnect = () => {
         });
     }
 
-    startGoogleCalendarConnect(returnPath);
+    startGoogleCalendarConnect(returnPath, resumeScreen);
     return new Promise<boolean>(() => {});
   };
 

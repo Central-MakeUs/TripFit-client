@@ -84,3 +84,20 @@ export const consumeOAuthReturnPath = (provider: string): string | null => {
   sessionStorage.removeItem(key);
   return path;
 };
+
+const CALENDAR_RESUME_SCREEN_STORAGE_KEY =
+  'tripfit-calendar-connect-resume-screen';
+
+// "돌아왔을 때 어느 화면을 보여줄지"를 URL 쿼리(resumeScreen)로 실어 보내면, 이후
+// 완전히 무관한 재방문에서도 그 쿼리로 진입했던 상태가 다시 나타나는 문제가 있었다
+// (예: 캘린더 연동 완료 후 홈에 나갔다가 헤더 아이콘으로 다시 들어가면 매번 완료 화면이
+// 뜸) — URL과 무관한 세션 저장소 1회성 값으로 분리해 이 문제를 원천적으로 없앤다.
+export const setCalendarConnectResumeScreen = (screen: string): void => {
+  sessionStorage.setItem(CALENDAR_RESUME_SCREEN_STORAGE_KEY, screen);
+};
+
+export const consumeCalendarConnectResumeScreen = (): string | null => {
+  const screen = sessionStorage.getItem(CALENDAR_RESUME_SCREEN_STORAGE_KEY);
+  sessionStorage.removeItem(CALENDAR_RESUME_SCREEN_STORAGE_KEY);
+  return screen;
+};

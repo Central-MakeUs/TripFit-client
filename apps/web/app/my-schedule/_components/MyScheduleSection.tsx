@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { addYears, format, max, parseISO, subDays } from 'date-fns';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
 import AlertModal from '@/components/alert-modal';
@@ -32,6 +32,7 @@ import {
   mapRegularScheduleItemToClient,
 } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
+import { consumeCalendarConnectResumeScreen } from '@/utils/oauthState';
 
 const MENU_ITEMS = [
   {
@@ -53,11 +54,6 @@ const MENU_ITEMS = [
 
 function MyScheduleSection() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  // 구글 캘린더 연동은 페이지 전체 리다이렉트(구글 OAuth) 왕복이 필요해 이 컴포넌트의
-  // state가 초기화된다 — 콜백이 이 쿼리를 실어 보내면 캘린더 연동 완료 화면부터
-  // 다시 연다.
-  const resumeScreen = searchParams.get('resumeScreen');
 
   const {
     connectGoogleCalendar,
@@ -81,17 +77,20 @@ function MyScheduleSection() {
   >(null);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [isCalendarConnectOpen, setIsCalendarConnectOpen] = useState(false);
+  // 구글 캘린더 연동은 페이지 전체 리다이렉트(구글 OAuth) 왕복이 필요해 이 컴포넌트의
+  // state가 초기화된다 — 떠나기 직전 세션 저장소에 남겨둔 1회성 값을 마운트 시 소비해
+  // 캘린더 연동 완료 화면부터 다시 연다. URL 쿼리로 이 신호를 실어 보내던 예전 방식은
+  // 이후 무관한 재방문에서도 같은 쿼리 상태가 다시 나타나 매번 완료 화면이 뜨는
+  // 문제가 있었다.
+  const [calendarConnectResumeScreen, setCalendarConnectResumeScreen] =
+    useState<string | null>(null);
 
-  // resumeScreen을 마운트 시점 lazy state로만 반영하면, 이 컴포넌트가 resumeScreen
-  // 없이 먼저 한 번 렌더링되는 경우(예: 캘린더 연동 콜백이 도착하기 전 중간 렌더) 그
-  // 시점에 이 state가 false로 고정돼버려, 나중에 resumeScreen이 붙어도 이미 마운트된
-  // state라 반영이 안 된다 — 값이 바뀔 때마다 반응하도록 만들고, 한 번 반영한 뒤에는
-  // URL에서 지워 재연동 시 완료 화면이 잘못 뜨는 것도 막는다.
   useEffect(() => {
+    const resumeScreen = consumeCalendarConnectResumeScreen();
     if (resumeScreen !== 'calendarConnectComplete') return;
+    setCalendarConnectResumeScreen(resumeScreen);
     setIsCalendarConnectOpen(true);
-    router.replace('/my-schedule');
-  }, [resumeScreen, router]);
+  }, []);
   const [isIndividualScheduleOpen, setIsIndividualScheduleOpen] =
     useState(false);
   const [isIndividualScheduleComplete, setIsIndividualScheduleComplete] =
@@ -161,7 +160,8 @@ function MyScheduleSection() {
   const handleConnectGoogleCalendar = async () => {
     try {
       return await connectGoogleCalendar(
-        '/my-schedule?resumeScreen=calendarConnectComplete',
+        '/my-schedule',
+        'calendarConnectComplete',
       );
     } catch (error) {
       setErrorMessage(
@@ -232,7 +232,7 @@ function MyScheduleSection() {
       <>
         <BasicInfo
           initialScreen={
-            resumeScreen === 'calendarConnectComplete'
+            calendarConnectResumeScreen === 'calendarConnectComplete'
               ? 'calendarConnectComplete'
               : 'calendarConnectIntro'
           }
