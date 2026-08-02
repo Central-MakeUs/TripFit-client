@@ -131,6 +131,19 @@ function SignupFlow() {
     }
   };
 
+  const handleConnectGoogleCalendar = async (returnPath: string) => {
+    try {
+      return await connectGoogleCalendar(returnPath);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : '구글 캘린더 연동에 실패했어요.',
+      );
+      return false;
+    }
+  };
+
   const handleBeforeIndividualSchedule = async () => {
     const { data } = await refetchScheduleCalendar();
     if (!data) return undefined;
@@ -259,7 +272,9 @@ function SignupFlow() {
           calendarConnectProgress={PROFILE_STEP_PROGRESS}
           calendarConnectContinuesToSchedule
           onConnectGoogleCalendar={() =>
-            connectGoogleCalendar(buildScheduleReturnPath('hasRegularSchedule'))
+            handleConnectGoogleCalendar(
+              buildScheduleReturnPath('hasRegularSchedule'),
+            )
           }
           endsAtIncludeHalfDayHoliday
           confirmDirectInputOnNoRegularSchedule

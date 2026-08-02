@@ -10,6 +10,10 @@ const GOOGLE_WEB_CLIENT_ID =
 const GOOGLE_IOS_CLIENT_ID =
   '1015195106839-6na06iqfihr97dg0u3lrrb1kn0hcr056.apps.googleusercontent.com';
 
+// apps/web/utils/googleCalendarAuth.ts의 GOOGLE_CALENDAR_SCOPE와 동일한 값이어야 한다.
+const GOOGLE_CALENDAR_SCOPE =
+  'https://www.googleapis.com/auth/calendar.freebusy';
+
 // 사용자가 로그인 자체를 취소한 경우를 나타내는 값 — 웹 쪽은 이 메시지를 보면
 // 에러 알럿을 띄우지 않고 조용히 원래 화면으로 돌아간다.
 export const SOCIAL_LOGIN_CANCELLED = 'CANCELLED';
@@ -49,6 +53,31 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
     token: response.data.idToken,
     authorizationCode: response.data.serverAuthCode,
   };
+};
+
+// 로그인과 별개로, 이미 로그인된 계정에 캘린더 읽기 권한만 추가로 동의받는 흐름이라
+// 로그인 스코프(profile/email)엔 캘린더 스코프를 기본 포함하지 않는다 — 여기서만
+// 스코프를 넓혀 재구성한 뒤 signIn을 다시 호출하면, 같은 계정에 대해 재로그인 없이
+// 캘린더 권한에 대한 증분 동의 화면만 추가로 뜬다.
+export const requestGoogleCalendarConnectCode = async (): Promise<string> => {
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+    offlineAccess: true,
+    scopes: [GOOGLE_CALENDAR_SCOPE],
+  });
+  isGoogleConfigured = true;
+
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const response = await GoogleSignin.signIn();
+
+  if (response.type === 'cancelled') {
+    throw new Error(SOCIAL_LOGIN_CANCELLED);
+  }
+  if (response.type !== 'success' || !response.data.serverAuthCode) {
+    throw new Error('구글 캘린더 연동에 실패했습니다.');
+  }
+  return response.data.serverAuthCode;
 };
 
 const requestKakaoToken = async (): Promise<NativeSocialLoginResult> => {

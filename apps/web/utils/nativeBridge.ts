@@ -31,6 +31,10 @@ export type PushLandingDataT = {
   tripId: string | null;
 };
 
+export type NativeGoogleCalendarConnectResultT = {
+  authorizationCode: string;
+};
+
 type NativeBridgeOutgoingMessageT =
   | {
       type: 'SOCIAL_LOGIN_REQUEST';
@@ -43,6 +47,9 @@ type NativeBridgeOutgoingMessageT =
   | {
       type: 'OPEN_EXTERNAL_URL';
       url: string;
+    }
+  | {
+      type: 'GOOGLE_CALENDAR_CONNECT_REQUEST';
     };
 
 type NativeBridgeIncomingMessageT =
@@ -69,6 +76,13 @@ type NativeBridgeIncomingMessageT =
     } & PushLandingDataT)
   | {
       type: 'NOTIFICATION_RECEIVED';
+    }
+  | ({
+      type: 'GOOGLE_CALENDAR_CONNECT_SUCCESS';
+    } & NativeGoogleCalendarConnectResultT)
+  | {
+      type: 'GOOGLE_CALENDAR_CONNECT_ERROR';
+      message: string;
     };
 
 const postMessageToNative = (message: NativeBridgeOutgoingMessageT) => {
@@ -93,6 +107,8 @@ const INCOMING_MESSAGE_TYPES = [
   'PUSH_TOKEN_ERROR',
   'NOTIFICATION_OPENED',
   'NOTIFICATION_RECEIVED',
+  'GOOGLE_CALENDAR_CONNECT_SUCCESS',
+  'GOOGLE_CALENDAR_CONNECT_ERROR',
 ];
 
 const parseIncomingMessage = (
@@ -194,6 +210,50 @@ export const requestNativePushToken = (): Promise<NativePushTokenResultT> =>
     document.addEventListener('message', handleMessage as EventListener);
     postMessageToNative({ type: 'PUSH_TOKEN_REQUEST', requestId });
   });
+
+// 구글 계정 선택·증분 동의 화면까지 거치는 흐름이라 푸시 토큰 요청보다 사용자 응답
+// 시간을 넉넉히 잡는다.
+const GOOGLE_CALENDAR_CONNECT_TIMEOUT_MS = 60_000;
+
+// requestNativeSocialLogin과 동일한 요청/응답 브릿지 패턴 — 다만 로그인이 아니라 이미
+// 로그인된 사용자의 캘린더 읽기 권한 추가 동의라 구글 캘린더 연동 전용 메시지를 쓴다.
+export const requestNativeGoogleCalendarConnect =
+  (): Promise<NativeGoogleCalendarConnectResultT> =>
+    new Promise((resolve, reject) => {
+      const cleanup = () => {
+        window.removeEventListener('message', handleMessage);
+        document.removeEventListener('message', handleMessage as EventListener);
+        clearTimeout(timeoutId);
+      };
+
+      const handleMessage = (event: MessageEvent) => {
+        const message = parseIncomingMessage(event.data);
+        if (
+          !message ||
+          (message.type !== 'GOOGLE_CALENDAR_CONNECT_SUCCESS' &&
+            message.type !== 'GOOGLE_CALENDAR_CONNECT_ERROR')
+        ) {
+          return;
+        }
+
+        cleanup();
+
+        if (message.type === 'GOOGLE_CALENDAR_CONNECT_SUCCESS') {
+          resolve({ authorizationCode: message.authorizationCode });
+        } else {
+          reject(new Error(message.message));
+        }
+      };
+
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('구글 캘린더 연동 요청이 응답하지 않았어요.'));
+      }, GOOGLE_CALENDAR_CONNECT_TIMEOUT_MS);
+
+      window.addEventListener('message', handleMessage);
+      document.addEventListener('message', handleMessage as EventListener);
+      postMessageToNative({ type: 'GOOGLE_CALENDAR_CONNECT_REQUEST' });
+    });
 
 // 로그인 요청과 달리 앱이 언제든(백그라운드 복귀·콜드 스타트) 먼저 보낼 수 있는
 // 이벤트라 요청/응답이 아니라 구독 형태로 둔다. 구독 해제 함수를 반환한다.
