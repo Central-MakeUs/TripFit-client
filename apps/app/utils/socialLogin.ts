@@ -44,6 +44,22 @@ const ensureGoogleConfigured = () => {
   isGoogleConfigured = true;
 };
 
+// GoogleSignin.configure()는 모듈 전역(및 네이티브 SDK) 상태를 바꾸는 공유 자원이다 —
+// 로그인과 캘린더 연동(그 안의 configure→OAuth→restore 사이클) 요청이 동시에 실행되면,
+// 한쪽이 진행 중인 configure를 다른 쪽의 restore가 덮어써 엉뚱한 클라이언트로 code가
+// 발급될 수 있다. 아래 큐로 이 파일의 Google 관련 진입점을 전부 직렬화해 항상 하나씩만
+// 실행되게 한다 — 실패한 작업도 큐를 막지 않도록 성공/실패 모두 다음 작업으로 이어간다.
+let googleSignInQueue: Promise<void> = Promise.resolve();
+
+const withGoogleSignInLock = <T>(task: () => Promise<T>): Promise<T> => {
+  const run = googleSignInQueue.then(task, task);
+  googleSignInQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+};
+
 const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
   ensureGoogleConfigured();
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
@@ -73,7 +89,10 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
 // 물려받는다 — 일반 로그인에도 캘린더 동의 화면이 뜨는 버그로 이어진다. addScopes는 전역
 // 설정을 건드리지 않고 이미 로그인된 계정에 스코프만 증분으로 추가하는 전용 API라 이
 // 문제가 없다. 다만 안드로이드 전용이라 iOS는 폴백 경로를 쓴다.
-export const requestGoogleCalendarConnectCode = async (): Promise<string> => {
+export const requestGoogleCalendarConnectCode = (): Promise<string> =>
+  withGoogleSignInLock(requestGoogleCalendarConnectCodeLocked);
+
+const requestGoogleCalendarConnectCodeLocked = async (): Promise<string> => {
   ensureGoogleConfigured();
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
@@ -177,7 +196,7 @@ export const requestNativeSocialLoginToken = (
 ): Promise<NativeSocialLoginResult> => {
   switch (provider) {
     case 'GOOGLE':
-      return requestGoogleToken();
+      return withGoogleSignInLock(requestGoogleToken);
     case 'KAKAO':
       return requestKakaoToken();
     case 'APPLE':
