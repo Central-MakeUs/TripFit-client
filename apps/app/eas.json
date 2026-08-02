@@ -13,7 +13,13 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildArtifactPaths": [
+          "android/app/build/outputs/**/*.aab",
+          "android/app/build/outputs/mapping/release/mapping.txt"
+        ]
+      }
     }
   },
   "submit": {
