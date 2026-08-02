@@ -66,11 +66,13 @@ type BasicInfoProps = {
   calendarConnectProgress?: number;
   /** true면 캘린더 연동/건너뛰기 모두 완료 화면 없이 바로 정기 일정 스텝으로 이어짐 (회원가입처럼 더 큰 플로우에 얹을 때 사용) */
   calendarConnectContinuesToSchedule?: boolean;
-  /** "구글 캘린더 연동하기" 클릭 시 호출됨 — 실제 구글 OAuth 동의 화면으로 이동시키는 건
-   * 페이지 전체 리다이렉트라 부모(회원가입/마이페이지)가 돌아올 경로를 알아야 하므로,
-   * 이 컴포넌트 내부에서 완결하지 않고 부모에 위임한다. 리다이렉트 이후 컴포넌트 상태가
-   * 초기화되므로, 완료 화면 표시는 부모가 initialScreen으로 복원해서 처리한다 */
-  onConnectGoogleCalendar?: () => void;
+  /** "구글 캘린더 연동하기" 클릭 시 호출됨 — 연동 성공 시 true를 반환해야 완료 화면으로
+   * 넘어간다. 웹 브라우저 리다이렉트 방식은 페이지 전체가 떠나버려(실제 구글 OAuth
+   * 동의 화면으로 이동) 이 Promise가 resolve되지 않고, 완료 화면 표시는 부모가 리다이렉트
+   * 완료 후 initialScreen으로 복원해서 처리한다. 앱(WebView)은 네이티브 SDK로 그 자리에서
+   * 바로 연동이 끝나므로 반환값으로 곧장 완료 화면으로 넘어간다. 에러 처리(알럿 표시 등)는
+   * 부모가 내부적으로 하고 항상 boolean만 반환해야 한다(throw 금지) */
+  onConnectGoogleCalendar?: () => boolean | Promise<boolean>;
   /** true면 반차/공휴일 포함 여부 스텝이 마지막 스텝이 되어 개별 일정 입력 없이 바로 완료됨 (내 일정 관리처럼 개별 일정을 별도 메뉴로 다루는 플로우에 사용) */
   endsAtIncludeHalfDayHoliday?: boolean;
   /** true면 "정기 일정 없어요" 선택 시 "여행이 어려운 날짜를 직접 입력하시겠어요?"
@@ -133,6 +135,10 @@ function BasicInfo({
   const [individualScheduleBackdrop, setIndividualScheduleBackdrop] =
     useState<IndividualScheduleValueT>({});
   const [isDirectInputConfirmOpen, setIsDirectInputConfirmOpen] =
+    useState(false);
+  // 앱(WebView)에서는 네이티브 구글 SDK 응답(계정 선택·동의 화면)을 기다리는 동안
+  // 이 화면을 벗어나지 않고 그대로 대기한다 — 그 사이 버튼이 중복 클릭되지 않게 막는다.
+  const [isConnectingGoogleCalendar, setIsConnectingGoogleCalendar] =
     useState(false);
 
   const screen =
@@ -234,13 +240,25 @@ function BasicInfo({
     onCompleteSecondaryClick?.();
   };
 
+  const handleConnectGoogleCalendar = async () => {
+    if (isConnectingGoogleCalendar) return;
+    setIsConnectingGoogleCalendar(true);
+    try {
+      const isConnected = (await onConnectGoogleCalendar?.()) ?? false;
+      if (isConnected) navigateTo('calendarConnectComplete');
+    } finally {
+      setIsConnectingGoogleCalendar(false);
+    }
+  };
+
   if (screen === 'calendarConnectIntro') {
     return (
       <CalendarConnectIntroStep
         title={calendarConnectTitle}
         progress={calendarConnectProgress}
         onBack={handleBack}
-        onConnect={() => onConnectGoogleCalendar?.()}
+        onConnect={handleConnectGoogleCalendar}
+        isConnecting={isConnectingGoogleCalendar}
         onSkip={
           calendarConnectContinuesToSchedule
             ? () => navigateTo('hasRegularSchedule')

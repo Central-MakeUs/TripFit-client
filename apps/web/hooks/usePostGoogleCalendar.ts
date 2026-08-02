@@ -9,8 +9,13 @@ export const usePostGoogleCalendar = () => {
 
   const {
     mutate: postGoogleCalendarMutation,
+    mutateAsync: postGoogleCalendarMutationAsync,
     isPending: isPostGoogleCalendarPending,
   } = useMutation({ mutationFn });
 
-  return { postGoogleCalendarMutation, isPostGoogleCalendarPending };
+  return {
+    postGoogleCalendarMutation,
+    postGoogleCalendarMutationAsync,
+    isPostGoogleCalendarPending,
+  };
 };

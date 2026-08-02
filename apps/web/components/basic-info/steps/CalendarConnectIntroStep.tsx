@@ -11,6 +11,7 @@ type CalendarConnectIntroStepProps = {
   onSkip: () => void;
   title?: string;
   progress?: number;
+  isConnecting?: boolean;
 };
 
 function CalendarConnectIntroStep({
@@ -19,6 +20,7 @@ function CalendarConnectIntroStep({
   onSkip,
   title = '캘린더 연동하기',
   progress,
+  isConnecting = false,
 }: CalendarConnectIntroStepProps) {
   return (
     <div className="flex w-full flex-1 flex-col">
@@ -46,6 +48,7 @@ function CalendarConnectIntroStep({
       <CtaButtonGroup
         primaryText="구글 캘린더 연동하기"
         onPrimaryClick={onConnect}
+        primaryDisabled={isConnecting}
         secondaryText="다음에 하기"
         secondaryVariant="text-link"
         onSecondaryClick={onSkip}

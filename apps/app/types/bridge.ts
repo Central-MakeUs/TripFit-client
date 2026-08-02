@@ -38,6 +38,9 @@ export type BridgeOutgoingMessage =
   | {
       type: 'OPEN_EXTERNAL_URL';
       url: string;
+    }
+  | {
+      type: 'GOOGLE_CALENDAR_CONNECT_REQUEST';
     };
 
 export type BridgeIncomingMessage =
@@ -67,6 +70,14 @@ export type BridgeIncomingMessage =
     } & PushLandingData)
   | {
       type: 'NOTIFICATION_RECEIVED';
+    }
+  | {
+      type: 'GOOGLE_CALENDAR_CONNECT_SUCCESS';
+      authorizationCode: string;
+    }
+  | {
+      type: 'GOOGLE_CALENDAR_CONNECT_ERROR';
+      message: string;
     };
 
 // OPEN_EXTERNAL_URL은 지금 구글 캘린더 OAuth 동의 화면을 여는 용도로만 쓰인다.
@@ -113,6 +124,9 @@ export const parseBridgeMessage = (
       typeof parsed.url === 'string' &&
       isAllowedExternalUrl(parsed.url)
     ) {
+      return parsed as BridgeOutgoingMessage;
+    }
+    if (parsed && parsed.type === 'GOOGLE_CALENDAR_CONNECT_REQUEST') {
       return parsed as BridgeOutgoingMessage;
     }
   } catch {

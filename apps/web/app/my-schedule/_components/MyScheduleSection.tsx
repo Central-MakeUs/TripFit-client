@@ -158,6 +158,21 @@ function MyScheduleSection() {
     }
   };
 
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      return await connectGoogleCalendar(
+        '/my-schedule?resumeScreen=calendarConnectComplete',
+      );
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : '구글 캘린더 연동에 실패했어요.',
+      );
+      return false;
+    }
+  };
+
   const handleSelectTrip = (tripId: string) => {
     setSelectedTripId(tripId);
     const trip = tripsData?.find((item) => item.tripId === tripId) ?? null;
@@ -221,11 +236,7 @@ function MyScheduleSection() {
               ? 'calendarConnectComplete'
               : 'calendarConnectIntro'
           }
-          onConnectGoogleCalendar={() =>
-            connectGoogleCalendar(
-              '/my-schedule?resumeScreen=calendarConnectComplete',
-            )
-          }
+          onConnectGoogleCalendar={handleConnectGoogleCalendar}
           onExit={() => setIsCalendarConnectOpen(false)}
           onComplete={() => setIsCalendarConnectOpen(false)}
         />

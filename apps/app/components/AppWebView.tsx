@@ -37,7 +37,10 @@ import {
   requestNativePushToken,
   showForegroundNotification,
 } from '../utils/pushNotifications';
-import { requestNativeSocialLoginToken } from '../utils/socialLogin';
+import {
+  requestGoogleCalendarConnectCode,
+  requestNativeSocialLoginToken,
+} from '../utils/socialLogin';
 import {
   getPathFromDeepLink,
   getWebUrl,
@@ -223,9 +226,9 @@ function AppWebView() {
         return;
       }
 
-      // 구글은 앱에 내장된 WebView를 "제한된 브라우저"로 감지해 OAuth 동의 화면을 막는다 —
-      // 구글 캘린더 연동처럼 WebView 안에서 그대로 열면 안 되는 URL은 시스템 기본 브라우저로
-      // 대신 열어준다. 이후 콜백은 딥링크(Universal/App Links)로 앱에 다시 들어온다.
+      // 웹(WebView)이 아닌 순수 브라우저 리다이렉트 전용 경로 — WebView는 구글 캘린더
+      // 연동에 GOOGLE_CALENDAR_CONNECT_REQUEST(네이티브 SDK)를 쓰므로 이 메시지를 보내지
+      // 않는다. 혹시 모를 예외적 호출에 대비해 핸들러 자체는 남겨둔다.
       if (message.type === 'OPEN_EXTERNAL_URL') {
         Linking.openURL(message.url).catch((error) => {
           // 브라우저 실행 자체가 실패하면 OAuth가 시작도 못 되는데, 이 실패는 웹 쪽
@@ -239,6 +242,26 @@ function AppWebView() {
           }
           console.warn('[AppWebView] Linking.openURL 실패:', origin, error);
         });
+        return;
+      }
+
+      if (message.type === 'GOOGLE_CALENDAR_CONNECT_REQUEST') {
+        requestGoogleCalendarConnectCode()
+          .then((authorizationCode) => {
+            sendToWeb({
+              type: 'GOOGLE_CALENDAR_CONNECT_SUCCESS',
+              authorizationCode,
+            });
+          })
+          .catch((error) => {
+            sendToWeb({
+              type: 'GOOGLE_CALENDAR_CONNECT_ERROR',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : '구글 캘린더 연동에 실패했어요.',
+            });
+          });
       }
     },
     [sendToWeb],
