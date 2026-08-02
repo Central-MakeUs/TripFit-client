@@ -11,6 +11,14 @@ const GOOGLE_WEB_CLIENT_ID =
 const GOOGLE_IOS_CLIENT_ID =
   '1015195106839-6na06iqfihr97dg0u3lrrb1kn0hcr056.apps.googleusercontent.com';
 
+// apps/web의 NEXT_PUBLIC_GOOGLE_CALENDAR_CLIENT_ID와 동일한 값이어야 한다 — 로그인과
+// 캘린더 연동은 백엔드가 서로 다른 시크릿으로 code를 교환하는 별도의 구글 OAuth
+// 클라이언트를 쓴다. 로그인용 webClientId(GOOGLE_WEB_CLIENT_ID)로 발급받은 code를
+// 캘린더 연동 엔드포인트로 보내면 백엔드가 다른 클라이언트로 교환을 시도해 구글이
+// invalid_client로 거절한다(GOOGLE_CALENDAR_CONNECT_FAILED).
+const GOOGLE_CALENDAR_WEB_CLIENT_ID =
+  '1015195106839-0atgsuv6l8coekallcomuseq83s8kl4j.apps.googleusercontent.com';
+
 // apps/web/utils/googleCalendarAuth.ts의 GOOGLE_CALENDAR_SCOPE와 동일한 값이어야 한다.
 const GOOGLE_CALENDAR_SCOPE =
   'https://www.googleapis.com/auth/calendar.freebusy';
@@ -70,19 +78,29 @@ export const requestGoogleCalendarConnectCode = async (): Promise<string> => {
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
   if (Platform.OS === 'android') {
-    const response = await GoogleSignin.addScopes({
-      scopes: [GOOGLE_CALENDAR_SCOPE],
-    }).catch(() => null);
+    try {
+      // addScopes는 현재 설정된 webClientId를 발급 code의 대상 클라이언트로 삼는다 —
+      // 캘린더 전용 클라이언트로 잠깐 바꿔치기한 뒤 아래 finally에서 로그인용으로 되돌린다.
+      GoogleSignin.configure({
+        ...BASE_GOOGLE_SIGNIN_CONFIG,
+        webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
+      });
+      const response = await GoogleSignin.addScopes({
+        scopes: [GOOGLE_CALENDAR_SCOPE],
+      }).catch(() => null);
 
-    if (response?.type === 'cancelled') {
-      throw new Error(SOCIAL_LOGIN_CANCELLED);
+      if (response?.type === 'cancelled') {
+        throw new Error(SOCIAL_LOGIN_CANCELLED);
+      }
+      if (response?.type === 'success' && response.data.serverAuthCode) {
+        return response.data.serverAuthCode;
+      }
+      // response가 null이거나 serverAuthCode가 없는 경우 — 카카오/애플로 가입해 이 기기에서
+      // 구글 네이티브 로그인을 한 번도 안 해 addScopes가 기준 삼을 현재 세션이 없는 사용자가
+      // 대표적인 예다. 아래 전체 동의 플로우로 폴백한다.
+    } finally {
+      GoogleSignin.configure(BASE_GOOGLE_SIGNIN_CONFIG);
     }
-    if (response?.type === 'success' && response.data.serverAuthCode) {
-      return response.data.serverAuthCode;
-    }
-    // response가 null이거나 serverAuthCode가 없는 경우 — 카카오/애플로 가입해 이 기기에서
-    // 구글 네이티브 로그인을 한 번도 안 해 addScopes가 기준 삼을 현재 세션이 없는 사용자가
-    // 대표적인 예다. 아래 전체 동의 플로우로 폴백한다.
   }
 
   return requestGoogleCalendarConnectCodeViaFullConsent();
@@ -96,6 +114,7 @@ const requestGoogleCalendarConnectCodeViaFullConsent =
     try {
       GoogleSignin.configure({
         ...BASE_GOOGLE_SIGNIN_CONFIG,
+        webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
         scopes: [GOOGLE_CALENDAR_SCOPE],
       });
       const response = await GoogleSignin.signIn();
