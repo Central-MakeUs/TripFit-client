@@ -11,7 +11,12 @@ import {
   GOOGLE_CALENDAR_OAUTH_PROVIDER_KEY,
   getGoogleCalendarRedirectUri,
 } from '@/utils/googleCalendarAuth';
-import { consumeOAuthReturnPath, consumeOAuthState } from '@/utils/oauthState';
+import {
+  consumeOAuthReturnPath,
+  consumeOAuthState,
+  consumePendingCalendarConnectResumeScreen,
+  setCalendarConnectResumeScreen,
+} from '@/utils/oauthState';
 
 type ConnectStatusT = 'loading' | 'error';
 
@@ -58,6 +63,10 @@ function GoogleCalendarCallbackHandler() {
 
     // 사용자가 동의 화면에서 취소하면 code 대신 error 쿼리파라미터가 돌아온다.
     if (!code || !isStateValid) {
+      // 이번 시도에 대한 pending 값을 버린다 — 안 지우면 resumeScreen 없이 시작된
+      // 다음 연동 시도(예: 회원가입)가 이 오래된 값을 잘못 소비해 완료 화면이
+      // 뜰 수 있다.
+      consumePendingCalendarConnectResumeScreen();
       setStatus('error');
       return;
     }
@@ -71,9 +80,20 @@ function GoogleCalendarCallbackHandler() {
     })
       .then(() => {
         setGoogleCalendarConnected(true);
+        // 연동이 실제로 성공했을 때만 완료 화면 신호를 최종 적용한다 — 리다이렉트를
+        // 시작할 때 미리 저장해둔 pending 값을 여기서 처음 소비/승격시킨다.
+        const pendingResumeScreen = consumePendingCalendarConnectResumeScreen();
+        if (pendingResumeScreen) {
+          setCalendarConnectResumeScreen(pendingResumeScreen);
+        }
         router.replace(returnPathRef.current);
       })
-      .catch(() => setStatus('error'));
+      .catch(() => {
+        // 위와 동일한 이유로, code 교환 자체가 실패한 경우에도 pending 값을 버려야
+        // 다음 시도가 오염되지 않는다.
+        consumePendingCalendarConnectResumeScreen();
+        setStatus('error');
+      });
   }, [router, searchParams, setGoogleCalendarConnected]);
 
   if (status === 'error') {
