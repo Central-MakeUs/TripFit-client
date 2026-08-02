@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { login as kakaoLogin } from '@react-native-seoul/kakao-login';
@@ -83,72 +82,35 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
   };
 };
 
-// GoogleSignin.configure({ scopes })로 로그인용 전역 설정 자체를 캘린더 스코프로 덮어쓰면,
-// 이후 같은 세션에서 재로그인할 때도(로그아웃 후 재로그인 등) ensureGoogleConfigured가
-// isGoogleConfigured 플래그만 보고 재구성을 건너뛰어 캘린더 스코프가 섞인 설정을 그대로
-// 물려받는다 — 일반 로그인에도 캘린더 동의 화면이 뜨는 버그로 이어진다. addScopes는 전역
-// 설정을 건드리지 않고 이미 로그인된 계정에 스코프만 증분으로 추가하는 전용 API라 이
-// 문제가 없다. 다만 안드로이드 전용이라 iOS는 폴백 경로를 쓴다.
-export const requestGoogleCalendarConnectCode = (): Promise<string> =>
-  withGoogleSignInLock(requestGoogleCalendarConnectCodeLocked);
-
+// 로그인 계정과 캘린더에 실제 일정이 들어있는 계정이 다른 경우가 흔해서(회사용/개인용
+// 분리 등), addScopes처럼 현재 로그인된 계정에 조용히 스코프만 추가하는 방식 대신 항상
+// 계정 선택 화면이 뜨는 전체 동의(signIn) 플로우를 쓴다. 캘린더 전용 클라이언트로 잠깐
+// 바꿔 code를 발급받고, 끝나면 로그인용 기본 설정으로 되돌려 다음 로그인이 캘린더
+// 스코프를 물려받지 않게 한다.
 const requestGoogleCalendarConnectCodeLocked = async (): Promise<string> => {
-  ensureGoogleConfigured();
-  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  try {
+    GoogleSignin.configure({
+      ...BASE_GOOGLE_SIGNIN_CONFIG,
+      webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
+      scopes: [GOOGLE_CALENDAR_SCOPE],
+    });
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const response = await GoogleSignin.signIn();
 
-  if (Platform.OS === 'android') {
-    try {
-      // addScopes는 현재 설정된 webClientId를 발급 code의 대상 클라이언트로 삼는다 —
-      // 캘린더 전용 클라이언트로 잠깐 바꿔치기한 뒤 아래 finally에서 로그인용으로 되돌린다.
-      GoogleSignin.configure({
-        ...BASE_GOOGLE_SIGNIN_CONFIG,
-        webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
-      });
-      const response = await GoogleSignin.addScopes({
-        scopes: [GOOGLE_CALENDAR_SCOPE],
-      }).catch(() => null);
-
-      if (response?.type === 'cancelled') {
-        throw new Error(SOCIAL_LOGIN_CANCELLED);
-      }
-      if (response?.type === 'success' && response.data.serverAuthCode) {
-        return response.data.serverAuthCode;
-      }
-      // response가 null이거나 serverAuthCode가 없는 경우 — 카카오/애플로 가입해 이 기기에서
-      // 구글 네이티브 로그인을 한 번도 안 해 addScopes가 기준 삼을 현재 세션이 없는 사용자가
-      // 대표적인 예다. 아래 전체 동의 플로우로 폴백한다.
-    } finally {
-      GoogleSignin.configure(BASE_GOOGLE_SIGNIN_CONFIG);
+    if (response.type === 'cancelled') {
+      throw new Error(SOCIAL_LOGIN_CANCELLED);
     }
+    if (response.type !== 'success' || !response.data.serverAuthCode) {
+      throw new Error('구글 캘린더 연동에 실패했습니다.');
+    }
+    return response.data.serverAuthCode;
+  } finally {
+    GoogleSignin.configure(BASE_GOOGLE_SIGNIN_CONFIG);
   }
-
-  return requestGoogleCalendarConnectCodeViaFullConsent();
 };
 
-// addScopes를 못 쓰는 iOS 전용 경로 + 안드로이드에서 addScopes가 기준 세션 없음 등으로
-// 실패했을 때의 폴백. 로그인과 같은 configure+signIn 경로를 쓰되, 끝나면 반드시 로그인용
-// 기본 설정으로 되돌려 다음 로그인이 캘린더 스코프를 물려받지 않게 한다.
-const requestGoogleCalendarConnectCodeViaFullConsent =
-  async (): Promise<string> => {
-    try {
-      GoogleSignin.configure({
-        ...BASE_GOOGLE_SIGNIN_CONFIG,
-        webClientId: GOOGLE_CALENDAR_WEB_CLIENT_ID,
-        scopes: [GOOGLE_CALENDAR_SCOPE],
-      });
-      const response = await GoogleSignin.signIn();
-
-      if (response.type === 'cancelled') {
-        throw new Error(SOCIAL_LOGIN_CANCELLED);
-      }
-      if (response.type !== 'success' || !response.data.serverAuthCode) {
-        throw new Error('구글 캘린더 연동에 실패했습니다.');
-      }
-      return response.data.serverAuthCode;
-    } finally {
-      GoogleSignin.configure(BASE_GOOGLE_SIGNIN_CONFIG);
-    }
-  };
+export const requestGoogleCalendarConnectCode = (): Promise<string> =>
+  withGoogleSignInLock(requestGoogleCalendarConnectCodeLocked);
 
 const requestKakaoToken = async (): Promise<NativeSocialLoginResult> => {
   try {
