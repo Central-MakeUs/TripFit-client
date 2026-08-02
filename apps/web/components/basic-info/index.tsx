@@ -240,12 +240,21 @@ function BasicInfo({
     onCompleteSecondaryClick?.();
   };
 
+  // calendarConnectContinuesToSchedule(회원가입처럼 더 큰 플로우에 얹은 경우)일 땐
+  // 완료 확인 화면 없이 바로 다음 스텝(hasRegularSchedule)으로 이어진다 — 브라우저
+  // 리다이렉트 방식이 돌아올 때도 resumeScreen으로 완료 화면을 건너뛰고 곧장 그
+  // 화면으로 보내는 것과 동일한 동작이다.
   const handleConnectGoogleCalendar = async () => {
     if (isConnectingGoogleCalendar) return;
     setIsConnectingGoogleCalendar(true);
     try {
       const isConnected = (await onConnectGoogleCalendar?.()) ?? false;
-      if (isConnected) navigateTo('calendarConnectComplete');
+      if (!isConnected) return;
+      navigateTo(
+        calendarConnectContinuesToSchedule
+          ? 'hasRegularSchedule'
+          : 'calendarConnectComplete',
+      );
     } finally {
       setIsConnectingGoogleCalendar(false);
     }
