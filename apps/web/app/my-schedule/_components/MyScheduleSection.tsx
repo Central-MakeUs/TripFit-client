@@ -123,6 +123,15 @@ function MyScheduleSection() {
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
+  // 캘린더 연동 직후 서버가 구글 일정을 동기화해 hasPreSchedule/isAllFree가 바뀔 수
+  // 있는데, 브라우저 리다이렉트로 돌아온 경우(위 useEffect가 이 값을 채움)엔 그 시점의
+  // accessToken 응답을 다시 받을 방법이 없어 이 상태가 갱신 안 된 채로 남는다 —
+  // calendarConnectResumeScreen이 채워지는 시점에 맞춰 한 번 더 재조회한다.
+  useEffect(() => {
+    if (calendarConnectResumeScreen !== 'calendarConnectComplete') return;
+    refreshScheduleStatus();
+  }, [calendarConnectResumeScreen, refreshScheduleStatus]);
+
   const today = new Date();
 
   // 칩으로 고른 여행 기간에 맞춰 그때그때 새로 조회한다 — 개인 일정 달력
@@ -159,10 +168,15 @@ function MyScheduleSection() {
 
   const handleConnectGoogleCalendar = async () => {
     try {
-      return await connectGoogleCalendar(
+      const isConnected = await connectGoogleCalendar(
         '/my-schedule',
         'calendarConnectComplete',
       );
+      // 앱(네이티브) 플로우는 페이지 이동 없이 이 자리에서 바로 성공 여부를 알 수
+      // 있으므로, 위 useEffect(브라우저 리다이렉트 전용)를 기다리지 않고 여기서
+      // 곧장 재조회한다.
+      if (isConnected) await refreshScheduleStatus();
+      return isConnected;
     } catch (error) {
       setErrorMessage(
         error instanceof Error
