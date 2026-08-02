@@ -78,6 +78,7 @@
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
       "./plugins/withAndroidKakaoMavenRepo",
+      "./plugins/withAndroidTelephonyFeature",
       [
         "expo-splash-screen",
         {
