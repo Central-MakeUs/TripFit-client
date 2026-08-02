@@ -95,6 +95,12 @@ const requestGoogleCalendarConnectCodeLocked = async (): Promise<string> => {
       scopes: [GOOGLE_CALENDAR_SCOPE],
     });
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    // signIn()이 기기에 캐시된 이전 세션을 그대로 돌려주면 계정 선택 화면 없이 조용히
+    // 끝나버릴 수 있고, 이미 소비된(1회용) 인가 코드가 재사용돼 백엔드 교환이 실패할
+    // 위험이 있다 — 매번 실제로 새로 동의받도록 직전에 캐시를 비운다. 로그인 세션이
+    // 없어 signOut이 실패해도(가입 시 로그인을 구글이 아닌 다른 provider로 한 경우 등)
+    // 무시하고 계속 진행한다.
+    await GoogleSignin.signOut().catch(() => {});
     const response = await GoogleSignin.signIn();
 
     if (response.type === 'cancelled') {
