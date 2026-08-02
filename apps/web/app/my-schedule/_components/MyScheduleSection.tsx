@@ -258,7 +258,7 @@ function MyScheduleSection() {
           open={isKakaoBrowserAlertOpen}
           onOpenChange={(open) => !open && closeKakaoBrowserAlert()}
           title="다른 브라우저에서 열어주세요"
-          description="우측 상단 메뉴(•••)에서 '다른 브라우저로 열기'를 눌러주세요."
+          description="하단의 공유 아이콘을 눌러 'Safari에서 열기'를 선택해주세요."
           primaryText="확인"
           onPrimaryClick={closeKakaoBrowserAlert}
         />
