@@ -281,7 +281,17 @@ function BasicInfo({
         }
         primaryText="확인"
         primaryColor="primary"
-        onPrimaryClick={() => (onExit ? onExit() : onComplete(value))}
+        onPrimaryClick={() =>
+          // calendarConnectContinuesToSchedule(회원가입처럼 더 큰 플로우에 얹은 경우)일 땐
+          // 여기서 끝내고 나가는 게 아니라 다음 스텝(정기 일정 입력)으로 이어져야 한다 —
+          // 이 분기가 없으면 onExit()이 호출돼 회원가입 흐름이 앞으로 안 나가고 이전
+          // 스텝(프로필)으로 되돌아가버리는 버그가 있었다.
+          calendarConnectContinuesToSchedule
+            ? navigateTo('hasRegularSchedule')
+            : onExit
+              ? onExit()
+              : onComplete(value)
+        }
       />
     );
   }
