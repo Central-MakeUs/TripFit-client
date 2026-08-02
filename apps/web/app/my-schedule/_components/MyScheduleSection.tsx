@@ -248,6 +248,15 @@ function MyScheduleSection() {
           primaryText="확인"
           onPrimaryClick={closeKakaoBrowserAlert}
         />
+        <AlertModal
+          open={errorMessage !== null}
+          onOpenChange={(open) => !open && setErrorMessage(null)}
+          variant="danger"
+          title="문제가 발생했어요"
+          description={errorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => setErrorMessage(null)}
+        />
       </>
     );
   }
