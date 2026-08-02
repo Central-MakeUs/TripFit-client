@@ -90,10 +90,12 @@ const requestGoogleToken = async (): Promise<NativeSocialLoginResult> => {
 //
 // forceCodeForRefreshToken(안드로이드 전용)이 꼭 필요하다 — 구글은 같은
 // (구글 계정, client_id) 조합에 이미 offline 권한을 한 번 준 적이 있으면 재동의 시
-// refresh_token을 재발급하지 않는 게 기본 동작이라(최초 grant 때만 줌), 이게 없으면
-// "이미 다른 TripFit 계정이 이 구글 계정으로 연동한 적 있음" 같은 상황에서 서버가
-// refresh_token 없는 응답을 받아 연동에 실패한다. 이 값을 true로 강제하면 매번 새
-// refresh_token을 재발급받는다.
+// 발급하는 serverAuthCode를 교환해도 refresh_token이 나오지 않는 게 기본 동작이라
+// (최초 grant 때만 나옴), 이게 없으면 "이미 다른 TripFit 계정이 이 구글 계정으로
+// 연동한 적 있음" 같은 상황에서 백엔드의 code 교환 결과에 refresh_token이 없어
+// 연동에 실패한다. 이 값은 앱이 refresh_token을 직접 받는 게 아니라, 구글에게
+// "이번엔 교환 시 refresh_token이 포함되는 serverAuthCode를 달라"고 요청하는
+// 옵션이다 — 실제 refresh_token 발급 여부는 여전히 백엔드의 교환 결과에 달려있다.
 const requestGoogleCalendarConnectCodeLocked = async (): Promise<string> => {
   try {
     GoogleSignin.configure({
