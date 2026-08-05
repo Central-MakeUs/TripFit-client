@@ -33,7 +33,7 @@ function SocialLoginStep({
       <div className="flex flex-1 flex-col items-center justify-center gap-0.5">
         <LogoIcon className="h-12 w-auto" />
         <p className="text-caption-01 text-blue-400">
-          최적의 여행 일정을 추천해주는
+          복잡한 여행 날짜 조율을 쉽게
         </p>
       </div>
 
