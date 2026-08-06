@@ -75,11 +75,19 @@ function AuthGuardInner({ children }: AuthGuardProps) {
       router.replace('/signup');
       return;
     }
+    // 앱 진입점(스플래시 직후 첫 화면)에서 로그인이 안 되어 있으면 로그인 화면
+    // 대신 온보딩부터 보여준다 — 초대 링크 등 다른 보호된 경로는 여기 해당하지
+    // 않으므로 기존처럼 곧장 /signup으로 보낸다(온보딩 재노출로 인한 딜레이 없이
+    // 이어지는 게 우선).
+    if (pathname === '/') {
+      router.replace('/onboarding');
+      return;
+    }
     // 그 외의 경우(로그인 안 된 채 보호된 페이지 접근 등)는 로그인/회원가입 완료 후
     // 원래 가려던 페이지(초대 링크로 들어온 여행방 등)로 바로 이어질 수 있도록,
     // 지금 있던 경로를(쿼리스트링 포함) 쿼리로 들려보낸다.
     router.replace(`/signup?redirect=${encodeURIComponent(pathWithQuery)}`);
-  }, [isBlocked, pathWithQuery, router]);
+  }, [isBlocked, pathname, pathWithQuery, router]);
 
   if (!hasHydrated || isBlocked) return null;
 
