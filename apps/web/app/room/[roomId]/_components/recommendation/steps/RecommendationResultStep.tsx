@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useRef, useState } from 'react';
+import { type PointerEvent, ReactNode, useRef, useState } from 'react';
 
 import ReplayIcon from '@/assets/icons/replay.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
@@ -14,6 +14,7 @@ import RecommendationCandidateCard from './_components/RecommendationCandidateCa
 
 const CARD_WIDTH = 292;
 const CARD_GAP = 6;
+const DRAG_THRESHOLD = 5;
 
 const RECOMMENDATION_TYPE_CONFIRM_HEADLINE: Record<
   RecommendationTypeT,
@@ -65,6 +66,12 @@ function RecommendationResultStep({
   onRetry,
 }: RecommendationResultStepProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    isDragging: boolean;
+    pointerId: number;
+    startScrollLeft: number;
+    startX: number;
+  } | null>(null);
   const [current, setCurrent] = useState(0);
   const activeCandidate = candidates[current] ?? candidates[0];
 
@@ -73,6 +80,68 @@ function RecommendationResultStep({
     if (!container) return;
     const index = Math.round(container.scrollLeft / (CARD_WIDTH + CARD_GAP));
     setCurrent(Math.min(Math.max(index, 0), candidates.length - 1));
+  };
+
+  // 마우스는 스크롤 컨테이너를 드래그해도 네이티브 스크롤이 발생하지 않으므로 직접
+  // 따라가게 해준다(데스크톱 브라우저에서는 이게 없으면 카드가 아예 안 넘어간다).
+  // 터치는 네이티브 스크롤(관성 포함)이 이미 동작하므로 건드리지 않는다.
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container || event.pointerType !== 'mouse') return;
+    dragRef.current = {
+      isDragging: false,
+      pointerId: event.pointerId,
+      startScrollLeft: container.scrollLeft,
+      startX: event.clientX,
+    };
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    const drag = dragRef.current;
+    if (!container || !drag || event.pointerType !== 'mouse') return;
+    const delta = event.clientX - drag.startX;
+
+    // DRAG_THRESHOLD 이전에는 캡처를 시작하지 않아, 단순 클릭이 카드의 onClick으로
+    // 정상적으로 전달된다.
+    if (!drag.isDragging) {
+      if (Math.abs(delta) < DRAG_THRESHOLD) return;
+      drag.isDragging = true;
+      container.setPointerCapture(drag.pointerId);
+      container.style.scrollSnapType = 'none';
+      container.style.scrollBehavior = 'auto';
+    }
+    container.scrollLeft = drag.startScrollLeft - delta;
+  };
+
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    const drag = dragRef.current;
+    if (container && drag?.isDragging && event.pointerType === 'mouse') {
+      container.releasePointerCapture(drag.pointerId);
+      container.style.scrollBehavior = '';
+
+      const restoreSnap = () => {
+        container.style.scrollSnapType = '';
+      };
+
+      const step = CARD_WIDTH + CARD_GAP;
+      const index = Math.round(container.scrollLeft / step);
+      const targetLeft = Math.max(
+        0,
+        Math.min(index * step, container.scrollWidth - container.clientWidth),
+      );
+
+      if (Math.round(container.scrollLeft) === Math.round(targetLeft)) {
+        restoreSnap();
+      } else if ('onscrollend' in container) {
+        container.addEventListener('scrollend', restoreSnap, { once: true });
+      } else {
+        setTimeout(restoreSnap, 400);
+      }
+      container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
+    dragRef.current = null;
   };
 
   return (
@@ -85,7 +154,11 @@ function RecommendationResultStep({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="no-scrollbar -mx-5 flex cursor-grab snap-x snap-mandatory gap-1.5 overflow-x-auto active:cursor-grabbing"
         >
           {candidates.map((candidate, index) => (
             <RecommendationCandidateCard
