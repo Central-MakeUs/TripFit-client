@@ -75,11 +75,13 @@ function AuthGuardInner({ children }: AuthGuardProps) {
       router.replace('/signup');
       return;
     }
-    // 앱 진입점(스플래시 직후 첫 화면)에서 로그인이 안 되어 있으면 로그인 화면
-    // 대신 온보딩부터 보여준다 — 초대 링크 등 다른 보호된 경로는 여기 해당하지
-    // 않으므로 기존처럼 곧장 /signup으로 보낸다(온보딩 재노출로 인한 딜레이 없이
-    // 이어지는 게 우선).
-    if (pathname === '/') {
+    // 앱 진입점(스플래시 직후 첫 화면)에서 로그인이 아예 안 되어 있으면 로그인
+    // 화면 대신 온보딩부터 보여준다 — accessToken은 있는데 hasName만 없는
+    // 회원가입 중간 사용자는 대상이 아니다(온보딩이 아니라 /signup으로 이어서
+    // 이름 입력 등 남은 가입 절차를 마쳐야 한다). 초대 링크 등 다른 보호된
+    // 경로도 여기 해당하지 않으므로 기존처럼 곧장 /signup으로 보낸다(온보딩
+    // 재노출로 인한 딜레이 없이 이어지는 게 우선).
+    if (pathname === '/' && !accessToken) {
       router.replace('/onboarding');
       return;
     }
@@ -87,7 +89,7 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     // 원래 가려던 페이지(초대 링크로 들어온 여행방 등)로 바로 이어질 수 있도록,
     // 지금 있던 경로를(쿼리스트링 포함) 쿼리로 들려보낸다.
     router.replace(`/signup?redirect=${encodeURIComponent(pathWithQuery)}`);
-  }, [isBlocked, pathname, pathWithQuery, router]);
+  }, [isBlocked, pathname, pathWithQuery, router, accessToken]);
 
   if (!hasHydrated || isBlocked) return null;
 
