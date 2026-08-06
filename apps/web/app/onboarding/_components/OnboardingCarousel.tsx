@@ -60,7 +60,10 @@ function OnboardingCarousel() {
   // 해준다(데스크톱 브라우저에서 테스트할 때 필요) — 터치는 네이티브 스크롤을 그대로 쓴다.
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const container = containerRef.current;
-    if (!container || event.pointerType !== 'mouse') return;
+    // 오른쪽/보조 버튼(컨텍스트 메뉴 등)까지 드래그로 취급하면 안 된다 — 기본
+    // 왼쪽 버튼(button === 0)만 캐러셀 드래그로 처리한다.
+    if (!container || event.pointerType !== 'mouse' || event.button !== 0)
+      return;
     dragRef.current = {
       isDragging: false,
       pointerId: event.pointerId,

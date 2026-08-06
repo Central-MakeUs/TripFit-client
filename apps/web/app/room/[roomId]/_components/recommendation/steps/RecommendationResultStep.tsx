@@ -72,6 +72,10 @@ function RecommendationResultStep({
     startScrollLeft: number;
     startX: number;
   } | null>(null);
+  // 포인터 캡처와 scrollLeft 조작만으로는 pointerup 뒤에 이어지는 click 이벤트가
+  // 취소되지 않는다 — 카드 위에서 드래그가 임계값을 넘으면 이 플래그를 세워 그
+  // click에서 onSelectCandidate가 호출되지 않도록 막는다.
+  const suppressClickRef = useRef(false);
   const [current, setCurrent] = useState(0);
   const activeCandidate = candidates[current] ?? candidates[0];
 
@@ -87,7 +91,13 @@ function RecommendationResultStep({
   // 터치는 네이티브 스크롤(관성 포함)이 이미 동작하므로 건드리지 않는다.
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const container = containerRef.current;
-    if (!container || event.pointerType !== 'mouse') return;
+    // 오른쪽/보조 버튼(컨텍스트 메뉴 등)까지 드래그로 취급하면 안 된다 — 기본
+    // 왼쪽 버튼(button === 0)만 캐러셀 드래그로 처리한다.
+    if (!container || event.pointerType !== 'mouse' || event.button !== 0)
+      return;
+    // 새 제스처 시작 — 직전 드래그의 억제 플래그가 어떤 이유로든 소비되지 못하고
+    // 남아있다면 여기서 초기화해 다음 정상 클릭까지 막히지 않게 한다.
+    suppressClickRef.current = false;
     dragRef.current = {
       isDragging: false,
       pointerId: event.pointerId,
@@ -107,6 +117,7 @@ function RecommendationResultStep({
     if (!drag.isDragging) {
       if (Math.abs(delta) < DRAG_THRESHOLD) return;
       drag.isDragging = true;
+      suppressClickRef.current = true;
       container.setPointerCapture(drag.pointerId);
       container.style.scrollSnapType = 'none';
       container.style.scrollBehavior = 'auto';
@@ -165,7 +176,13 @@ function RecommendationResultStep({
               key={candidate.id}
               candidate={candidate}
               active={index === current}
-              onClick={() => onSelectCandidate(candidate)}
+              onClick={() => {
+                if (suppressClickRef.current) {
+                  suppressClickRef.current = false;
+                  return;
+                }
+                onSelectCandidate(candidate);
+              }}
               className="snap-center first:ml-[calc(50%-146px)] last:mr-[calc(50%-146px)]"
             />
           ))}

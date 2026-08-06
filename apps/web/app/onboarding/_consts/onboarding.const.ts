@@ -7,7 +7,6 @@ import onboarding4 from '../_assets/onboarding-4.png';
 import onboarding5 from '../_assets/onboarding-5.png';
 
 export type OnboardingSlideT = {
-  /** true면 배지 대신 로고 워드마크를 보여줌 — 첫 슬라이드 전용 */
   logo?: boolean;
   badge?: string;
   title: string;
@@ -15,7 +14,6 @@ export type OnboardingSlideT = {
   image: StaticImageData;
 };
 
-// TODO: 배지/타이틀/서브타이틀 문구는 Figma 원본 대조 후 확정 필요
 export const ONBOARDING_SLIDES: OnboardingSlideT[] = [
   {
     logo: true,
