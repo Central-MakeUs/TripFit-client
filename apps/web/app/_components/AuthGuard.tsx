@@ -91,13 +91,22 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     router.replace(`/signup?redirect=${encodeURIComponent(pathWithQuery)}`);
   }, [isBlocked, pathname, pathWithQuery, router, accessToken]);
 
-  if (!hasHydrated || isBlocked) return null;
+  // 공개 경로는 인증 상태를 몰라도 되므로 hydration을 기다리지 않고 즉시
+  // 렌더링한다 — 서버 렌더링 시점엔 hasHydrated가 항상 false라, 이 체크를
+  // 모든 경로에 걸면 온보딩처럼 로그인 없이 봐야 하는 페이지까지 서버 응답에
+  // 텍스트가 하나도 없는 빈 화면으로 나가버린다(구글 OAuth 브랜딩 심사가
+  // 정확히 이 문제로 홈페이지에 "앱 목적 설명이 없다"고 반려한 원인).
+  if (!isPublicPath(pathname) && (!hasHydrated || isBlocked)) return null;
 
   return (
     <>
-      <PushTokenRegistrar />
-      <NotificationDeepLinkHandler />
-      <NotificationReceivedHandler />
+      {hasHydrated && (
+        <>
+          <PushTokenRegistrar />
+          <NotificationDeepLinkHandler />
+          <NotificationReceivedHandler />
+        </>
+      )}
       {children}
     </>
   );
