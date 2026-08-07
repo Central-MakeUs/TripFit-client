@@ -24,7 +24,26 @@ type AuthGuardProps = {
   children: React.ReactNode;
 };
 
+// usePathname()은 useSearchParams()와 달리 정적 프리렌더에서도 Suspense 없이 안전하다.
+// 공개 경로인지 여기서 먼저 갈라서, children이 useSearchParams()를 쓰는 Suspense 경계
+// 안으로 절대 들어가지 않게 한다 — 예전엔 children이 그 경계 안에 있어서, 정적으로
+// 프리렌더되는 라우트에서는(예: /onboarding, /signup, /privacy-policy) 그 경계 전체가
+// 통째로 클라이언트 렌더링으로 넘어가 버려 서버 HTML에 콘텐츠가 하나도 없었다(구글
+// OAuth 브랜딩 심사가 "홈페이지에 앱 목적 설명이 없다"고 반려한 원인). 공개 경로는
+// isBlocked가 항상 false라 리다이렉트 로직 자체가 필요 없으므로, children을 곧장
+// 서버 렌더링하고 인증 관련 부수효과만 별도 Suspense 경계 안에서 처리한다.
 function AuthGuard({ children }: AuthGuardProps) {
+  const pathname = usePathname();
+
+  if (isPublicPath(pathname)) {
+    return (
+      <>
+        {children}
+        <AuthGuardEffects />
+      </>
+    );
+  }
+
   return (
     <Suspense fallback={null}>
       <AuthGuardInner>{children}</AuthGuardInner>
@@ -32,9 +51,34 @@ function AuthGuard({ children }: AuthGuardProps) {
   );
 }
 
+// 로그인된 상태로 공개 경로를 열람할 수도 있으므로(예: 로그인한 채 /privacy-policy
+// 열람), 푸시 토큰 등록·알림 처리 같은 인증 사용자 전용 부수효과는 공개 경로에서도
+// hydration 이후에 마운트한다. children 렌더링과는 완전히 분리되어 있어 이 컴포넌트가
+// 클라이언트 렌더링으로 넘어가도 children의 서버 HTML에는 영향이 없다.
+function AuthGuardEffects() {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(useAuthStore.persist.hasHydrated());
+    return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
+  }, []);
+
+  if (!hasHydrated) return null;
+
+  return (
+    <>
+      <PushTokenRegistrar />
+      <NotificationDeepLinkHandler />
+      <NotificationReceivedHandler />
+    </>
+  );
+}
+
 // useSearchParams()는 정적으로 프리렌더되는 페이지(예: Next.js가 자동 생성하는
 // /_not-found)에서 Suspense 경계 없이 쓰면 빌드가 실패한다 — 이 컴포넌트를 감싸
-// 그 요구를 만족시킨다.
+// 그 요구를 만족시킨다. 보호된 경로에서만 쓰이므로(공개 경로는 AuthGuard가 이
+// 컴포넌트 자체를 렌더링하지 않는다) 이 경계가 클라이언트 렌더링으로 넘어가도
+// 괜찮다 — 인증 여부를 모르면 어차피 아무것도 보여줄 수 없는 경로들이다.
 function AuthGuardInner({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -56,12 +100,6 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
   }, []);
 
-  // isPublicPath는 로그인 여부와 무관하게 항상 예외여야 한다 — 특히 /auth/* 콜백
-  // 페이지는 소셜 로그인 처리 도중 accessToken은 이미 생겼지만 hasName은 아직
-  // false인 순간이 있는데, 이 체크가 accessToken 분기 안에만 있으면 그 찰나에
-  // AuthGuard가 콜백 페이지 자신의 경로(pathname)로 또 리다이렉트를 걸어버려
-  // 원래 저장해둔 목적지를 덮어써버린다(콜백 페이지 자체가 최종 리다이렉트를
-  // 이미 책임지고 처리하므로 AuthGuard가 끼어들 필요가 없다).
   const isBlocked =
     hasHydrated &&
     !isPublicPath(pathname) &&
@@ -78,9 +116,7 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     // 앱 진입점(스플래시 직후 첫 화면)에서 로그인이 아예 안 되어 있으면 로그인
     // 화면 대신 온보딩부터 보여준다 — accessToken은 있는데 hasName만 없는
     // 회원가입 중간 사용자는 대상이 아니다(온보딩이 아니라 /signup으로 이어서
-    // 이름 입력 등 남은 가입 절차를 마쳐야 한다). 초대 링크 등 다른 보호된
-    // 경로도 여기 해당하지 않으므로 기존처럼 곧장 /signup으로 보낸다(온보딩
-    // 재노출로 인한 딜레이 없이 이어지는 게 우선).
+    // 이름 입력 등 남은 가입 절차를 마쳐야 한다).
     if (pathname === '/' && !accessToken) {
       router.replace('/onboarding');
       return;
