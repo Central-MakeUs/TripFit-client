@@ -237,9 +237,14 @@ function MyScheduleSection() {
     setIsIndividualScheduleComplete(true);
   };
 
-  const calendarStartDate = selectedTrip
-    ? max([today, parseISO(selectedTrip.startRange)])
-    : today;
+  // 마이페이지의 개인 일정은 특정 여행방에 종속되지 않으므로, 선택된 여행의
+  // 시작월과 무관하게 항상 오늘이 속한 달부터 보여준다 — 여행 시작월로 미리
+  // 스크롤을 넘겨버리면(무한 스크롤이 뒤로는 못 가는 구조라) 그 이전 달은 아예
+  // 확인할 수 없게 된다. 노출 상한만 "오늘+2년"과 여행 종료일 중 더 늦은
+  // 날짜로 넓힌다.
+  const calendarMaxDate = selectedTrip
+    ? max([subDays(addYears(today, 2), 1), parseISO(selectedTrip.endRange)])
+    : subDays(addYears(today, 2), 1);
 
   if (isCalendarConnectOpen) {
     return (
@@ -298,8 +303,7 @@ function MyScheduleSection() {
           tripOptions={tripOptions}
           selectedTripId={selectedTrip?.tripId}
           onSelectTrip={handleSelectTrip}
-          initialYear={calendarStartDate.getFullYear()}
-          initialMonth={calendarStartDate.getMonth() + 1}
+          maxDate={calendarMaxDate}
           value={individualSchedule}
           onChange={setIndividualSchedule}
           mergedStatus={individualScheduleBackdrop}

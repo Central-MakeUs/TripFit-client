@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 import {
-  addYears,
   eachMonthOfInterval,
   format,
   isWithinInterval,
   parseISO,
-  subDays,
 } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -111,10 +109,9 @@ function GroupCalendarSection({
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
-  const today = new Date();
   const { refetchScheduleCalendar } = useGetScheduleCalendar({
-    startDate: format(today, 'yyyy-MM-dd'),
-    endDate: format(subDays(addYears(today, 2), 1), 'yyyy-MM-dd'),
+    startDate: format(minDate, 'yyyy-MM-dd'),
+    endDate: format(maxDate, 'yyyy-MM-dd'),
   });
 
   const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
@@ -318,9 +315,13 @@ function GroupCalendarSection({
             </>
           }
           description="앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요."
+          initialYear={minDate.getFullYear()}
+          initialMonth={minDate.getMonth() + 1}
           value={individualSchedule}
           onChange={setIndividualSchedule}
           mergedStatus={individualScheduleBackdrop}
+          minDate={minDate}
+          maxDate={maxDate}
           onBack={() => setIsIndividualScheduleOpen(false)}
           onClose={() => setIsIndividualScheduleOpen(false)}
           onNext={handleSaveIndividualSchedule}

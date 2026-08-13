@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { addYears, format, subDays } from 'date-fns';
+import { addYears, format, parseISO, subDays } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
-import { BasicInfoValue } from '@/components/basic-info/basicInfo.const';
+import {
+  BasicInfoScreen,
+  BasicInfoValue,
+  DEFAULT_BASIC_INFO_VALUE,
+} from '@/components/basic-info/basicInfo.const';
 import Header from '@/components/header';
 import Spinner from '@/components/spinner';
 import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
@@ -16,8 +20,14 @@ import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
 import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
+import {
+  getIncludeHalfDayHolidayFromRegularSchedules,
+  getLeaveNoticeDaysFromRegularSchedules,
+  mapRegularScheduleItemToClient,
+} from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 
+import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal';
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
@@ -43,6 +53,8 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const [section, setSection] = useState<SectionT>('calendar');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
+  const [basicInfoInitialScreen, setBasicInfoInitialScreen] =
+    useState<BasicInfoScreen>('hasRegularSchedule');
   const [scheduleErrorMessage, setScheduleErrorMessage] = useState<
     string | null
   >(null);
@@ -69,6 +81,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
   const isAllFree = useAuthStore((state) => state.isAllFree);
+  const hasSavedSchedule = hasPreSchedule || isAllFree;
 
   // hasPreSchedule/isAllFree는 persist된 store 값이라, 하이드레이션이 끝나기
   // 전엔 이미 일정을 입력한 사용자도 잠깐 기본값(false)으로 보인다 — 그 사이
@@ -86,8 +99,15 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 목록(myRole)을 따로 조회해 host 여부를 판단한다 — 활성화 여부와 무관하게
   // 항상 내려온다.
   const { tripsData, isTripsLoading } = useGetTrips({ scope: 'all' });
-  const isHost =
-    tripsData?.find((trip) => trip.tripId === roomId)?.myRole === 'OWNER';
+  const currentTrip = tripsData?.find((trip) => trip.tripId === roomId);
+  const isHost = currentTrip?.myRole === 'OWNER';
+  // roomData는 SCHEDULE_ENTRY_REQUIRED/SCHEDULE_ACTIVATION_REQUIRED 에러 상태에선
+  // 비어 있어 여행 예상 기간을 알 수 없으므로, 활성화 여부와 무관하게 항상 내려오는
+  // tripsData(홈 목록 조회)에서 대신 가져와 일정 입력/수정 캘린더를 이 기간으로 제한한다.
+  const tripMinDate = currentTrip
+    ? parseISO(currentTrip.startRange)
+    : undefined;
+  const tripMaxDate = currentTrip ? parseISO(currentTrip.endRange) : undefined;
 
   // 초대 코드가 있는데 아직 방/멤버 조회를 안 켠 상태 — 이 방 멤버인지 여부를
   // 미리 알 수 없으니, join을 먼저 시도(또는 그 전에 일정 입력부터)해야 한다.
@@ -140,7 +160,11 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsJoinOnly]);
 
-  const { saveRegularSchedule } = useSaveRegularSchedule({ enabled: false });
+  const {
+    regularSchedulesData,
+    isRegularSchedulesLoading,
+    saveRegularSchedule,
+  } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
 
   const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
@@ -158,8 +182,11 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   const today = new Date();
   const { refetchScheduleCalendar } = useGetScheduleCalendar({
-    startDate: format(today, 'yyyy-MM-dd'),
-    endDate: format(subDays(addYears(today, 2), 1), 'yyyy-MM-dd'),
+    startDate: format(tripMinDate ?? today, 'yyyy-MM-dd'),
+    endDate: format(
+      tripMaxDate ?? subDays(addYears(today, 2), 1),
+      'yyyy-MM-dd',
+    ),
   });
 
   const handleBeforeIndividualSchedule = async () => {
@@ -194,6 +221,16 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     // activate는 방장 전용이라, 방장이 처음 일정을 입력하는 경우에만 여기서
     // 트립을 활성화한다. 참여자는 자기 일정 저장만으로 완료 화면으로 넘어간다.
     return isHost ? confirmSchedule(roomId) : true;
+  };
+
+  // 기존에 저장된 일정이 있으면(hasSavedSchedule) 그 내용을 확인/수정하는
+  // 화면(regularScheduleDetail)으로, 없으면 처음 묻는 화면(hasRegularSchedule)으로
+  // 들어간다 — ConfirmScheduleModal/PreScheduleRequiredModal 각각의 onConfirm.
+  const handleStartBasicInfo = () => {
+    setBasicInfoInitialScreen(
+      hasSavedSchedule ? 'regularScheduleDetail' : 'hasRegularSchedule',
+    );
+    setIsBasicInfoOpen(true);
   };
 
   if (
@@ -245,10 +282,56 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
 
   if (needsScheduleEntry) {
     if (isBasicInfoOpen) {
+      if (
+        basicInfoInitialScreen === 'regularScheduleDetail' &&
+        isRegularSchedulesLoading
+      ) {
+        return (
+          <div className="flex w-full flex-1 items-center justify-center">
+            <Spinner />
+          </div>
+        );
+      }
+
+      const savedItems = regularSchedulesData ?? [];
+
       return (
         <>
           <BasicInfo
             allowSkip={false}
+            initialScreen={basicInfoInitialScreen}
+            initialValue={
+              basicInfoInitialScreen === 'regularScheduleDetail'
+                ? {
+                    ...DEFAULT_BASIC_INFO_VALUE,
+                    hasRegularSchedule: savedItems.length > 0,
+                    regularSchedules: savedItems.map(
+                      mapRegularScheduleItemToClient,
+                    ),
+                    annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
+                    leaveNoticeDays:
+                      getLeaveNoticeDaysFromRegularSchedules(savedItems),
+                    includeHalfDayHoliday:
+                      getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
+                  }
+                : undefined
+            }
+            individualScheduleHeading={
+              basicInfoInitialScreen === 'regularScheduleDetail' ? (
+                <>
+                  여행 기간 중 여행이 어렵거나
+                  <br />
+                  확실하지 않은 날짜를 알려주세요.
+                </>
+              ) : undefined
+            }
+            individualScheduleDescription={
+              basicInfoInitialScreen === 'regularScheduleDetail'
+                ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
+                : undefined
+            }
+            individualScheduleMinDate={tripMinDate}
+            individualScheduleMaxDate={tripMaxDate}
             onComplete={() => {
               setIsBasicInfoOpen(false);
               setEnableRoomQueries(true);
@@ -292,11 +375,19 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           title="여행방 상세"
           onBack={() => router.push('/')}
         />
-        <PreScheduleRequiredModal
-          open
-          onOpenChange={() => {}}
-          onConfirm={() => setIsBasicInfoOpen(true)}
-        />
+        {hasSavedSchedule ? (
+          <ConfirmScheduleModal
+            open
+            onOpenChange={() => {}}
+            onConfirm={handleStartBasicInfo}
+          />
+        ) : (
+          <PreScheduleRequiredModal
+            open
+            onOpenChange={() => {}}
+            onConfirm={handleStartBasicInfo}
+          />
+        )}
       </div>
     );
   }

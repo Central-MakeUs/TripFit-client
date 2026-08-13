@@ -293,6 +293,8 @@ function RoomCreateForm() {
               ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
               : undefined
           }
+          individualScheduleMinDate={tripPeriod.startDate ?? undefined}
+          individualScheduleMaxDate={tripPeriod.endDate ?? undefined}
           onExit={() => setIsBasicInfoOpen(false)}
           onRegularScheduleNext={handleSaveRegularSchedule}
           onBeforeIndividualSchedule={handleBeforeIndividualSchedule}

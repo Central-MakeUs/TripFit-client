@@ -195,6 +195,11 @@ function Roulette({
 
   return (
     <div
+      // vaul(BottomSheet) 안에서 쓰일 때, 이 다이얼 자체가 포인터 캡처로 세로 드래그를
+      // 이미 전담 처리하므로 같은 제스처가 바텀시트 드래그로도 동시에 해석되지 않게
+      // 막는다 — vaul이 이 속성을 가진 요소(또는 그 자손)에서 시작된 제스처는 드래그로
+      // 취급하지 않는다. 바텀시트 밖(vaul 컨텍스트가 없는 곳)에서는 아무 영향이 없다.
+      data-vaul-no-drag
       className={cn(
         'relative w-full touch-none cursor-grab overflow-hidden select-none active:cursor-grabbing',
         className,
