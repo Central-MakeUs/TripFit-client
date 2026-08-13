@@ -5,6 +5,7 @@ import {
   addDays,
   addYears,
   differenceInCalendarMonths,
+  isAfter,
   isBefore,
   startOfToday,
   subDays,
@@ -35,6 +36,13 @@ type ScheduleCalendarProps = {
    * 한 번 저장한 날짜는 이후 정기 패턴이 바뀌어도 값이 고정되므로, 사용자가
    * 손대지 않은 날짜까지 개별 오버라이드로 저장돼버리는 걸 막기 위함 */
   mergedStatus?: Record<string, DayScheduleValueT>;
+  /** 지정하면 이 날짜 이전은 선택할 수 없게 비활성화됨(오늘 이전은 항상 비활성화되며
+   * 그보다 나중이면 이 값이 우선함) — 여행방 입장 시 여행 예상 기간으로 캘린더를
+   * 제한할 때 사용. 미지정 시 기존처럼 오늘부터 선택 가능 */
+  minDate?: Date;
+  /** 지정하면 이 날짜 이후는 선택할 수 없게 비활성화됨 — 미지정 시 기존처럼
+   * 오늘+2년까지 전체 기간 선택 가능 */
+  maxDate?: Date;
 };
 
 function ScheduleCalendar({
@@ -43,6 +51,8 @@ function ScheduleCalendar({
   value,
   onChange,
   mergedStatus,
+  minDate,
+  maxDate,
 }: ScheduleCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -52,7 +62,10 @@ function ScheduleCalendar({
   const [draftValue, setDraftValue] = useState<DayScheduleValueT | null>(null);
   // 개인 일정 조회/저장 API가 "오늘~오늘+2년-1일" 구간만 허용하므로,
   // 그 밖의 날짜를 선택해 저장이 거부되는 일이 없도록 스크롤 자체를 여기서 막는다.
-  const maxScheduleDate = subDays(addYears(new Date(), 2), 1);
+  // maxDate(여행 예상 기간 등)가 주어지면 그 범위로 더 좁혀서 막는다.
+  const maxScheduleDate = maxDate ?? subDays(addYears(new Date(), 2), 1);
+  const effectiveMinDate =
+    minDate && isAfter(minDate, startOfToday()) ? minDate : startOfToday();
   // 기준 월이 maxScheduleDate보다 뒤(여행 종료일이 오늘+2년을 넘는 경우 등)면
   // 이 값이 0 이하가 되어 캘린더가 아예 안 보일 수 있으므로 최소 1개월은 보장한다.
   const maxMonthCount = Math.max(
@@ -105,13 +118,15 @@ function ScheduleCalendar({
   const handlePrevDay = () => {
     if (!selectedDate) return;
     const prevDate = subDays(selectedDate, 1);
-    if (isBefore(prevDate, startOfToday())) return;
+    if (isBefore(prevDate, effectiveMinDate)) return;
     openDay(prevDate);
   };
 
   const handleNextDay = () => {
     if (!selectedDate) return;
-    openDay(addDays(selectedDate, 1));
+    const nextDate = addDays(selectedDate, 1);
+    if (isAfter(nextDate, maxScheduleDate)) return;
+    openDay(nextDate);
   };
 
   return (
@@ -123,6 +138,8 @@ function ScheduleCalendar({
           month={sectionMonth}
           value={value}
           mergedStatus={mergedStatus}
+          minDate={minDate}
+          maxDate={maxScheduleDate}
           selectedDateKey={isSheetOpen ? selectedDateKey : null}
           onSelectDate={openDay}
         />
@@ -140,7 +157,11 @@ function ScheduleCalendar({
               onNextDay={handleNextDay}
               isPrevDisabled={isBefore(
                 subDays(selectedDate, 1),
-                startOfToday(),
+                effectiveMinDate,
+              )}
+              isNextDisabled={isAfter(
+                addDays(selectedDate, 1),
+                maxScheduleDate,
               )}
             />
           }

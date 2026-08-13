@@ -1,4 +1,4 @@
-import { format, isBefore, startOfToday } from 'date-fns';
+import { format, isAfter, isBefore, startOfToday } from 'date-fns';
 
 import { WEEKDAY_LABELS } from '@/consts/date';
 import { useMonthGrid } from '@/hooks/useMonthGrid';
@@ -21,6 +21,8 @@ type ScheduleMonthSectionProps = {
   month: number;
   value: Record<string, DayScheduleValueT>;
   mergedStatus?: Record<string, DayScheduleValueT>;
+  minDate?: Date;
+  maxDate?: Date;
   selectedDateKey: string | null;
   onSelectDate: (date: Date) => void;
 };
@@ -30,6 +32,8 @@ function ScheduleMonthSection({
   month,
   value,
   mergedStatus,
+  minDate,
+  maxDate,
   selectedDateKey,
   onSelectDate,
 }: ScheduleMonthSectionProps) {
@@ -38,6 +42,7 @@ function ScheduleMonthSection({
     month,
   });
   const today = startOfToday();
+  const effectiveMinDate = minDate && isAfter(minDate, today) ? minDate : today;
 
   return (
     <div className="w-full">
@@ -62,7 +67,9 @@ function ScheduleMonthSection({
         ))}
         {days.map((date) => {
           const dateKey = getDateKey(date);
-          const isDisabled = isBefore(date, today);
+          const isDisabled =
+            isBefore(date, effectiveMinDate) ||
+            (maxDate ? isAfter(date, maxDate) : false);
           const isSelected = selectedDateKey === dateKey;
           const hasData = hasScheduleData(
             value[dateKey] ?? mergedStatus?.[dateKey],

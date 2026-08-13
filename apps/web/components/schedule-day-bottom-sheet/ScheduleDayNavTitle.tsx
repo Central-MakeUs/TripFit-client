@@ -9,6 +9,7 @@ type ScheduleDayNavTitleProps = {
   onPrevDay: () => void;
   onNextDay: () => void;
   isPrevDisabled?: boolean;
+  isNextDisabled?: boolean;
 };
 
 function ScheduleDayNavTitle({
@@ -16,6 +17,7 @@ function ScheduleDayNavTitle({
   onPrevDay,
   onNextDay,
   isPrevDisabled,
+  isNextDisabled,
 }: ScheduleDayNavTitleProps) {
   return (
     <div className="flex w-full items-center justify-between px-3 py-2">
@@ -31,6 +33,7 @@ function ScheduleDayNavTitle({
         size="small"
         icon={<ArrowRightIcon className="text-grey-500" />}
         onClick={onNextDay}
+        disabled={isNextDisabled}
         aria-label="다음 날짜"
       />
     </div>
