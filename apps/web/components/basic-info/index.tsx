@@ -60,6 +60,13 @@ type BasicInfoProps = {
   individualScheduleHeading?: ReactNode;
   /** 개별 일정 입력 화면의 보조 설명 — 미지정 시 표시 안 함 */
   individualScheduleDescription?: ReactNode;
+  /** 개별 일정 입력 화면의 캘린더를 이 날짜 이전은 선택 못 하게 제한 — 지정하면
+   * 캘린더도 이 날짜가 속한 달부터 보여줌(여행방 입장처럼 특정 여행 기간으로
+   * 좁혀야 하는 플로우에서 사용). 미지정 시 기존처럼 오늘부터 제한 없이 열림 */
+  individualScheduleMinDate?: Date;
+  /** 개별 일정 입력 화면의 캘린더를 이 날짜 이후는 선택 못 하게 제한 — 미지정 시
+   * 기존처럼 오늘+2년까지 제한 없이 열림 */
+  individualScheduleMaxDate?: Date;
   /** 캘린더 연동 스텝의 헤더 타이틀 — 미지정 시 "캘린더 연동하기" */
   calendarConnectTitle?: string;
   /** 캘린더 연동 스텝의 프로그레스바 값 — 미지정 시 프로그레스바 숨김 */
@@ -109,6 +116,8 @@ function BasicInfo({
   title = '일정 입력하기',
   individualScheduleHeading = '날짜를 클릭해 스케줄을 입력해주세요',
   individualScheduleDescription,
+  individualScheduleMinDate,
+  individualScheduleMaxDate,
   calendarConnectTitle,
   calendarConnectProgress,
   calendarConnectContinuesToSchedule = false,
@@ -303,11 +312,19 @@ function BasicInfo({
         progress={progress}
         heading={individualScheduleHeading}
         description={individualScheduleDescription}
+        initialYear={individualScheduleMinDate?.getFullYear()}
+        initialMonth={
+          individualScheduleMinDate
+            ? individualScheduleMinDate.getMonth() + 1
+            : undefined
+        }
         value={value.individualSchedule}
         onChange={(individualSchedule) =>
           setValue((prev) => ({ ...prev, individualSchedule }))
         }
         mergedStatus={individualScheduleBackdrop}
+        minDate={individualScheduleMinDate}
+        maxDate={individualScheduleMaxDate}
         onNext={handleIndividualScheduleNext}
       />
     );

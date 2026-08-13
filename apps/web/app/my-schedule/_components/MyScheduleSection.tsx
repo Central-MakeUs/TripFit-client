@@ -187,10 +187,18 @@ function MyScheduleSection() {
     }
   };
 
-  const handleSelectTrip = (tripId: string) => {
-    setSelectedTripId(tripId);
+  // calendarMaxDate/개별 일정 배경값은 모두 selectedTripId에서 파생되므로,
+  // 조회가 끝나기 전에 먼저 selectedTripId부터 바꿔버리면 "캘린더 노출 범위는
+  // 이미 새 여행 기준으로 넓어졌는데 그 구간의 배경값은 아직 안 채워진" 순간이
+  // 생긴다 — 조회가 성공했을 때만 선택을 반영해 그 틈 자체를 없앤다. 실패하면
+  // loadScheduleCalendarForTrip이 이미 에러 알럿을 띄우고, selectedTripId는
+  // 이전 값 그대로라 범위도 이전 상태로 유지된다.
+  const handleSelectTrip = async (tripId: string) => {
     const trip = tripsData?.find((item) => item.tripId === tripId) ?? null;
-    loadScheduleCalendarForTrip(trip);
+    const success = await loadScheduleCalendarForTrip(trip);
+    if (success) {
+      setSelectedTripId(tripId);
+    }
   };
 
   const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
@@ -237,9 +245,14 @@ function MyScheduleSection() {
     setIsIndividualScheduleComplete(true);
   };
 
-  const calendarStartDate = selectedTrip
-    ? max([today, parseISO(selectedTrip.startRange)])
-    : today;
+  // 마이페이지의 개인 일정은 특정 여행방에 종속되지 않으므로, 선택된 여행의
+  // 시작월과 무관하게 항상 오늘이 속한 달부터 보여준다 — 여행 시작월로 미리
+  // 스크롤을 넘겨버리면(무한 스크롤이 뒤로는 못 가는 구조라) 그 이전 달은 아예
+  // 확인할 수 없게 된다. 노출 상한만 "오늘+2년"과 여행 종료일 중 더 늦은
+  // 날짜로 넓힌다.
+  const calendarMaxDate = selectedTrip
+    ? max([subDays(addYears(today, 2), 1), parseISO(selectedTrip.endRange)])
+    : subDays(addYears(today, 2), 1);
 
   if (isCalendarConnectOpen) {
     return (
@@ -298,8 +311,7 @@ function MyScheduleSection() {
           tripOptions={tripOptions}
           selectedTripId={selectedTrip?.tripId}
           onSelectTrip={handleSelectTrip}
-          initialYear={calendarStartDate.getFullYear()}
-          initialMonth={calendarStartDate.getMonth() + 1}
+          maxDate={calendarMaxDate}
           value={individualSchedule}
           onChange={setIndividualSchedule}
           mergedStatus={individualScheduleBackdrop}

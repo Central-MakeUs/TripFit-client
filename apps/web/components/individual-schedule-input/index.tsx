@@ -38,6 +38,10 @@ type IndividualScheduleInputProps = {
   onChange: (value: IndividualScheduleValueT) => void;
   /** 정기 일정 등을 합쳐 계산된 읽기 전용 배경값 — ScheduleCalendar에 그대로 전달 */
   mergedStatus?: IndividualScheduleValueT;
+  /** 지정하면 이 날짜 이전은 선택할 수 없게 비활성화됨 — ScheduleCalendar에 그대로 전달 */
+  minDate?: Date;
+  /** 지정하면 이 날짜 이후는 선택할 수 없게 비활성화됨 — ScheduleCalendar에 그대로 전달 */
+  maxDate?: Date;
   onNext: () => void;
 };
 
@@ -56,6 +60,8 @@ function IndividualScheduleInput({
   value,
   onChange,
   mergedStatus,
+  minDate,
+  maxDate,
   onNext,
 }: IndividualScheduleInputProps) {
   const [today, setToday] = useState<Date | null>(null);
@@ -128,6 +134,8 @@ function IndividualScheduleInput({
             value={value}
             onChange={onChange}
             mergedStatus={mergedStatus}
+            minDate={minDate}
+            maxDate={maxDate}
           />
         )}
         <div aria-hidden className="h-14.5 w-full shrink-0" />

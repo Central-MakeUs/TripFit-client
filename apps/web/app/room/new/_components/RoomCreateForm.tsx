@@ -77,10 +77,13 @@ function RoomCreateForm() {
 
   const { postRoomMutation, isPostRoomPending } = usePostRoom();
   // postRoom 응답엔 inviteCode가 없어, 방 생성 직후 "참여자 초대하기" 공유 링크에
-  // 실을 inviteCode는 별도로 조회해서 가져온다.
-  const { roomData: createdRoomData } = useGetRoom(createdRoomId ?? '', {
-    enabled: !!createdRoomId,
-  });
+  // 실을 inviteCode는 별도로 조회해서 가져온다. 다만 이 시점엔 방장이 아직 일정
+  // 입력/확인을 안 끝내 방이 활성화(activate) 전이라 이 조회가 SCHEDULE_ACTIVATION_REQUIRED로
+  // 실패한다 — activate가 끝난 뒤(handleSaveIndividualSchedule) 명시적으로 다시 불러온다.
+  const { roomData: createdRoomData, refetchRoom: refetchCreatedRoom } =
+    useGetRoom(createdRoomId ?? '', {
+      enabled: !!createdRoomId,
+    });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
@@ -141,7 +144,11 @@ function RoomCreateForm() {
       return false;
     }
     if (!createdRoomId) return false;
-    return confirmSchedule(createdRoomId);
+    const confirmed = await confirmSchedule(createdRoomId);
+    // 활성화가 끝나야 비로소 방 조회(inviteCode 포함)가 성공하므로, 여기서 다시
+    // 불러와야 "참여자 초대하기" 링크에 inviteCode가 정상적으로 실린다.
+    if (confirmed) await refetchCreatedRoom();
+    return confirmed;
   };
 
   const periodDays =
@@ -293,6 +300,8 @@ function RoomCreateForm() {
               ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
               : undefined
           }
+          individualScheduleMinDate={tripPeriod.startDate ?? undefined}
+          individualScheduleMaxDate={tripPeriod.endDate ?? undefined}
           onExit={() => setIsBasicInfoOpen(false)}
           onRegularScheduleNext={handleSaveRegularSchedule}
           onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
