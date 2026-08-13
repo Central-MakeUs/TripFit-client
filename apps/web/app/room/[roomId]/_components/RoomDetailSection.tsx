@@ -32,9 +32,11 @@ import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequi
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
+import { useDeleteTripsJoinHold } from '../_common/_hooks/useDeleteTripsJoinHold';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { usePostTripsJoin } from '../_common/_hooks/usePostTripsJoin';
+import { usePostTripsJoinHold } from '../_common/_hooks/usePostTripsJoinHold';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
 import RecommendationSection from './recommendation/RecommendationSection';
 
@@ -78,6 +80,8 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   } = useGetRoomMembers(roomId, { enabled: enableRoomQueries });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
   const { postTripsJoinMutation } = usePostTripsJoin();
+  const { postTripsJoinHoldMutation } = usePostTripsJoinHold();
+  const { deleteTripsJoinHoldMutation } = useDeleteTripsJoinHold();
 
   const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
   const isAllFree = useAuthStore((state) => state.isAllFree);
@@ -231,7 +235,20 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 기존에 저장된 일정이 있으면(hasSavedSchedule) 그 내용을 확인/수정하는
   // 화면(regularScheduleDetail)으로, 없으면 처음 묻는 화면(hasRegularSchedule)으로
   // 들어간다 — ConfirmScheduleModal/PreScheduleRequiredModal 각각의 onConfirm.
-  const handleStartBasicInfo = () => {
+  // 초대 링크로 들어와 아직 멤버가 아닌 경우(needsJoin)엔, 일정 입력에 걸리는
+  // 시간 동안 다른 사람에게 마지막 자리를 뺏기지 않도록 화면을 열기 직전에
+  // 정원을 10분간 hold한다. 정원이 가득 찼으면(409) 화면을 열지 않고 안내한다.
+  const handleStartBasicInfo = async () => {
+    if (needsJoin && inviteCode) {
+      try {
+        await postTripsJoinHoldMutation({ inviteCode });
+      } catch (error) {
+        setJoinErrorMessage(
+          error instanceof Error ? error.message : '참여하지 못했어요.',
+        );
+        return;
+      }
+    }
     setBasicInfoInitialScreen(
       hasSavedSchedule ? 'regularScheduleDetail' : 'hasRegularSchedule',
     );
@@ -337,6 +354,13 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             }
             individualScheduleMinDate={tripMinDate}
             individualScheduleMaxDate={tripMaxDate}
+            // 플로우 첫 화면(정기 일정 입력 화면)에서 뒤로가기로 위저드 자체를
+            // 벗어날 때만 호출됨 — 위저드 내부 이동(개별 일정 → 정기 일정 등)은
+            // BasicInfo가 자체 screenHistory로 처리하고 onExit을 타지 않는다.
+            onExit={() => {
+              if (needsJoin) deleteTripsJoinHoldMutation(roomId);
+              router.back();
+            }}
             onComplete={() => {
               setIsBasicInfoOpen(false);
               setEnableRoomQueries(true);
@@ -393,6 +417,18 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             onConfirm={handleStartBasicInfo}
           />
         )}
+        <AlertModal
+          open={joinErrorMessage !== null}
+          onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+          variant="danger"
+          title="참여하지 못했어요"
+          description={joinErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={() => {
+            setJoinErrorMessage(null);
+            router.push('/');
+          }}
+        />
       </div>
     );
   }
