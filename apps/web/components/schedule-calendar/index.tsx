@@ -125,7 +125,7 @@ function ScheduleCalendar({
   const handleNextDay = () => {
     if (!selectedDate) return;
     const nextDate = addDays(selectedDate, 1);
-    if (maxDate && isAfter(nextDate, maxDate)) return;
+    if (isAfter(nextDate, maxScheduleDate)) return;
     openDay(nextDate);
   };
 
@@ -139,7 +139,7 @@ function ScheduleCalendar({
           value={value}
           mergedStatus={mergedStatus}
           minDate={minDate}
-          maxDate={maxDate}
+          maxDate={maxScheduleDate}
           selectedDateKey={isSheetOpen ? selectedDateKey : null}
           onSelectDate={openDay}
         />
@@ -159,9 +159,10 @@ function ScheduleCalendar({
                 subDays(selectedDate, 1),
                 effectiveMinDate,
               )}
-              isNextDisabled={
-                !!maxDate && isAfter(addDays(selectedDate, 1), maxDate)
-              }
+              isNextDisabled={isAfter(
+                addDays(selectedDate, 1),
+                maxScheduleDate,
+              )}
             />
           }
           value={selectedValue}
