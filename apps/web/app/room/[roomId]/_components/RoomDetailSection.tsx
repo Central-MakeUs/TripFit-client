@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { addYears, format, parseISO, subDays } from 'date-fns';
+import { addYears, format, max, parseISO, subDays } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import AlertModal from '@/components/alert-modal';
@@ -181,8 +181,13 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   };
 
   const today = new Date();
+  // 여행 예상 기간이 이미 시작된 뒤(tripMinDate가 과거)라도, 개인 일정 조회 API는
+  // 오늘 이전 날짜를 시작일로 받지 않으므로 오늘보다 앞서지 않게 clamp한다.
   const { refetchScheduleCalendar } = useGetScheduleCalendar({
-    startDate: format(tripMinDate ?? today, 'yyyy-MM-dd'),
+    startDate: format(
+      tripMinDate ? max([today, tripMinDate]) : today,
+      'yyyy-MM-dd',
+    ),
     endDate: format(
       tripMaxDate ?? subDays(addYears(today, 2), 1),
       'yyyy-MM-dd',

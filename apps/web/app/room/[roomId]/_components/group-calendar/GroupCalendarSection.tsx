@@ -5,7 +5,9 @@ import {
   eachMonthOfInterval,
   format,
   isWithinInterval,
+  max,
   parseISO,
+  startOfToday,
 } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -109,8 +111,11 @@ function GroupCalendarSection({
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
+  // 여행 예상 기간이 이미 시작된 뒤(minDate가 과거)라도, 개인 일정 조회 API는
+  // 오늘 이전 날짜를 시작일로 받지 않으므로 오늘보다 앞서지 않게 clamp한다.
+  // (그룹 달력 자체가 쓰는 minDate/maxDate는 과거 날짜도 그대로 보여줘야 해서 안 건드림)
   const { refetchScheduleCalendar } = useGetScheduleCalendar({
-    startDate: format(minDate, 'yyyy-MM-dd'),
+    startDate: format(max([startOfToday(), minDate]), 'yyyy-MM-dd'),
     endDate: format(maxDate, 'yyyy-MM-dd'),
   });
 
