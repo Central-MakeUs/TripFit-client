@@ -51,26 +51,6 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 받은 사람이 아직 이 방 멤버가 아닐 때만 참여 처리에 쓰인다.
   const inviteCode = searchParams.get('inviteCode');
   const [section, setSection] = useState<SectionT>('calendar');
-  // 추천 근거 화면에서 날짜를 클릭해 그룹 달력의 날짜 상세로 이동할 때만 쓰는
-  // 1회성 값 — GroupCalendarSection이 마운트 시 selectedDate 초기값으로 소비하고
-  // 나면, 이후 무관하게 캘린더 탭으로 돌아왔을 때 같은 날짜가 다시 열리지 않도록
-  // 아래 useEffect에서 곧바로 비운다.
-  const [pendingSelectedDate, setPendingSelectedDate] = useState<Date | null>(
-    null,
-  );
-  // pendingSelectedDate는 GroupCalendarSection이 마운트될 때 selectedDate 초기값으로만
-  // 읽고 이후 자체 상태로 관리하므로, 이 값을 나중에 지워도 이미 마운트된 화면엔
-  // 영향이 없다 — 여기서 바로 비워둬야 다음에 캘린더 탭으로 무관하게 돌아왔을 때
-  // 같은 날짜 상세가 또 열리지 않는다.
-  useEffect(() => {
-    if (section === 'calendar' && pendingSelectedDate) {
-      setPendingSelectedDate(null);
-    }
-  }, [section, pendingSelectedDate]);
-  const handleSelectRecommendationDate = (date: Date) => {
-    setPendingSelectedDate(date);
-    setSection('calendar');
-  };
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
   const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(false);
   const [basicInfoInitialScreen, setBasicInfoInitialScreen] =
@@ -454,9 +434,11 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           roomName={room.title}
           inviteCode={room.inviteCode}
           myName={myName}
+          participants={participants}
+          tripStartDate={room.startDate}
+          tripEndDate={room.endDate}
           isHost={isHost}
           onExit={() => setSection('calendar')}
-          onSelectDate={handleSelectRecommendationDate}
           respondedCount={respondedCount}
           onRequestResponse={() => setIsRequestResponseOpen(true)}
           isConfirmed={isConfirmed}
@@ -491,7 +473,6 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       isHost={isHost}
       isConfirmed={isConfirmed}
       onShowRecommendation={() => setSection('recommendation')}
-      initialSelectedDate={pendingSelectedDate}
     />
   );
 }
