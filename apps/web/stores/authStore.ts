@@ -37,6 +37,7 @@ export type AuthStateT = {
     isGoogleCalendarConnected: boolean;
   }) => void;
   setAccessToken: (accessToken: string) => void;
+  setRefreshToken: (refreshToken: string) => void;
   setName: (name: {
     firstName: string;
     lastName: string;
@@ -108,6 +109,7 @@ export const useAuthStore = create<AuthStateT>()(
       ...INITIAL_AUTH_STATE,
       setAuth: (auth) => set(auth),
       setAccessToken: (accessToken) => set({ accessToken }),
+      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
       setPushDeviceToken: (pushDeviceToken) => set({ pushDeviceToken }),
