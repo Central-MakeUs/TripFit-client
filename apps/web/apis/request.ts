@@ -70,6 +70,11 @@ export async function request<T>(
 // 이 요청이 다시 401을 받아도 재귀적으로 재발급을 또 시도하지 않는다.
 let refreshPromise: Promise<string> | null = null;
 
+type RefreshAccessTokenResponseT = {
+  accessToken: string;
+  refreshToken: string;
+};
+
 const refreshAccessToken = (): Promise<string> => {
   const { refreshToken } = useAuthStore.getState();
   // refreshToken이 없으면 재발급이 애초에 불가능한, 확실한 인증 실패 상황이다.
@@ -80,7 +85,7 @@ const refreshAccessToken = (): Promise<string> => {
   }
 
   if (!refreshPromise) {
-    refreshPromise = request<{ accessToken: string; refreshToken: string }>(
+    refreshPromise = request<RefreshAccessTokenResponseT>(
       '/api/v1/auth/refresh',
       {
         method: 'POST',
