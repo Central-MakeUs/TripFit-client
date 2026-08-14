@@ -7,6 +7,7 @@ import { postLogout } from '../_apis/postLogout';
 
 export const usePostLogout = () => {
   const refreshToken = useAuthStore((state) => state.refreshToken);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const pushDeviceToken = useAuthStore((state) => state.pushDeviceToken);
   const clear = useAuthStore((state) => state.clear);
 
@@ -23,7 +24,10 @@ export const usePostLogout = () => {
       }
       // refreshToken은 새로고침 이후엔 메모리에서 사라질 수 있다(보안상 localStorage 미저장) —
       // 그 경우 서버에 폐기 요청은 못 보내지만, 로컬 로그아웃(clear)까지 막을 이유는 없다.
-      return refreshToken ? postLogout({ refreshToken }) : Promise.resolve();
+      // accessToken을 같이 보내면 만료 전이라도 서버가 그 자리에서 즉시 무효화해준다.
+      return refreshToken
+        ? postLogout({ refreshToken, accessToken: accessToken ?? undefined })
+        : Promise.resolve();
     },
     onSuccess: () => clear(),
   });
