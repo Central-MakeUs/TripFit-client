@@ -8,7 +8,7 @@ export const useDeleteTripsJoinHold = () => {
   const mutationFn = useAuthenticatedMutationFn(deleteTripsJoinHold);
 
   const {
-    mutate: deleteTripsJoinHoldMutation,
+    mutateAsync: deleteTripsJoinHoldMutation,
     isPending: isDeleteTripsJoinHoldPending,
   } = useMutation({ mutationFn });
 

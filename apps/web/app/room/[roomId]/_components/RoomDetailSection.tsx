@@ -61,6 +61,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     string | null
   >(null);
   const [joinErrorMessage, setJoinErrorMessage] = useState<string | null>(null);
+  const [leaveErrorMessage, setLeaveErrorMessage] = useState<string | null>(
+    null,
+  );
   // 초대 코드가 있으면 아직 이 방 멤버가 아닐 수 있으니, 실패가 뻔한 조회부터
   // 하지 않고 join을 먼저 시도한 뒤에야 방/멤버 조회를 켠다. 초대 코드가
   // 없는 일반 진입(이미 멤버)은 처음부터 그대로 조회한다.
@@ -357,8 +360,22 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             // 플로우 첫 화면(정기 일정 입력 화면)에서 뒤로가기로 위저드 자체를
             // 벗어날 때만 호출됨 — 위저드 내부 이동(개별 일정 → 정기 일정 등)은
             // BasicInfo가 자체 screenHistory로 처리하고 onExit을 타지 않는다.
-            onExit={() => {
-              if (needsJoin) deleteTripsJoinHoldMutation(roomId);
+            // hold 해제가 끝나기 전에 화면을 나가면 다른 사용자가 자리를 못 받는
+            // 채로 TTL까지 남으므로, 해제가 완료된 뒤에만 이전 화면으로 이동한다.
+            // 실패하면 현재 화면에 남겨 재시도할 수 있게 한다.
+            onExit={async () => {
+              if (needsJoin) {
+                try {
+                  await deleteTripsJoinHoldMutation(roomId);
+                } catch (error) {
+                  setLeaveErrorMessage(
+                    error instanceof Error
+                      ? error.message
+                      : '참여를 취소하지 못했어요.',
+                  );
+                  return;
+                }
+              }
               router.back();
             }}
             onComplete={() => {
@@ -383,6 +400,15 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             description={scheduleErrorMessage ?? ''}
             primaryText="확인"
             onPrimaryClick={() => setScheduleErrorMessage(null)}
+          />
+          <AlertModal
+            open={leaveErrorMessage !== null}
+            onOpenChange={(open) => !open && setLeaveErrorMessage(null)}
+            variant="danger"
+            title="나가지 못했어요"
+            description={leaveErrorMessage ?? ''}
+            primaryText="확인"
+            onPrimaryClick={() => setLeaveErrorMessage(null)}
           />
           <AlertModal
             open={joinErrorMessage !== null}
