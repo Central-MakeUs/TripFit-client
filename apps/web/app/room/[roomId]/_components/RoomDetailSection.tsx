@@ -497,6 +497,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           roomName={room.title}
           inviteCode={room.inviteCode}
           myName={myName}
+          participants={participants}
+          tripStartDate={room.startDate}
+          tripEndDate={room.endDate}
           isHost={isHost}
           onExit={() => setSection('calendar')}
           respondedCount={respondedCount}

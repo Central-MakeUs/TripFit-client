@@ -1,14 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { parseISO } from 'date-fns';
 
 import AlertModal from '@/components/alert-modal';
 import Header from '@/components/header';
+import { ParticipantT } from '@/types/participant';
 import {
   RecommendationCandidateDetailT,
   RecommendationTypeT,
 } from '@/types/recommendation';
 
+import DayDetailView from '../group-calendar/_components/DayDetailView';
+import { useGetRoomScheduleCalendar } from '../group-calendar/_hooks/useGetRoomScheduleCalendar';
+import { getDayAvailabilityStatus } from '../group-calendar/_utils/getDayAvailabilityStatus';
+import { getDayDetailParticipants } from '../group-calendar/_utils/getDayDetailParticipants';
+import {
+  DEFAULT_DAY_SCHEDULE_VALUE,
+  getMyDaySchedule,
+} from '../group-calendar/_utils/getMyDaySchedule';
 import { useGetRecommendationDetail } from './_hooks/useGetRecommendationDetail';
 import { usePostConfirmTrip } from './_hooks/usePostConfirmTrip';
 import { usePostRecommendations } from './_hooks/usePostRecommendations';
@@ -24,6 +34,9 @@ type RecommendationSectionProps = {
   roomName: string;
   inviteCode: string;
   myName: string;
+  participants: ParticipantT[];
+  tripStartDate: string;
+  tripEndDate: string;
   isHost: boolean;
   onExit: () => void;
   respondedCount: number;
@@ -42,6 +55,9 @@ function RecommendationSection({
   roomName,
   inviteCode,
   myName,
+  participants,
+  tripStartDate,
+  tripEndDate,
   isHost,
   onExit,
   respondedCount,
@@ -66,11 +82,49 @@ function RecommendationSection({
     useState<RecommendationCandidateDetailT | null>(null);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [justUnconfirmed, setJustUnconfirmed] = useState(false);
+  // 추천 근거 화면에서 날짜를 클릭했을 때 보여줄 그룹 달력 날짜 상세 — 이 컴포넌트
+  // 자체의 로컬 상태로 둬서(RoomDetailSection의 section 전환을 타지 않음), 뒤로가기로
+  // 닫아도 step/selectedCandidate 등 추천 화면 상태가 그대로 남아 원래 보던 추천
+  // 상세로 돌아온다. isCancelOpen과 동일한 패턴.
+  const [dateDetailDate, setDateDetailDate] = useState<Date | null>(null);
+  const { roomScheduleCalendarData, refetchRoomScheduleCalendar } =
+    useGetRoomScheduleCalendar(roomId);
   const { postRecommendationsMutation } = usePostRecommendations();
   const { getRecommendationDetailMutation } = useGetRecommendationDetail();
   const { postConfirmTripMutation } = usePostConfirmTrip();
   const { postUnconfirmTripMutation, isPostUnconfirmTripPending } =
     usePostUnconfirmTrip();
+
+  const getDayStatus = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
+      : 'unavailable';
+
+  const getDayParticipants = (date: Date) =>
+    roomScheduleCalendarData
+      ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
+      : { needsAttention: [], available: [] };
+
+  const getMyDayScheduleValue = (date: Date) =>
+    roomScheduleCalendarData
+      ? getMyDaySchedule(roomScheduleCalendarData, date)
+      : DEFAULT_DAY_SCHEDULE_VALUE;
+
+  if (dateDetailDate) {
+    return (
+      <DayDetailView
+        selectedDate={dateDetailDate}
+        onSelectDate={setDateDetailDate}
+        onBack={() => setDateDetailDate(null)}
+        minDate={parseISO(tripStartDate)}
+        maxDate={parseISO(tripEndDate)}
+        getDayStatus={getDayStatus}
+        getDayParticipants={getDayParticipants}
+        getMyDaySchedule={getMyDayScheduleValue}
+        onScheduleUpdated={refetchRoomScheduleCalendar}
+      />
+    );
+  }
 
   const handleUnconfirm = (
     reason: Parameters<typeof postUnconfirmTripMutation>[0]['reason'],
@@ -232,6 +286,7 @@ function RecommendationSection({
             candidate={selectedCandidate}
             onConfirm={handleConfirm}
             onFeedbackError={setErrorMessage}
+            onSelectDate={setDateDetailDate}
           />
         )}
         {step === 4 && confirmedCandidate && (

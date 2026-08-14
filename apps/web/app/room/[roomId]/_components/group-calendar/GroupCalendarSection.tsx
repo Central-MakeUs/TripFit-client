@@ -123,6 +123,7 @@ function GroupCalendarSection({
     try {
       await saveRegularSchedule(value);
       await refreshScheduleStatus();
+      refetchRoomScheduleCalendar();
       return true;
     } catch (error) {
       setScheduleErrorMessage(
