@@ -32,9 +32,11 @@ import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequi
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
+import { useDeleteTripsJoinHold } from '../_common/_hooks/useDeleteTripsJoinHold';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { usePostTripsJoin } from '../_common/_hooks/usePostTripsJoin';
+import { usePostTripsJoinHold } from '../_common/_hooks/usePostTripsJoinHold';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
 import RecommendationSection from './recommendation/RecommendationSection';
 
@@ -59,6 +61,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     string | null
   >(null);
   const [joinErrorMessage, setJoinErrorMessage] = useState<string | null>(null);
+  const [leaveErrorMessage, setLeaveErrorMessage] = useState<string | null>(
+    null,
+  );
   // 초대 코드가 있으면 아직 이 방 멤버가 아닐 수 있으니, 실패가 뻔한 조회부터
   // 하지 않고 join을 먼저 시도한 뒤에야 방/멤버 조회를 켠다. 초대 코드가
   // 없는 일반 진입(이미 멤버)은 처음부터 그대로 조회한다.
@@ -78,6 +83,8 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   } = useGetRoomMembers(roomId, { enabled: enableRoomQueries });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
   const { postTripsJoinMutation } = usePostTripsJoin();
+  const { postTripsJoinHoldMutation } = usePostTripsJoinHold();
+  const { deleteTripsJoinHoldMutation } = useDeleteTripsJoinHold();
 
   const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
   const isAllFree = useAuthStore((state) => state.isAllFree);
@@ -135,6 +142,13 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 이미 일정을 입력해둔 사용자가 초대 링크로 새 방에 들어온 경우 — 일정
   // 입력 마법사 없이 초대 코드로 바로 참여 처리만 하면 된다.
   const needsJoinOnly = needsJoin && !needsScheduleEntry;
+
+  // AlertModal은 primaryText 클릭뿐 아니라 Escape/배경 클릭으로도 onOpenChange(false)를
+  // 호출한다 — 두 경로 모두 같은 동작(에러 닫고 홈으로 이동)을 하도록 하나로 묶는다.
+  const handleDismissJoinError = () => {
+    setJoinErrorMessage(null);
+    router.push('/');
+  };
 
   const handleJoinTrip = async (): Promise<boolean> => {
     if (!inviteCode) return true;
@@ -231,7 +245,20 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 기존에 저장된 일정이 있으면(hasSavedSchedule) 그 내용을 확인/수정하는
   // 화면(regularScheduleDetail)으로, 없으면 처음 묻는 화면(hasRegularSchedule)으로
   // 들어간다 — ConfirmScheduleModal/PreScheduleRequiredModal 각각의 onConfirm.
-  const handleStartBasicInfo = () => {
+  // 초대 링크로 들어와 아직 멤버가 아닌 경우(needsJoin)엔, 일정 입력에 걸리는
+  // 시간 동안 다른 사람에게 마지막 자리를 뺏기지 않도록 화면을 열기 직전에
+  // 정원을 10분간 hold한다. 정원이 가득 찼으면(409) 화면을 열지 않고 안내한다.
+  const handleStartBasicInfo = async () => {
+    if (needsJoin && inviteCode) {
+      try {
+        await postTripsJoinHoldMutation({ inviteCode });
+      } catch (error) {
+        setJoinErrorMessage(
+          error instanceof Error ? error.message : '참여하지 못했어요.',
+        );
+        return;
+      }
+    }
     setBasicInfoInitialScreen(
       hasSavedSchedule ? 'regularScheduleDetail' : 'hasRegularSchedule',
     );
@@ -271,15 +298,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         </div>
         <AlertModal
           open={joinErrorMessage !== null}
-          onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+          onOpenChange={(open) => !open && handleDismissJoinError()}
           variant="danger"
           title="참여하지 못했어요"
           description={joinErrorMessage ?? ''}
           primaryText="확인"
-          onPrimaryClick={() => {
-            setJoinErrorMessage(null);
-            router.push('/');
-          }}
+          onPrimaryClick={handleDismissJoinError}
         />
       </div>
     );
@@ -337,6 +361,27 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             }
             individualScheduleMinDate={tripMinDate}
             individualScheduleMaxDate={tripMaxDate}
+            // 플로우 첫 화면(정기 일정 입력 화면)에서 뒤로가기로 위저드 자체를
+            // 벗어날 때만 호출됨 — 위저드 내부 이동(개별 일정 → 정기 일정 등)은
+            // BasicInfo가 자체 screenHistory로 처리하고 onExit을 타지 않는다.
+            // hold 해제가 끝나기 전에 화면을 나가면 다른 사용자가 자리를 못 받는
+            // 채로 TTL까지 남으므로, 해제가 완료된 뒤에만 이전 화면으로 이동한다.
+            // 실패하면 현재 화면에 남겨 재시도할 수 있게 한다.
+            onExit={async () => {
+              if (needsJoin) {
+                try {
+                  await deleteTripsJoinHoldMutation(roomId);
+                } catch (error) {
+                  setLeaveErrorMessage(
+                    error instanceof Error
+                      ? error.message
+                      : '참여를 취소하지 못했어요.',
+                  );
+                  return;
+                }
+              }
+              router.back();
+            }}
             onComplete={() => {
               setIsBasicInfoOpen(false);
               setEnableRoomQueries(true);
@@ -359,6 +404,15 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             description={scheduleErrorMessage ?? ''}
             primaryText="확인"
             onPrimaryClick={() => setScheduleErrorMessage(null)}
+          />
+          <AlertModal
+            open={leaveErrorMessage !== null}
+            onOpenChange={(open) => !open && setLeaveErrorMessage(null)}
+            variant="danger"
+            title="나가지 못했어요"
+            description={leaveErrorMessage ?? ''}
+            primaryText="확인"
+            onPrimaryClick={() => setLeaveErrorMessage(null)}
           />
           <AlertModal
             open={joinErrorMessage !== null}
@@ -393,6 +447,15 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             onConfirm={handleStartBasicInfo}
           />
         )}
+        <AlertModal
+          open={joinErrorMessage !== null}
+          onOpenChange={(open) => !open && handleDismissJoinError()}
+          variant="danger"
+          title="참여하지 못했어요"
+          description={joinErrorMessage ?? ''}
+          primaryText="확인"
+          onPrimaryClick={handleDismissJoinError}
+        />
       </div>
     );
   }
@@ -434,6 +497,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           roomName={room.title}
           inviteCode={room.inviteCode}
           myName={myName}
+          participants={participants}
+          tripStartDate={room.startDate}
+          tripEndDate={room.endDate}
           isHost={isHost}
           onExit={() => setSection('calendar')}
           respondedCount={respondedCount}

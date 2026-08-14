@@ -1,3 +1,5 @@
+import { parseISO } from 'date-fns';
+
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
 import CtaButtonGroup from '@/components/cta-button-group';
@@ -15,6 +17,8 @@ type RecommendationDetailStepProps = {
   candidate: RecommendationCandidateDetailT;
   onConfirm: (candidate: RecommendationCandidateDetailT) => void;
   onFeedbackError: (message: string) => void;
+  /** 날짜 범위 클릭 시 시작일 기준으로 그룹 달력의 날짜 상세 화면으로 이동시키는 데 사용 */
+  onSelectDate: (date: Date) => void;
 };
 
 function RecommendationDetailStep({
@@ -23,16 +27,21 @@ function RecommendationDetailStep({
   candidate,
   onConfirm,
   onFeedbackError,
+  onSelectDate,
 }: RecommendationDetailStepProps) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="mt-4">
         <p className="text-caption-01 text-grey-400">{roomName}</p>
-        <p className="text-body-01 text-grey-800">
+        <button
+          type="button"
+          onClick={() => onSelectDate(parseISO(candidate.startDate))}
+          className="cursor-pointer text-body-01 text-grey-800"
+        >
           {formatDateLabel(candidate.startDate)}
           <span className="text-grey-400"> - </span>
           {formatDateLabel(candidate.endDate)}
-        </p>
+        </button>
       </div>
       <div className="mt-4 flex flex-col gap-2 rounded-[20px] bg-blue-50 p-4">
         <div className="flex items-end justify-between">

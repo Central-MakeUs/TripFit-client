@@ -70,6 +70,11 @@ export async function request<T>(
 // 이 요청이 다시 401을 받아도 재귀적으로 재발급을 또 시도하지 않는다.
 let refreshPromise: Promise<string> | null = null;
 
+type RefreshAccessTokenResponseT = {
+  accessToken: string;
+  refreshToken: string;
+};
+
 const refreshAccessToken = (): Promise<string> => {
   const { refreshToken } = useAuthStore.getState();
   // refreshToken이 없으면 재발급이 애초에 불가능한, 확실한 인증 실패 상황이다.
@@ -80,12 +85,18 @@ const refreshAccessToken = (): Promise<string> => {
   }
 
   if (!refreshPromise) {
-    refreshPromise = request<{ accessToken: string }>('/api/v1/auth/refresh', {
-      method: 'POST',
-      data: { refreshToken },
-    })
-      .then(({ accessToken }) => {
+    refreshPromise = request<RefreshAccessTokenResponseT>(
+      '/api/v1/auth/refresh',
+      {
+        method: 'POST',
+        data: { refreshToken },
+      },
+    )
+      .then(({ accessToken, refreshToken: nextRefreshToken }) => {
+        // 서버가 호출마다 refresh token을 회전시키고 기존 값은 그 즉시 폐기하므로,
+        // 반드시 이 응답의 새 값으로 교체해야 다음 재발급이 실패하지 않는다.
         useAuthStore.getState().setAccessToken(accessToken);
+        useAuthStore.getState().setRefreshToken(nextRefreshToken);
         return accessToken;
       })
       .finally(() => {
@@ -123,7 +134,10 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // refresh 자체가 인증 실패(401/403)로 거부된 경우에만 로그아웃 처리한다 —
         // 네트워크 오류/타임아웃 등으로 재발급에 실패한 경우까지 로그아웃시키면
-        // 일시적인 연결 문제로도 세션이 강제로 끊기게 된다.
+        // 일시적인 연결 문제로도 세션이 강제로 끊기게 된다. 이미 폐기된(회전된)
+        // refresh token 재사용 시 서버가 내려주는 AUTH_REFRESH_REUSE(401, 탈취
+        // 의심 시나리오)도 이 401 분기로 자연스럽게 포함되어 전체 로그인 체인이
+        // 폐기된다.
         if (
           refreshError instanceof ApiError &&
           (refreshError.status === 401 || refreshError.status === 403)
