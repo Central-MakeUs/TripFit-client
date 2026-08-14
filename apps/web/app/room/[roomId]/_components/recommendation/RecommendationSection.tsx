@@ -26,6 +26,7 @@ type RecommendationSectionProps = {
   myName: string;
   isHost: boolean;
   onExit: () => void;
+  onSelectDate: (date: Date) => void;
   respondedCount: number;
   onRequestResponse: () => void;
   isConfirmed: boolean;
@@ -44,6 +45,7 @@ function RecommendationSection({
   myName,
   isHost,
   onExit,
+  onSelectDate,
   respondedCount,
   onRequestResponse,
   isConfirmed,
@@ -232,6 +234,7 @@ function RecommendationSection({
             candidate={selectedCandidate}
             onConfirm={handleConfirm}
             onFeedbackError={setErrorMessage}
+            onSelectDate={onSelectDate}
           />
         )}
         {step === 4 && confirmedCandidate && (

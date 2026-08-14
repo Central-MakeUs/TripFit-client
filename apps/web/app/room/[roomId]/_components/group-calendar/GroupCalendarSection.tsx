@@ -64,6 +64,10 @@ type GroupCalendarSectionProps = {
   isHost: boolean;
   isConfirmed: boolean;
   onShowRecommendation: () => void;
+  /** 추천 근거 화면 등 외부에서 특정 날짜의 상세 화면으로 곧장 진입시키고 싶을 때 사용 —
+   * 마운트 시 selectedDate 초기값으로만 쓰이고, 이후 사용자의 캘린더 조작은 내부
+   * 상태로 독립적으로 관리된다. */
+  initialSelectedDate?: Date | null;
 };
 
 function GroupCalendarSection({
@@ -73,12 +77,15 @@ function GroupCalendarSection({
   isHost,
   isConfirmed,
   onShowRecommendation,
+  initialSelectedDate,
 }: GroupCalendarSectionProps) {
   const router = useRouter();
   const minDate = parseISO(room.startDate);
   const maxDate = parseISO(room.endDate);
   const months = eachMonthOfInterval({ start: minDate, end: maxDate });
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    initialSelectedDate ?? null,
+  );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filter, setFilter] = useState<CalendarFilterT>('all');
   const [isRequestResponseOpen, setIsRequestResponseOpen] = useState(false);
