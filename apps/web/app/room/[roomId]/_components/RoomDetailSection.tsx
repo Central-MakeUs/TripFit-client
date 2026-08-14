@@ -143,6 +143,13 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   // 입력 마법사 없이 초대 코드로 바로 참여 처리만 하면 된다.
   const needsJoinOnly = needsJoin && !needsScheduleEntry;
 
+  // AlertModal은 primaryText 클릭뿐 아니라 Escape/배경 클릭으로도 onOpenChange(false)를
+  // 호출한다 — 두 경로 모두 같은 동작(에러 닫고 홈으로 이동)을 하도록 하나로 묶는다.
+  const handleDismissJoinError = () => {
+    setJoinErrorMessage(null);
+    router.push('/');
+  };
+
   const handleJoinTrip = async (): Promise<boolean> => {
     if (!inviteCode) return true;
     try {
@@ -291,15 +298,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         </div>
         <AlertModal
           open={joinErrorMessage !== null}
-          onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+          onOpenChange={(open) => !open && handleDismissJoinError()}
           variant="danger"
           title="참여하지 못했어요"
           description={joinErrorMessage ?? ''}
           primaryText="확인"
-          onPrimaryClick={() => {
-            setJoinErrorMessage(null);
-            router.push('/');
-          }}
+          onPrimaryClick={handleDismissJoinError}
         />
       </div>
     );
@@ -445,15 +449,12 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         )}
         <AlertModal
           open={joinErrorMessage !== null}
-          onOpenChange={(open) => !open && setJoinErrorMessage(null)}
+          onOpenChange={(open) => !open && handleDismissJoinError()}
           variant="danger"
           title="참여하지 못했어요"
           description={joinErrorMessage ?? ''}
           primaryText="확인"
-          onPrimaryClick={() => {
-            setJoinErrorMessage(null);
-            router.push('/');
-          }}
+          onPrimaryClick={handleDismissJoinError}
         />
       </div>
     );
