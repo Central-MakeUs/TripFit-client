@@ -354,7 +354,7 @@ function GroupCalendarSection({
         title={
           <div className="flex flex-col">
             <span className="text-body-03 text-black">{room.title}</span>
-            <span className="text-caption-05 text-grey-400">
+            <span className="text-caption-04 text-grey-400">
               {format(minDate, 'yy.MM.dd')} - {format(maxDate, 'yy.MM.dd')}
             </span>
           </div>

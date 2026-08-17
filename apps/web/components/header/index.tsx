@@ -128,13 +128,13 @@ function Header(props: HeaderProps) {
       */}
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-20 mx-auto flex h-11 w-full items-center sm:max-w-90',
+          'fixed inset-x-0 top-0 z-20 mx-auto flex h-12 w-full items-center pb-1 sm:max-w-90',
           backgroundClass,
         )}
       >
         {content}
       </header>
-      <div aria-hidden className="h-11 w-full shrink-0" />
+      <div aria-hidden className="h-12 w-full shrink-0" />
     </>
   );
 }
