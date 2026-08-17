@@ -350,6 +350,7 @@ function GroupCalendarSection({
       <Header
         variant="page"
         titleAlign="left"
+        size="lg"
         onBack={() => router.push('/')}
         title={
           <div className="flex flex-col">

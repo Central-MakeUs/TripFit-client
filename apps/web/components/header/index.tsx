@@ -31,6 +31,9 @@ type HeaderProps =
       onBack?: () => void;
       rightSlot?: ReactNode;
       background?: keyof typeof HEADER_BACKGROUND_CLASS;
+      /** 'lg'면 높이 48px(하단 패딩 4px) — 여행방 상세처럼 타이틀 아래 날짜 등
+       * 보조 텍스트가 함께 있는 화면 전용. 미지정 시 기본 44px */
+      size?: 'default' | 'lg';
     };
 
 function Header(props: HeaderProps) {
@@ -41,6 +44,7 @@ function Header(props: HeaderProps) {
     props.variant === 'page'
       ? HEADER_BACKGROUND_CLASS[props.background ?? 'white']
       : HEADER_BACKGROUND_CLASS.white;
+  const isLarge = props.variant === 'page' && props.size === 'lg';
 
   if (props.variant === 'home') {
     content = (
@@ -128,13 +132,17 @@ function Header(props: HeaderProps) {
       */}
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-20 mx-auto flex h-12 w-full items-center pb-1 sm:max-w-90',
+          'fixed inset-x-0 top-0 z-20 mx-auto flex w-full items-center sm:max-w-90',
+          isLarge ? 'h-12 pb-1' : 'h-11',
           backgroundClass,
         )}
       >
         {content}
       </header>
-      <div aria-hidden className="h-12 w-full shrink-0" />
+      <div
+        aria-hidden
+        className={cn('w-full shrink-0', isLarge ? 'h-12' : 'h-11')}
+      />
     </>
   );
 }
