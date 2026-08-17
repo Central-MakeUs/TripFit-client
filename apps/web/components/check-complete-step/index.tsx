@@ -1,43 +1,12 @@
 import { ReactNode } from 'react';
 
 import CloseIcon from '@/assets/icons/close.svg';
+import CheckCircleMotion from '@/components/check-circle-motion';
+import Confetti from '@/components/confetti';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import ProgressBar from '@/components/progress-bar';
-import { cn } from '@/utils/cn';
-
-type CheckCircleMotionProps = {
-  className?: string;
-};
-
-function CheckCircleMotion({ className }: CheckCircleMotionProps) {
-  return (
-    <svg
-      viewBox="0 0 72 72"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={cn('shrink-0', className)}
-    >
-      <circle
-        cx="36"
-        cy="36"
-        r="36"
-        fill="#0095FF"
-        className="transform-fill origin-center animate-check-circle-pop"
-      />
-      <path
-        d="M19 35.5L28.5885 45.9602C29.3579 46.7996 30.6719 46.8281 31.477 46.023L52.5 25"
-        pathLength="1"
-        stroke="#CCEAFF"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeDasharray="1 1"
-        className="animate-check-circle-draw"
-      />
-    </svg>
-  );
-}
 
 type CheckCompleteStepProps = {
   title?: string;
@@ -48,6 +17,9 @@ type CheckCompleteStepProps = {
   /** 지정하면 헤더 오른쪽에 전체 닫기(X) 버튼을 보여줌 — 자유롭게 나갈 수 있는
    * 임의 편집 플로우에서만 쓰고, 반드시 완료해야 하는 필수 입력 플로우에는 넘기지 않는다 */
   onClose?: () => void;
+  /** true면 체크마크 주변에 컨페티 연출을 함께 보여줌 — 지정된 3개 완료 화면
+   * (여행방 생성 완료, 추천 결과 확정, 회원가입 기본정보 완료)에서만 켠다 */
+  showConfetti?: boolean;
   heading: ReactNode;
   description?: ReactNode;
   primaryText?: string;
@@ -62,6 +34,7 @@ function CheckCompleteStep({
   showHeader = false,
   onBack,
   onClose,
+  showConfetti = false,
   heading,
   description,
   primaryText = '시작하기',
@@ -93,9 +66,10 @@ function CheckCompleteStep({
           </div>
         </>
       )}
-      <div className="flex w-full flex-1 flex-col items-center justify-center gap-7 px-5">
-        <CheckCircleMotion className="h-18 w-18" />
-        <div className="flex flex-col items-center gap-0.5 text-center">
+      <div className="relative flex w-full flex-1 flex-col items-center justify-center gap-7 px-5">
+        {showConfetti && <Confetti />}
+        <CheckCircleMotion className="relative z-10 h-18 w-18" />
+        <div className="relative z-10 flex flex-col items-center gap-0.5 text-center">
           <span className="text-headline-01 text-black">{heading}</span>
           {description && (
             <span className="text-body-01 text-grey-500">{description}</span>

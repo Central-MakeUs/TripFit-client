@@ -291,6 +291,7 @@ function SignupFlow() {
             )
           }
           endsAtIncludeHalfDayHoliday
+          completeShowConfetti
           confirmDirectInputOnNoRegularSchedule
           onExit={() => setStep('profile')}
           onRegularScheduleNext={handleSaveRegularSchedule}

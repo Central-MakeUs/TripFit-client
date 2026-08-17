@@ -82,6 +82,11 @@ function RecommendationSection({
     useState<RecommendationCandidateDetailT | null>(null);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [justUnconfirmed, setJustUnconfirmed] = useState(false);
+  // 확정 성공 시 onConfirmed()가 부모의 room 재조회를 트리거해 isConfirmed prop이
+  // true로 바뀌는데, 그 시점이 되면 아래 "isConfirmed && !justUnconfirmed" 가드가
+  // step===4(컨페티 있는 방금 확정 화면)보다 먼저 걸려서 컨페티 없는 화면으로
+  // 바로 덮어써버린다 — justUnconfirmed와 대칭으로 이 상태를 막아준다.
+  const [justConfirmed, setJustConfirmed] = useState(false);
   // 추천 근거 화면에서 날짜를 클릭했을 때 보여줄 그룹 달력 날짜 상세 — 이 컴포넌트
   // 자체의 로컬 상태로 둬서(RoomDetailSection의 section 전환을 타지 않음), 뒤로가기로
   // 닫아도 step/selectedCandidate 등 추천 화면 상태가 그대로 남아 원래 보던 추천
@@ -136,6 +141,7 @@ function RecommendationSection({
         onSuccess: () => {
           setIsCancelOpen(false);
           setJustUnconfirmed(true);
+          setJustConfirmed(false);
           setStep(1);
           setType(null);
           setCandidates([]);
@@ -169,7 +175,7 @@ function RecommendationSection({
     );
   }
 
-  if (isConfirmed && !justUnconfirmed) {
+  if (isConfirmed && !justUnconfirmed && !justConfirmed) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title="추천 일정" onBack={onExit} />
@@ -231,6 +237,7 @@ function RecommendationSection({
               onSuccess: () => {
                 onConfirmed?.();
                 setJustUnconfirmed(false);
+                setJustConfirmed(true);
                 setConfirmedCandidate(enrichedCandidate);
                 setStep(4);
               },
@@ -303,6 +310,7 @@ function RecommendationSection({
             leaveCount={confirmedCandidate.vacationMemberCount ?? 0}
             uncertainCount={confirmedCandidate.uncertainCount}
             onCancel={() => setIsCancelOpen(true)}
+            showConfetti
           />
         )}
       </div>

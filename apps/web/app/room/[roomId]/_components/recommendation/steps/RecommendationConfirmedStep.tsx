@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-import CheckCircleIcon from '@/assets/icons/check-circle.svg';
+import CheckCircleMotion from '@/components/check-circle-motion';
+import Confetti from '@/components/confetti';
 import CtaButtonGroup from '@/components/cta-button-group';
 
 import ShareSheet from '../../../../_common/_components/ShareSheet';
@@ -18,6 +19,9 @@ type RecommendationConfirmedStepProps = {
   uncertainCount: number;
   onCancel: () => void;
   readOnly?: boolean;
+  /** true면 체크마크 주변에 컨페티 연출을 함께 보여줌 — 방금 확정한 직후에만 켠다
+   * (이미 확정된 방을 다시 조회해서 보여줄 땐 켜지 않음) */
+  showConfetti?: boolean;
 };
 
 function RecommendationConfirmedStep({
@@ -31,18 +35,20 @@ function RecommendationConfirmedStep({
   uncertainCount,
   onCancel,
   readOnly = false,
+  showConfetti = false,
 }: RecommendationConfirmedStepProps) {
   const [isShareOpen, setIsShareOpen] = useState(false);
 
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <CheckCircleIcon className="h-18 w-18" />
+      <div className="relative flex flex-1 flex-col items-center justify-center">
+        {showConfetti && <Confetti />}
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <CheckCircleMotion className="h-18 w-18" />
           <span className="text-body-01">여행 일정이 확정됐어요!</span>
         </div>
 
-        <div className="mt-6 flex w-full flex-col items-center rounded-3xl bg-blue-20 px-3 py-4">
+        <div className="relative z-10 mt-6 flex w-full flex-col items-center rounded-3xl bg-blue-20 px-3 py-4">
           <span className="text-body-01">
             {formatDateLabel(startDate)}
             <span className="text-grey-400"> - </span>
