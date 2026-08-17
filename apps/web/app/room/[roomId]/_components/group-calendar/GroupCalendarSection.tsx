@@ -378,7 +378,7 @@ function GroupCalendarSection({
 
       <CalendarLegend onClickFilter={() => setIsFilterOpen(true)} />
 
-      <div className="flex w-full flex-1 flex-col px-5 py-4">
+      <div className="flex w-full flex-1 flex-col gap-8 px-5 py-4">
         {months.map((month) => (
           <Calendar
             key={month.toISOString()}
