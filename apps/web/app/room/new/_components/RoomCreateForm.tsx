@@ -265,6 +265,7 @@ function RoomCreateForm() {
     return (
       <>
         <BasicInfo
+          allowSkip={false}
           initialScreen={basicInfoInitialScreen}
           initialValue={
             basicInfoInitialScreen === 'regularScheduleDetail'
