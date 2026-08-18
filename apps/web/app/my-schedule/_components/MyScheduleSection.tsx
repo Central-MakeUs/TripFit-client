@@ -103,6 +103,11 @@ function MyScheduleSection() {
   // 기간부터 보여줄지 정하는 화면 전용 선택 상태다 — 이 화면 밖에서 쓰이지
   // 않으므로 전역 상태(zustand)로 뺄 이유 없이 로컬 state로 충분하다.
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  // 달력을 처음 열 때는 항상 오늘이 속한 달부터 보여줘야 하므로(무한 스크롤이
+  // 앞으로만 늘어나는 구조라 시작 기준을 미래로 옮기면 그 이전 달은 다시 볼 수
+  // 없다), selectedTripId(활성 칩·조회 범위 계산용)와는 별도로 "사용자가 실제로
+  // 칩을 눌렀을 때"만 채워지는 스크롤 대상을 따로 둔다.
+  const [focusTripId, setFocusTripId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { tripsData } = useGetTrips({ scope: 'ongoing' });
@@ -114,6 +119,7 @@ function MyScheduleSection() {
     tripsData?.find((trip) => trip.tripId === selectedTripId) ??
     tripsData?.[0] ??
     null;
+  const focusTrip = tripsData?.find((trip) => trip.tripId === focusTripId);
 
   const {
     regularSchedulesData,
@@ -198,6 +204,7 @@ function MyScheduleSection() {
     const success = await loadScheduleCalendarForTrip(trip);
     if (success) {
       setSelectedTripId(tripId);
+      setFocusTripId(tripId);
     }
   };
 
@@ -219,6 +226,9 @@ function MyScheduleSection() {
     setIndividualScheduleBackdrop({});
     const defaultTrip = tripsData?.[0] ?? null;
     setSelectedTripId(defaultTrip?.tripId ?? null);
+    // 화면을 나갔다 다시 열어도 이전 세션에서 눌렀던 칩으로 스크롤이 다시
+    // 튀지 않도록, 매번 열 때는 스크롤 대상을 비워 오늘이 속한 달부터 시작한다.
+    setFocusTripId(null);
     // 기준값 조회에 실패하면 잘못된(전부 가능 처리된) 기준으로 편집하게 되므로,
     // 조회가 끝나 성공했을 때만 입력 화면으로 들어간다.
     const success = await loadScheduleCalendarForTrip(defaultTrip);
@@ -245,11 +255,13 @@ function MyScheduleSection() {
     setIsIndividualScheduleComplete(true);
   };
 
-  // 마이페이지의 개인 일정은 특정 여행방에 종속되지 않으므로, 선택된 여행의
-  // 시작월과 무관하게 항상 오늘이 속한 달부터 보여준다 — 여행 시작월로 미리
-  // 스크롤을 넘겨버리면(무한 스크롤이 뒤로는 못 가는 구조라) 그 이전 달은 아예
-  // 확인할 수 없게 된다. 노출 상한만 "오늘+2년"과 여행 종료일 중 더 늦은
-  // 날짜로 넓힌다.
+  // 마이페이지의 개인 일정은 특정 여행방에 종속되지 않으므로, 달력을 처음 열
+  // 때는 선택된 여행의 시작월과 무관하게 항상 오늘이 속한 달부터 보여준다(아래
+  // IndividualScheduleInput에 initialYear/initialMonth를 넘기지 않음). 대신
+  // 사용자가 여행 칩을 직접 선택하면(focusTrip) 그 여행 시작월로 스크롤만
+  // 이동시킨다(scrollToYear/scrollToMonth) — 달력 시작 기준 자체는 그대로라
+  // 오늘이 속한 달로도 계속 스크롤해서 돌아갈 수 있다. 노출 상한은 "오늘+2년"과
+  // 여행 종료일 중 더 늦은 날짜로 넓힌다.
   const calendarMaxDate = selectedTrip
     ? max([subDays(addYears(today, 2), 1), parseISO(selectedTrip.endRange)])
     : subDays(addYears(today, 2), 1);
@@ -311,6 +323,14 @@ function MyScheduleSection() {
           tripOptions={tripOptions}
           selectedTripId={selectedTrip?.tripId}
           onSelectTrip={handleSelectTrip}
+          scrollToYear={
+            focusTrip ? parseISO(focusTrip.startRange).getFullYear() : undefined
+          }
+          scrollToMonth={
+            focusTrip
+              ? parseISO(focusTrip.startRange).getMonth() + 1
+              : undefined
+          }
           maxDate={calendarMaxDate}
           value={individualSchedule}
           onChange={setIndividualSchedule}

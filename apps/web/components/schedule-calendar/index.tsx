@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   addDays,
   addYears,
@@ -18,7 +18,7 @@ import { DayScheduleValueT } from '@/types/schedule';
 import { DEFAULT_DAY_VALUE } from '@/utils/dayScheduleValue';
 
 import ScheduleMonthSection from './ScheduleMonthSection';
-import { getDateKey } from './scheduleCalendar.const';
+import { getDateKey, getMonthSectionId } from './scheduleCalendar.const';
 
 const isSameDayValue = (a: DayScheduleValueT, b: DayScheduleValueT) =>
   a.isUncertain === b.isUncertain &&
@@ -43,6 +43,13 @@ type ScheduleCalendarProps = {
   /** 지정하면 이 날짜 이후는 선택할 수 없게 비활성화됨 — 미지정 시 기존처럼
    * 오늘+2년까지 전체 기간 선택 가능 */
   maxDate?: Date;
+  /** 지정하면 year/month(달력이 시작하는 기준)는 그대로 둔 채, 이 연/월이
+   * 렌더링될 때까지 목록을 미리 확장해서 그 달로 스크롤 이동한다 — 값이
+   * 바뀔 때마다 다시 스크롤한다. 여행 칩 선택처럼 특정 달로 바로 이동하고
+   * 싶지만 그 이전 달(오늘이 속한 달 등)도 계속 스크롤로 볼 수 있어야 하는
+   * 경우에 사용 */
+  scrollToYear?: number;
+  scrollToMonth?: number;
 };
 
 function ScheduleCalendar({
@@ -53,6 +60,8 @@ function ScheduleCalendar({
   mergedStatus,
   minDate,
   maxDate,
+  scrollToYear,
+  scrollToMonth,
 }: ScheduleCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -77,7 +86,32 @@ function ScheduleCalendar({
     year,
     month,
     maxMonthCount,
+    focusYear: scrollToYear,
+    focusMonth: scrollToMonth,
   });
+
+  // scrollToYear/scrollToMonth가 가리키는 달이 실제로 목록에 렌더링된 뒤에만
+  // (useInfiniteMonths가 그 달까지 목록을 확장한 뒤) 스크롤한다 — 확장되기 전에
+  // 스크롤하면 아직 DOM에 없는 요소라 아무 일도 일어나지 않는다.
+  const isScrollTargetRendered =
+    scrollToYear !== undefined &&
+    scrollToMonth !== undefined &&
+    months.some(
+      (item) => item.year === scrollToYear && item.month === scrollToMonth,
+    );
+
+  useEffect(() => {
+    if (
+      !isScrollTargetRendered ||
+      scrollToYear === undefined ||
+      scrollToMonth === undefined
+    ) {
+      return;
+    }
+    document
+      .getElementById(getMonthSectionId(scrollToYear, scrollToMonth))
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [isScrollTargetRendered, scrollToYear, scrollToMonth]);
 
   const getBaselineValue = (dateKey: string): DayScheduleValueT =>
     mergedStatus?.[dateKey] ?? DEFAULT_DAY_VALUE;

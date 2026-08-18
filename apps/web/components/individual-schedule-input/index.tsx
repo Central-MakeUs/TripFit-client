@@ -42,6 +42,10 @@ type IndividualScheduleInputProps = {
   minDate?: Date;
   /** 지정하면 이 날짜 이후는 선택할 수 없게 비활성화됨 — ScheduleCalendar에 그대로 전달 */
   maxDate?: Date;
+  /** 지정하면 initialYear/initialMonth(달력 시작 기준)는 그대로 둔 채 이 연/월로
+   * 스크롤만 이동한다 — ScheduleCalendar에 그대로 전달 */
+  scrollToYear?: number;
+  scrollToMonth?: number;
   onNext: () => void;
 };
 
@@ -62,6 +66,8 @@ function IndividualScheduleInput({
   mergedStatus,
   minDate,
   maxDate,
+  scrollToYear,
+  scrollToMonth,
   onNext,
 }: IndividualScheduleInputProps) {
   const [today, setToday] = useState<Date | null>(null);
@@ -136,6 +142,8 @@ function IndividualScheduleInput({
             mergedStatus={mergedStatus}
             minDate={minDate}
             maxDate={maxDate}
+            scrollToYear={scrollToYear}
+            scrollToMonth={scrollToMonth}
           />
         )}
         <div aria-hidden className="h-14.5 w-full shrink-0" />
