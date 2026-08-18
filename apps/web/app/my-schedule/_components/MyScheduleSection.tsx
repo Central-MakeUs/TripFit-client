@@ -23,15 +23,13 @@ import { useGoogleCalendarConnect } from '@/hooks/useGoogleCalendarConnect';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
-import {
-  getIncludeHalfDayHolidayFromRegularSchedules,
-  getLeaveNoticeDaysFromRegularSchedules,
-  mapRegularScheduleItemToClient,
-} from '@/utils/mapRegularSchedule';
+import { mapRegularScheduleItemToClient } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
+import { mapVacationPolicyToClient } from '@/utils/mapVacationPolicy';
 import { consumeCalendarConnectResumeScreen } from '@/utils/oauthState';
 
 const MENU_ITEMS = [
@@ -124,8 +122,12 @@ function MyScheduleSection() {
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    saveRegularSchedule,
+    addRegularSchedule,
+    editRegularSchedule,
+    removeRegularSchedule,
   } = useSaveRegularSchedule();
+  const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
+    useSaveVacationPolicy();
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
@@ -208,9 +210,9 @@ function MyScheduleSection() {
     }
   };
 
-  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+  const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
-      await saveRegularSchedule(value);
+      await saveVacationPolicy(value);
       await refreshScheduleStatus();
       return true;
     } catch (error) {
@@ -219,6 +221,10 @@ function MyScheduleSection() {
       );
       return false;
     }
+  };
+
+  const handleRegularScheduleError = (message: string) => {
+    setErrorMessage(message);
   };
 
   const handleOpenIndividualSchedule = async () => {
@@ -352,7 +358,7 @@ function MyScheduleSection() {
   }
 
   if (isBasicInfoOpen) {
-    if (isRegularSchedulesLoading) {
+    if (isRegularSchedulesLoading || isVacationPolicyLoading) {
       return (
         <div className="flex w-full flex-1 items-center justify-center">
           <Spinner />
@@ -361,6 +367,9 @@ function MyScheduleSection() {
     }
 
     const items = regularSchedulesData ?? [];
+    const vacationPolicyValue = vacationPolicyData
+      ? mapVacationPolicyToClient(vacationPolicyData)
+      : null;
     return (
       <>
         <BasicInfo
@@ -371,14 +380,19 @@ function MyScheduleSection() {
             ...DEFAULT_BASIC_INFO_VALUE,
             hasRegularSchedule: items.length > 0,
             regularSchedules: items.map(mapRegularScheduleItemToClient),
-            annualLeaveCount: items[0]?.maxVacationDays ?? null,
-            leaveNoticeDays: getLeaveNoticeDaysFromRegularSchedules(items),
+            annualLeaveCount: vacationPolicyValue?.annualLeaveCount ?? null,
+            leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
             includeHalfDayHoliday:
-              getIncludeHalfDayHolidayFromRegularSchedules(items),
+              vacationPolicyValue?.includeHalfDayHoliday ??
+              DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
           }}
           endsAtIncludeHalfDayHoliday
           onExit={() => setIsBasicInfoOpen(false)}
-          onRegularScheduleNext={handleSaveRegularSchedule}
+          onVacationPolicyNext={handleSaveVacationPolicy}
+          onAddRegularSchedule={addRegularSchedule}
+          onEditRegularSchedule={editRegularSchedule}
+          onRemoveRegularSchedule={removeRegularSchedule}
+          onRegularScheduleError={handleRegularScheduleError}
           onComplete={() => setIsBasicInfoOpen(false)}
           completeTitle="기본 정보 관리"
           completeHeading="기본 정보 수정이 완료되었어요!"

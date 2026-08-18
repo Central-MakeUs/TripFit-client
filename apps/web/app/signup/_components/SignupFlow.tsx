@@ -15,6 +15,7 @@ import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { usePostAuthLogin } from '@/hooks/usePostAuthLogin';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { SocialProviderT } from '@/types/auth';
 import { IndividualScheduleValueT } from '@/types/schedule';
@@ -108,7 +109,11 @@ function SignupFlow() {
 
   const { postAuthLoginMutation } = usePostAuthLogin();
   const { patchOnboardingNameMutation } = usePatchOnboardingName();
-  const { saveRegularSchedule } = useSaveRegularSchedule({ enabled: false });
+  // 회원가입은 항상 새로 시작이라 기존 정기 일정을 프리페치할 필요가 없다
+  // (regularScheduleDetail로 곧장 진입하는 경로가 없음).
+  const { addRegularSchedule, editRegularSchedule, removeRegularSchedule } =
+    useSaveRegularSchedule({ enabled: false });
+  const { saveVacationPolicy } = useSaveVacationPolicy({ enabled: false });
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
@@ -127,9 +132,9 @@ function SignupFlow() {
     endDate: format(subDays(addYears(today, 2), 1), 'yyyy-MM-dd'),
   });
 
-  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+  const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
-      await saveRegularSchedule(value);
+      await saveVacationPolicy(value);
       await refreshScheduleStatus();
       return true;
     } catch (error) {
@@ -138,6 +143,10 @@ function SignupFlow() {
       );
       return false;
     }
+  };
+
+  const handleRegularScheduleError = (message: string) => {
+    setErrorMessage(message);
   };
 
   const handleConnectGoogleCalendar = async (returnPath: string) => {
@@ -293,7 +302,11 @@ function SignupFlow() {
           endsAtIncludeHalfDayHoliday
           confirmDirectInputOnNoRegularSchedule
           onExit={() => setStep('profile')}
-          onRegularScheduleNext={handleSaveRegularSchedule}
+          onVacationPolicyNext={handleSaveVacationPolicy}
+          onAddRegularSchedule={addRegularSchedule}
+          onEditRegularSchedule={editRegularSchedule}
+          onRemoveRegularSchedule={removeRegularSchedule}
+          onRegularScheduleError={handleRegularScheduleError}
           onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
           onBeforeComplete={handleSaveIndividualSchedule}
           onComplete={() => router.push(redirectTarget)}

@@ -19,15 +19,13 @@ import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
-import {
-  getIncludeHalfDayHolidayFromRegularSchedules,
-  getLeaveNoticeDaysFromRegularSchedules,
-  mapRegularScheduleItemToClient,
-} from '@/utils/mapRegularSchedule';
+import { mapRegularScheduleItemToClient } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
+import { mapVacationPolicyToClient } from '@/utils/mapVacationPolicy';
 
 import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal';
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
@@ -95,12 +93,17 @@ function RoomCreateForm() {
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    saveRegularSchedule,
+    refetchRegularSchedules,
+    addRegularSchedule,
+    editRegularSchedule,
+    removeRegularSchedule,
   } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
+  const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
+    useSaveVacationPolicy({ enabled: hasSavedSchedule });
 
-  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+  const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
-      await saveRegularSchedule(value);
+      await saveVacationPolicy(value);
       await refreshScheduleStatus();
       return true;
     } catch (error) {
@@ -109,6 +112,10 @@ function RoomCreateForm() {
       );
       return false;
     }
+  };
+
+  const handleRegularScheduleError = (message: string) => {
+    setScheduleErrorMessage(message);
   };
 
   const { refetchScheduleCalendar } = useGetScheduleCalendar({
@@ -238,8 +245,14 @@ function RoomCreateForm() {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
-  const handleGoToRoom = () => {
-    setScheduleModal(hasSavedSchedule ? 'confirmSchedule' : 'preSchedule');
+  const handleGoToRoom = async () => {
+    // hasSavedSchedule(hasPreSchedule||isAllFree) 대신 실제 정기 일정 개수로
+    // 판단한다 — 개별 일정만 있고 정기 일정은 0건인 사용자에게 빈 목록을 보여주며
+    // 재입력을 강제하는 버그를 막기 위함(RoomDetailSection과 동일한 이유).
+    const { data: items } = await refetchRegularSchedules();
+    setScheduleModal(
+      (items ?? []).length > 0 ? 'confirmSchedule' : 'preSchedule',
+    );
   };
 
   const handleStartBasicInfo = (initialScreen: BasicInfoScreen) => {
@@ -251,7 +264,7 @@ function RoomCreateForm() {
   if (isBasicInfoOpen) {
     if (
       basicInfoInitialScreen === 'regularScheduleDetail' &&
-      isRegularSchedulesLoading
+      (isRegularSchedulesLoading || isVacationPolicyLoading)
     ) {
       return (
         <div className="flex w-full flex-1 items-center justify-center">
@@ -261,6 +274,9 @@ function RoomCreateForm() {
     }
 
     const savedItems = regularSchedulesData ?? [];
+    const vacationPolicyValue = vacationPolicyData
+      ? mapVacationPolicyToClient(vacationPolicyData)
+      : null;
 
     return (
       <>
@@ -275,11 +291,12 @@ function RoomCreateForm() {
                   regularSchedules: savedItems.map(
                     mapRegularScheduleItemToClient,
                   ),
-                  annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
-                  leaveNoticeDays:
-                    getLeaveNoticeDaysFromRegularSchedules(savedItems),
+                  annualLeaveCount:
+                    vacationPolicyValue?.annualLeaveCount ?? null,
+                  leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
                   includeHalfDayHoliday:
-                    getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
+                    vacationPolicyValue?.includeHalfDayHoliday ??
+                    DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
                 }
               : undefined
           }
@@ -304,7 +321,11 @@ function RoomCreateForm() {
           individualScheduleMinDate={tripPeriod.startDate ?? undefined}
           individualScheduleMaxDate={tripPeriod.endDate ?? undefined}
           onExit={() => setIsBasicInfoOpen(false)}
-          onRegularScheduleNext={handleSaveRegularSchedule}
+          onVacationPolicyNext={handleSaveVacationPolicy}
+          onAddRegularSchedule={addRegularSchedule}
+          onEditRegularSchedule={editRegularSchedule}
+          onRemoveRegularSchedule={removeRegularSchedule}
+          onRegularScheduleError={handleRegularScheduleError}
           onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
           onBeforeComplete={handleSaveIndividualSchedule}
           onComplete={() => {}}

@@ -18,14 +18,12 @@ import { useGetTrips } from '@/hooks/useGetTrips';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
-import {
-  getIncludeHalfDayHolidayFromRegularSchedules,
-  getLeaveNoticeDaysFromRegularSchedules,
-  mapRegularScheduleItemToClient,
-} from '@/utils/mapRegularSchedule';
+import { mapRegularScheduleItemToClient } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
+import { mapVacationPolicyToClient } from '@/utils/mapVacationPolicy';
 
 import ConfirmScheduleModal from '../../_common/_components/ConfirmScheduleModal';
 import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequiredModal';
@@ -177,13 +175,18 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    saveRegularSchedule,
+    refetchRegularSchedules,
+    addRegularSchedule,
+    editRegularSchedule,
+    removeRegularSchedule,
   } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
+  const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
+    useSaveVacationPolicy({ enabled: hasSavedSchedule });
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
 
-  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+  const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
-      await saveRegularSchedule(value);
+      await saveVacationPolicy(value);
       await refreshScheduleStatus();
       return true;
     } catch (error) {
@@ -192,6 +195,10 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       );
       return false;
     }
+  };
+
+  const handleRegularScheduleError = (message: string) => {
+    setScheduleErrorMessage(message);
   };
 
   const today = new Date();
@@ -259,8 +266,14 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
         return;
       }
     }
+    // hasSavedSchedule(hasPreSchedule||isAllFree)은 "정기 또는 개별 일정 중
+    // 하나라도 있으면 true"라, 개별 일정만 있고 정기 일정은 0건인 사용자에게도
+    // regularScheduleDetail을 열어 빈 목록을 보여주는 버그가 있었다 — 실제 정기
+    // 일정 개수로 판단하도록 이 시점에 다시 조회해서 확정한다(백그라운드
+    // 프리페치가 이미 끝나 있으면 캐시를 그대로 반환해 사실상 즉시 resolve된다).
+    const { data: items } = await refetchRegularSchedules();
     setBasicInfoInitialScreen(
-      hasSavedSchedule ? 'regularScheduleDetail' : 'hasRegularSchedule',
+      (items ?? []).length > 0 ? 'regularScheduleDetail' : 'hasRegularSchedule',
     );
     setIsBasicInfoOpen(true);
   };
@@ -313,7 +326,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     if (isBasicInfoOpen) {
       if (
         basicInfoInitialScreen === 'regularScheduleDetail' &&
-        isRegularSchedulesLoading
+        (isRegularSchedulesLoading || isVacationPolicyLoading)
       ) {
         return (
           <div className="flex w-full flex-1 items-center justify-center">
@@ -323,6 +336,9 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       }
 
       const savedItems = regularSchedulesData ?? [];
+      const vacationPolicyValue = vacationPolicyData
+        ? mapVacationPolicyToClient(vacationPolicyData)
+        : null;
 
       return (
         <>
@@ -337,11 +353,13 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
                     regularSchedules: savedItems.map(
                       mapRegularScheduleItemToClient,
                     ),
-                    annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
+                    annualLeaveCount:
+                      vacationPolicyValue?.annualLeaveCount ?? null,
                     leaveNoticeDays:
-                      getLeaveNoticeDaysFromRegularSchedules(savedItems),
+                      vacationPolicyValue?.leaveNoticeDays ?? null,
                     includeHalfDayHoliday:
-                      getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
+                      vacationPolicyValue?.includeHalfDayHoliday ??
+                      DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
                   }
                 : undefined
             }
@@ -388,7 +406,11 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
               refetchRoom();
               refetchRoomMembers();
             }}
-            onRegularScheduleNext={handleSaveRegularSchedule}
+            onVacationPolicyNext={handleSaveVacationPolicy}
+            onAddRegularSchedule={addRegularSchedule}
+            onEditRegularSchedule={editRegularSchedule}
+            onRemoveRegularSchedule={removeRegularSchedule}
+            onRegularScheduleError={handleRegularScheduleError}
             onBeforeIndividualSchedule={handleBeforeIndividualSchedule}
             onBeforeComplete={handleSaveIndividualSchedule}
             completeTitle="일정 입력하기"

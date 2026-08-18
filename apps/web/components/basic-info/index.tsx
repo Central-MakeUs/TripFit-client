@@ -10,7 +10,7 @@ import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
 import IndividualScheduleInput from '@/components/individual-schedule-input';
 import ProgressBar from '@/components/progress-bar';
-import { IndividualScheduleValueT } from '@/types/schedule';
+import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
 
 import {
   BASIC_INFO_PROGRESS_STEPS,
@@ -30,10 +30,25 @@ type BasicInfoProps = {
   initialScreen?: BasicInfoScreen;
   /** 완료 화면 기본/보조 버튼 클릭 시 호출됨 — 저장은 이미 끝난 뒤라, 여기선 오버레이 닫기 등 화면 전환용 동작만 처리 */
   onComplete: (value: BasicInfoValue) => void;
-  /** 반차/공휴일 포함 여부 스텝(정기 일정 섹션의 마지막 스텝) "다음"에서, 다음 화면(개별 일정 또는 완료 화면)으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 정기 일정 저장에 사용. false를 반환하면 다음 화면으로 넘어가지 않고 현재 화면에 머무름 (반환값 없으면 true로 간주) */
-  onRegularScheduleNext?: (
+  /** 반차/공휴일 포함 여부 스텝(정기 일정 섹션의 마지막 스텝) "다음"에서, 다음 화면(개별 일정 또는 완료 화면)으로 넘어가기 전에 호출되고 완료될 때까지 대기함 — 연차·반차·공휴일 정책 저장에 사용(정기 일정 자체는 항목을 추가·수정·삭제하는 즉시 아래 onAddRegularSchedule 등으로 이미 저장되어 있다). false를 반환하면 다음 화면으로 넘어가지 않고 현재 화면에 머무름 (반환값 없으면 true로 간주) */
+  onVacationPolicyNext?: (
     value: BasicInfoValue,
   ) => boolean | void | Promise<boolean | void>;
+  /** 정기 일정 목록 화면에서 "추가하기"를 누른 그 즉시 호출됨 — 실제 저장에 성공하면
+   * 서버가 내려준(id가 붙은) 항목을 반환해야 화면 목록에 반영된다. regularScheduleDetail
+   * 화면으로 진입시키는 모든 곳에서 필수로 넘겨야 한다(캘린더 연동 전용처럼 그 화면
+   * 자체를 안 쓰는 곳만 생략 가능하도록 옵셔널로 둠) */
+  onAddRegularSchedule?: (
+    schedule: Omit<RegularScheduleT, 'id'>,
+  ) => Promise<RegularScheduleT>;
+  /** 정기 일정 항목을 수정한 그 즉시 호출됨 */
+  onEditRegularSchedule?: (
+    schedule: RegularScheduleT,
+  ) => Promise<RegularScheduleT>;
+  /** 정기 일정 항목을 삭제한 그 즉시 호출됨 */
+  onRemoveRegularSchedule?: (id: string) => Promise<void>;
+  /** 정기 일정 추가·수정·삭제 중 하나라도 실패하면 호출됨 — 부모가 공통 에러 안내(AlertModal)를 띄운다 */
+  onRegularScheduleError?: (message: string) => void;
   /** 개별 일정 화면 진입 직전(정기 일정 없음 확정 시 또는 반차/공휴일 스텝 다음)에 호출됨 — 반환값이 있으면 개별 일정 초기값을 그 값으로 교체함(예: 방금 저장된 정기 일정을 반영한 병합 캘린더로 갱신) */
   onBeforeIndividualSchedule?: () =>
     | Promise<IndividualScheduleValueT | void>
@@ -106,7 +121,24 @@ function BasicInfo({
   initialValue = DEFAULT_BASIC_INFO_VALUE,
   initialScreen = 'hasRegularSchedule',
   onComplete,
-  onRegularScheduleNext,
+  onVacationPolicyNext,
+  // regularScheduleDetail 화면을 실제로 띄우는 곳은 반드시 이 셋을 넘겨야 한다 —
+  // 넘기지 않은 채로 그 화면까지 도달하면(연동 전용처럼 원래 도달할 일이 없는
+  // 곳이 아니라면) 잘못 연결된 것이므로 조용히 무시하지 않고 바로 에러를 던진다.
+  onAddRegularSchedule = () => {
+    throw new Error('onAddRegularSchedule 없이 정기 일정 화면에 진입했습니다.');
+  },
+  onEditRegularSchedule = () => {
+    throw new Error(
+      'onEditRegularSchedule 없이 정기 일정 화면에 진입했습니다.',
+    );
+  },
+  onRemoveRegularSchedule = () => {
+    throw new Error(
+      'onRemoveRegularSchedule 없이 정기 일정 화면에 진입했습니다.',
+    );
+  },
+  onRegularScheduleError = () => {},
   onBeforeIndividualSchedule,
   onBeforeComplete,
   allowSkip = true,
@@ -181,13 +213,19 @@ function BasicInfo({
       hasRegularSchedule,
       regularSchedules: hasRegularSchedule ? prev.regularSchedules : [],
     }));
-    if (!hasRegularSchedule && confirmDirectInputOnNoRegularSchedule) {
+    if (hasRegularSchedule) {
+      navigateTo('regularScheduleDetail');
+      return;
+    }
+    // "정기 일정 없어요"를 고른 사용자에게는 연차 3문항을 묻지 않는다 — 연차 화면은
+    // 정기 일정을 실제로 입력·수정하는 경로에서만 태운다. confirmDirectInputOnNoRegularSchedule이
+    // 켜진 곳(회원가입)은 "직접 입력하시겠어요?" 확인 모달을 거치고, 그 외(방 입장 등
+    // 필수 플로우)는 건너뛰기 버튼 없이 바로 개별 일정 화면으로 넘어간다.
+    if (confirmDirectInputOnNoRegularSchedule) {
       setIsDirectInputConfirmOpen(true);
       return;
     }
-    navigateTo(
-      hasRegularSchedule ? 'regularScheduleDetail' : 'annualLeaveCount',
-    );
+    enterIndividualSchedule();
   };
 
   const handleConfirmDirectInput = () => {
@@ -223,7 +261,7 @@ function BasicInfo({
   };
 
   const handleIncludeHalfDayHolidayNext = async () => {
-    const canProceed = (await onRegularScheduleNext?.(value)) ?? true;
+    const canProceed = (await onVacationPolicyNext?.(value)) ?? true;
     if (!canProceed) return;
     if (endsAtIncludeHalfDayHoliday) {
       navigateTo('complete');
@@ -392,6 +430,10 @@ function BasicInfo({
             }
             onNext={handleRegularScheduleDetailNext}
             onSkip={allowSkip ? handleSkip : undefined}
+            onAddSchedule={onAddRegularSchedule}
+            onEditSchedule={onEditRegularSchedule}
+            onRemoveSchedule={onRemoveRegularSchedule}
+            onError={onRegularScheduleError}
           />
         )}
         {screen === 'annualLeaveCount' && (

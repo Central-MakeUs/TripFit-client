@@ -29,15 +29,13 @@ import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
 import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
+import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { ParticipantT } from '@/types/participant';
 import { RoomT } from '@/types/room';
 import { IndividualScheduleValueT } from '@/types/schedule';
-import {
-  getIncludeHalfDayHolidayFromRegularSchedules,
-  getLeaveNoticeDaysFromRegularSchedules,
-  mapRegularScheduleItemToClient,
-} from '@/utils/mapRegularSchedule';
+import { mapRegularScheduleItemToClient } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
+import { mapVacationPolicyToClient } from '@/utils/mapVacationPolicy';
 
 import ShareSheet from '../../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../../_common/_consts/shareMessages';
@@ -106,8 +104,12 @@ function GroupCalendarSection({
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    saveRegularSchedule,
+    addRegularSchedule,
+    editRegularSchedule,
+    removeRegularSchedule,
   } = useSaveRegularSchedule({ enabled: isRepeatScheduleOpen });
+  const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
+    useSaveVacationPolicy({ enabled: isRepeatScheduleOpen });
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
@@ -119,9 +121,13 @@ function GroupCalendarSection({
     endDate: format(maxDate, 'yyyy-MM-dd'),
   });
 
-  const handleSaveRegularSchedule = async (value: BasicInfoValue) => {
+  const handleRegularScheduleError = (message: string) => {
+    setScheduleErrorMessage(message);
+  };
+
+  const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
-      await saveRegularSchedule(value);
+      await saveVacationPolicy(value);
       await refreshScheduleStatus();
       refetchRoomScheduleCalendar();
       return true;
@@ -238,7 +244,7 @@ function GroupCalendarSection({
   }
 
   if (isRepeatScheduleOpen) {
-    if (isRegularSchedulesLoading) {
+    if (isRegularSchedulesLoading || isVacationPolicyLoading) {
       return (
         <div className="flex w-full flex-1 items-center justify-center">
           <Spinner />
@@ -247,6 +253,9 @@ function GroupCalendarSection({
     }
 
     const savedItems = regularSchedulesData ?? [];
+    const vacationPolicyValue = vacationPolicyData
+      ? mapVacationPolicyToClient(vacationPolicyData)
+      : null;
 
     return (
       <>
@@ -258,15 +267,20 @@ function GroupCalendarSection({
             ...DEFAULT_BASIC_INFO_VALUE,
             hasRegularSchedule: savedItems.length > 0,
             regularSchedules: savedItems.map(mapRegularScheduleItemToClient),
-            annualLeaveCount: savedItems[0]?.maxVacationDays ?? null,
-            leaveNoticeDays: getLeaveNoticeDaysFromRegularSchedules(savedItems),
+            annualLeaveCount: vacationPolicyValue?.annualLeaveCount ?? null,
+            leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
             includeHalfDayHoliday:
-              getIncludeHalfDayHolidayFromRegularSchedules(savedItems),
+              vacationPolicyValue?.includeHalfDayHoliday ??
+              DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
           }}
           endsAtIncludeHalfDayHoliday
           onExit={() => setIsRepeatScheduleOpen(false)}
           onClose={() => setIsRepeatScheduleOpen(false)}
-          onRegularScheduleNext={handleSaveRegularSchedule}
+          onVacationPolicyNext={handleSaveVacationPolicy}
+          onAddRegularSchedule={addRegularSchedule}
+          onEditRegularSchedule={editRegularSchedule}
+          onRemoveRegularSchedule={removeRegularSchedule}
+          onRegularScheduleError={handleRegularScheduleError}
           onComplete={() => setIsRepeatScheduleOpen(false)}
           completeTitle="반복 일정 수정"
           completeHeading="반복 일정 수정이 완료되었습니다!"
