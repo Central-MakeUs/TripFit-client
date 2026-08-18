@@ -51,6 +51,6 @@ export const LEAVE_NOTICE_DAYS_OPTIONS = [
 ];
 
 export const ANNUAL_LEAVE_COUNT_VALUES = Array.from(
-  { length: 31 },
+  { length: 11 },
   (_, index) => String(index),
 );
