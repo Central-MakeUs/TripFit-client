@@ -10,6 +10,7 @@ function CheckCircleMotion({ className }: CheckCircleMotionProps) {
       viewBox="0 0 72 72"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
       className={cn('shrink-0', className)}
     >
       <circle
