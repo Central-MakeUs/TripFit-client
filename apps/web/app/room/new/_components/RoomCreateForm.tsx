@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
@@ -93,6 +93,15 @@ function RoomCreateForm() {
   const hasCompletedPreSchedule = useAuthStore(
     (state) => state.hasCompletedPreSchedule,
   );
+  // hasCompletedPreSchedule는 persist된 store 값이라, 하이드레이션이 끝나기 전엔
+  // 이미 사전 일정을 입력한 사용자도 잠깐 기본값(false)으로 보인다 — 그 사이
+  // "여행방 바로가기"를 누르면 갱신 입력 대신 최초 입력 모달로 잘못 갈 수 있으므로
+  // (RoomDetailSection과 동일한 이유) 하이드레이션 완료 전엔 버튼을 비활성화한다.
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => {
+    setHasHydrated(useAuthStore.persist.hasHydrated());
+    return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
+  }, []);
 
   // hasCompletedPreSchedule로 게이팅하지 않는다 — 정기 일정만 저장해두고
   // 연차·휴일 정보는 아직 저장 안 한 사용자는 hasCompletedPreSchedule이
@@ -429,6 +438,7 @@ function RoomCreateForm() {
           <CtaButtonGroup
             primaryText="여행방 바로가기"
             primaryColor="secondary"
+            primaryDisabled={!hasHydrated}
             onPrimaryClick={handleGoToRoom}
             secondaryText="나중에 할게요"
             secondaryVariant="text-link"
