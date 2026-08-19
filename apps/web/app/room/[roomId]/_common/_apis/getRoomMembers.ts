@@ -16,7 +16,7 @@ type TripMemberItem = {
   userId: string;
   displayName: string;
   role: 'OWNER' | 'MEMBER';
-  status: RoomMemberStatusT;
+  memberStatus: RoomMemberStatusT;
 };
 
 type TripMembersResponse = {
@@ -37,6 +37,6 @@ export const getRoomMembers = async (
     color: PARTICIPANT_COLORS[index % PARTICIPANT_COLORS.length] ?? 'pink',
     isHost: member.role === 'OWNER',
     isMe: member.userId === userId,
-    status: member.status,
+    status: member.memberStatus,
   }));
 };
