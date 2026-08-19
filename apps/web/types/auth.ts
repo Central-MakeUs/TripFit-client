@@ -21,7 +21,8 @@ export type UserSummaryT = {
   profileImageUrl: string | null;
   provider: SocialProviderT;
   isGoogleCalendarConnected: boolean;
-  hasPreSchedule: boolean;
-  isAllFree: boolean;
+  // 사전 일정(정기+연차·휴일 정보) 입력을 한 번이라도 마쳤는지 — 정기/개별 일정
+  // 건수와 무관하게 연차·휴일 정보가 저장된 순간 true가 된다.
+  hasCompletedPreSchedule: boolean;
   notificationEnabled: boolean;
 };

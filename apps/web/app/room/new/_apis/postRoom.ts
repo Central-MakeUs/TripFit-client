@@ -27,7 +27,7 @@ type CreateTripRequest = {
   destination: string | null;
 };
 
-type CreateTripResponse = Omit<PostRoomResponseT, 'roomId'> & {
+type TripEntryResponse = Omit<PostRoomResponseT, 'roomId'> & {
   tripId: string;
 };
 
@@ -44,7 +44,7 @@ export const postRoom = async (
     destination: requestBody.destination,
   };
 
-  const tripResponse = await request<CreateTripResponse>('/api/v1/trips', {
+  const tripResponse = await request<TripEntryResponse>('/api/v1/trips', {
     method: 'POST',
     data: tripRequest,
   });

@@ -5,6 +5,7 @@ import { format, isWithinInterval } from 'date-fns';
 
 import CompletionIcon from '@/assets/icons/completion.svg';
 import WarningIcon from '@/assets/icons/warning.svg';
+import { ApiError } from '@/apis/request';
 import AlertModal from '@/components/alert-modal';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
@@ -44,7 +45,9 @@ function DayDetailView({
   onScheduleUpdated,
 }: DayDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isSubmitErrorOpen, setIsSubmitErrorOpen] = useState(false);
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
+    null,
+  );
   const [scheduleValue, setScheduleValue] = useState(() =>
     getMyDaySchedule(selectedDate),
   );
@@ -157,20 +160,25 @@ function DayDetailView({
                 setIsEditOpen(false);
                 onScheduleUpdated();
               },
-              onError: () => setIsSubmitErrorOpen(true),
+              onError: (error) =>
+                setSubmitErrorMessage(
+                  error instanceof ApiError && error.code === 'INVALID_INPUT'
+                    ? '저장 가능한 기간을 벗어났어요.'
+                    : '잠시 후 다시 시도해주세요',
+                ),
             },
           );
         }}
       />
 
       <AlertModal
-        open={isSubmitErrorOpen}
-        onOpenChange={setIsSubmitErrorOpen}
+        open={submitErrorMessage !== null}
+        onOpenChange={(open) => !open && setSubmitErrorMessage(null)}
         variant="danger"
         title="일정을 저장하지 못했어요"
-        description="잠시 후 다시 시도해주세요"
+        description={submitErrorMessage ?? ''}
         primaryText="확인"
-        onPrimaryClick={() => setIsSubmitErrorOpen(false)}
+        onPrimaryClick={() => setSubmitErrorMessage(null)}
       />
     </div>
   );

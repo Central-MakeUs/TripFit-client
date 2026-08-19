@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { getAuthMe } from '@/apis/auth';
 import { ApiError, postAuthRefresh } from '@/apis/request';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -22,6 +23,7 @@ export type SilentRefreshStatusT =
 export const useSilentRefresh = (hasHydrated: boolean) => {
   const userId = useAuthStore((state) => state.userId);
   const clear = useAuthStore((state) => state.clear);
+  const setScheduleStatus = useAuthStore((state) => state.setScheduleStatus);
   const [status, setStatus] = useState<SilentRefreshStatusT>('pending');
   const [retryCount, setRetryCount] = useState(0);
 
@@ -33,7 +35,22 @@ export const useSilentRefresh = (hasHydrated: boolean) => {
     }
     setStatus('pending');
     postAuthRefresh()
-      .then(() => setStatus('authenticated'))
+      .then(() => {
+        setStatus('authenticated');
+        // 기존에 로그인해둔 기기의 localStorage에는 hasCompletedPreSchedule 같은
+        // 필드가 아예 없을 수 있다(스키마 변경 전에 저장된 값) — 그 경우 초기값
+        // false로 하이드레이션된다. 매번 이 조회를 기다렸다가 authenticated로
+        // 넘어가면 정상 사용자도 앱 구동마다 왕복 한 번을 더 기다리게 되므로,
+        // authenticated 판정과는 완전히 분리해서 백그라운드로만 값을 맞춘다 —
+        // 한 번만 서버 값으로 보정되면 이후 세션은 partialize로 정상 저장된다.
+        getAuthMe()
+          .then((user) =>
+            setScheduleStatus({
+              hasCompletedPreSchedule: user.hasCompletedPreSchedule,
+            }),
+          )
+          .catch(() => {});
+      })
       .catch((error) => {
         if (
           error instanceof ApiError &&

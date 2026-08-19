@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
 
-import { BasicInfoValue } from '@/components/basic-info/basicInfo.const';
 import { useDeleteRegularSchedule } from '@/hooks/useDeleteRegularSchedule';
 import {
   REGULAR_SCHEDULES_QUERY_KEY,
@@ -8,51 +7,62 @@ import {
 } from '@/hooks/useGetRegularSchedules';
 import { usePatchRegularSchedule } from '@/hooks/usePatchRegularSchedule';
 import { usePostRegularSchedule } from '@/hooks/usePostRegularSchedule';
-import { mapClientScheduleToRequestBody } from '@/utils/mapRegularSchedule';
+import { RegularScheduleT } from '@/types/schedule';
+import {
+  mapClientScheduleToRequestBody,
+  mapRegularScheduleItemToClient,
+} from '@/utils/mapRegularSchedule';
 
+// 정기 일정은 항목을 추가·수정·삭제하는 그 순간 바로 API를 쏜다(백엔드가 그렇게
+// 설계됨) — 위저드를 나갈 때 한꺼번에 diff해서 저장하지 않는다. 실패하면 그대로
+// 던지므로, 호출부(RegularScheduleDetailStep을 감싸는 각 화면)가 잡아서
+// AlertModal로 안내한다.
 export const useSaveRegularSchedule = (options?: { enabled?: boolean }) => {
   const queryClient = useQueryClient();
-  const { regularSchedulesData, isRegularSchedulesLoading } =
-    useGetRegularSchedules(options);
+  const {
+    regularSchedulesData,
+    isRegularSchedulesLoading,
+    refetchRegularSchedules,
+  } = useGetRegularSchedules(options);
   const { postRegularScheduleMutation } = usePostRegularSchedule();
   const { patchRegularScheduleMutation } = usePatchRegularSchedule();
   const { deleteRegularScheduleMutation } = useDeleteRegularSchedule();
 
-  const saveRegularSchedule = async (value: BasicInfoValue) => {
-    const savedIds = new Set(
-      (regularSchedulesData ?? []).map((item) => item.id),
-    );
-    const currentIds = new Set(value.regularSchedules.map((s) => s.id));
-    const vacationValue = {
-      annualLeaveCount: value.annualLeaveCount,
-      leaveNoticeDays: value.leaveNoticeDays,
-      includeHalfDayHoliday: value.includeHalfDayHoliday,
-    };
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: REGULAR_SCHEDULES_QUERY_KEY });
 
-    await Promise.all([
-      ...value.regularSchedules.map((schedule) => {
-        const requestBody = mapClientScheduleToRequestBody(
-          schedule,
-          vacationValue,
-        );
-        return savedIds.has(schedule.id)
-          ? patchRegularScheduleMutation({ id: schedule.id, ...requestBody })
-          : postRegularScheduleMutation(requestBody);
-      }),
-      // UI에서 삭제한(더 이상 regularSchedules에 없는) 기존 서버 항목은 여기서 한 번에 반영한다 —
-      // "삭제하기" 클릭 즉시 지우면 위저드를 저장 없이 나갔을 때도 이미 지워져버린다.
-      ...[...savedIds]
-        .filter((id) => !currentIds.has(id))
-        .map((id) => deleteRegularScheduleMutation(id)),
-    ]);
-    await queryClient.invalidateQueries({
-      queryKey: REGULAR_SCHEDULES_QUERY_KEY,
+  const addRegularSchedule = async (
+    schedule: Omit<RegularScheduleT, 'id'>,
+  ): Promise<RegularScheduleT> => {
+    const savedItem = await postRegularScheduleMutation(
+      mapClientScheduleToRequestBody(schedule as RegularScheduleT),
+    );
+    await invalidate();
+    return mapRegularScheduleItemToClient(savedItem);
+  };
+
+  const editRegularSchedule = async (
+    schedule: RegularScheduleT,
+  ): Promise<RegularScheduleT> => {
+    const savedItem = await patchRegularScheduleMutation({
+      id: schedule.id,
+      ...mapClientScheduleToRequestBody(schedule),
     });
+    await invalidate();
+    return mapRegularScheduleItemToClient(savedItem);
+  };
+
+  const removeRegularSchedule = async (id: string): Promise<void> => {
+    await deleteRegularScheduleMutation(id);
+    await invalidate();
   };
 
   return {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    saveRegularSchedule,
+    refetchRegularSchedules,
+    addRegularSchedule,
+    editRegularSchedule,
+    removeRegularSchedule,
   };
 };
