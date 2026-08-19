@@ -62,3 +62,11 @@ export const deleteRegularSchedule = (id: string) =>
   request<void>(`/api/v1/users/schedule/regular/${id}`, {
     method: 'DELETE',
   });
+
+// "정기 일정이 있나요?" 질문에 "아니요"를 고르면 즉시 호출한다 — 본인 정기 일정을
+// 전부 지운다(0건이어도 204, 존재 여부를 먼저 확인할 필요 없음). 개별 일정·연차·
+// 휴일 정보는 그대로 남는다.
+export const deleteAllRegularSchedules = () =>
+  request<void>('/api/v1/users/schedule/regular', {
+    method: 'DELETE',
+  });
