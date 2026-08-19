@@ -23,8 +23,7 @@ export const usePostAuthLogin = () => {
         profileImageUrl: data.user.profileImageUrl,
         provider: data.user.provider,
         hasName: !!(data.user.firstName && data.user.lastName),
-        hasPreSchedule: data.user.hasPreSchedule,
-        isAllFree: data.user.isAllFree,
+        hasCompletedPreSchedule: data.user.hasCompletedPreSchedule,
         notificationEnabled: data.user.notificationEnabled,
         isGoogleCalendarConnected: data.user.isGoogleCalendarConnected,
       });

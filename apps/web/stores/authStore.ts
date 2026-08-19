@@ -19,8 +19,7 @@ export type AuthStateT = {
   profileImageUrl: string | null;
   provider: SocialProviderT | null;
   hasName: boolean;
-  hasPreSchedule: boolean;
-  isAllFree: boolean;
+  hasCompletedPreSchedule: boolean;
   notificationEnabled: boolean;
   isGoogleCalendarConnected: boolean;
   // 로그아웃 시 서버에 해제 요청을 보내야 해서 등록된 FCM 토큰 값을 들고 있는다.
@@ -35,8 +34,7 @@ export type AuthStateT = {
     profileImageUrl: string | null;
     provider: SocialProviderT;
     hasName: boolean;
-    hasPreSchedule: boolean;
-    isAllFree: boolean;
+    hasCompletedPreSchedule: boolean;
     notificationEnabled: boolean;
     isGoogleCalendarConnected: boolean;
   }) => void;
@@ -53,10 +51,7 @@ export type AuthStateT = {
     notificationEnabled?: boolean;
   }) => void;
   setPushDeviceToken: (pushDeviceToken: string | null) => void;
-  setScheduleStatus: (status: {
-    hasPreSchedule: boolean;
-    isAllFree: boolean;
-  }) => void;
+  setScheduleStatus: (status: { hasCompletedPreSchedule: boolean }) => void;
   setGoogleCalendarConnected: (isGoogleCalendarConnected: boolean) => void;
   clear: () => void;
 };
@@ -71,8 +66,7 @@ const INITIAL_AUTH_STATE = {
   profileImageUrl: null,
   provider: null,
   hasName: false,
-  hasPreSchedule: false,
-  isAllFree: false,
+  hasCompletedPreSchedule: false,
   notificationEnabled: false,
   isGoogleCalendarConnected: false,
   pushDeviceToken: null,
@@ -145,8 +139,7 @@ export const useAuthStore = create<AuthStateT>()(
         profileImageUrl: state.profileImageUrl,
         provider: state.provider,
         hasName: state.hasName,
-        hasPreSchedule: state.hasPreSchedule,
-        isAllFree: state.isAllFree,
+        hasCompletedPreSchedule: state.hasCompletedPreSchedule,
         notificationEnabled: state.notificationEnabled,
         isGoogleCalendarConnected: state.isGoogleCalendarConnected,
         pushDeviceToken: state.pushDeviceToken,
