@@ -353,6 +353,7 @@ function RoomCreateForm() {
           completeTitle="일정 입력하기"
           completeHeading={roomName}
           completeDescription="일정 입력이 완료되었어요!"
+          completeShowConfetti
           completePrimaryText="참여자 초대하기"
           onCompletePrimaryClick={() => setIsInviteSheetOpen(true)}
           completeSecondaryText="나중에 할게요"

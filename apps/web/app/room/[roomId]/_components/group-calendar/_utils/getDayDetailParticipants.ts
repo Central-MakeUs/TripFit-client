@@ -31,8 +31,14 @@ export const getDayDetailParticipants = (
   scheduleCalendar: GetRoomScheduleCalendarResponseT,
   participants: ParticipantT[],
   date: Date,
+  // 인원 필터에서 특정 참여자를 선택했을 때 그 사람만 목록에 남기기 위해 쓴다.
+  // 미지정(전체 보기)이면 기존과 동일하게 전체 멤버를 대상으로 계산한다.
+  memberId?: string,
 ): DayDetailParticipantsT => {
   const dateKey = format(date, 'yyyy-MM-dd');
+  const targetMembers = memberId
+    ? scheduleCalendar.members.filter((member) => member.id === memberId)
+    : scheduleCalendar.members;
 
   const toParticipantStatus = (
     member: RoomScheduleMemberT,
@@ -49,7 +55,7 @@ export const getDayDetailParticipants = (
     };
   };
 
-  return scheduleCalendar.members.reduce<DayDetailParticipantsT>(
+  return targetMembers.reduce<DayDetailParticipantsT>(
     (acc, member) => {
       const status = getMemberDateStatus(member, dateKey);
 

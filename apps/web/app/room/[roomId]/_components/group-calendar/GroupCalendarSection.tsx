@@ -193,14 +193,23 @@ function GroupCalendarSection({
     onShowRecommendation();
   };
 
+  // filter가 'all'이면 전체 멤버 기준(undefined로 넘겨 필터링 안 함), 특정
+  // 참여자를 선택했으면 그 사람의 id만 넘겨 해당 참여자 기준으로만 계산한다.
+  const filterMemberId = filter === 'all' ? undefined : filter;
+
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData
-      ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
+      ? getDayAvailabilityStatus(roomScheduleCalendarData, date, filterMemberId)
       : 'unavailable';
 
   const getDayParticipants = (date: Date) =>
     roomScheduleCalendarData
-      ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
+      ? getDayDetailParticipants(
+          roomScheduleCalendarData,
+          participants,
+          date,
+          filterMemberId,
+        )
       : { needsAttention: [], available: [] };
 
   const getMyDayScheduleValue = (date: Date) =>
@@ -369,11 +378,12 @@ function GroupCalendarSection({
       <Header
         variant="page"
         titleAlign="left"
+        size="lg"
         onBack={() => router.push('/')}
         title={
           <div className="flex flex-col">
             <span className="text-body-03 text-black">{room.title}</span>
-            <span className="text-caption-05 text-grey-400">
+            <span className="text-caption-04 text-grey-400">
               {format(minDate, 'yy.MM.dd')} - {format(maxDate, 'yy.MM.dd')}
             </span>
           </div>
@@ -397,7 +407,7 @@ function GroupCalendarSection({
 
       <CalendarLegend onClickFilter={() => setIsFilterOpen(true)} />
 
-      <div className="flex w-full flex-1 flex-col px-5 py-4">
+      <div className="flex w-full flex-1 flex-col gap-8 px-5 py-4">
         {months.map((month) => (
           <Calendar
             key={month.toISOString()}

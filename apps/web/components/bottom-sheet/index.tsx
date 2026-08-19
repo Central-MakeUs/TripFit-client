@@ -4,7 +4,6 @@ import { ReactNode, useRef } from 'react';
 import { Drawer } from 'vaul';
 
 import CloseIcon from '@/assets/icons/close.svg';
-import IconButton from '@/components/icon-button';
 import { cn } from '@/utils/cn';
 
 import { bottomSheetContentStyle } from './bottomSheet.style';
@@ -61,13 +60,16 @@ function BottomSheet({
           {dismissType === 'handle' ? (
             <div className="mx-auto mt-2 h-1 w-14 shrink-0 cursor-grab rounded-[99px] bg-grey-100 active:cursor-grabbing" />
           ) : (
-            <IconButton
-              size="small"
-              icon={<CloseIcon className="text-grey-500" />}
+            // IconButton의 size 프리셋(small=16px/32px, default=24px/44px)엔 이
+            // 화면 전용 스펙(20px 아이콘/36px 박스)이 없어 직접 구현한다.
+            <button
+              type="button"
               onClick={() => onOpenChange(false)}
               aria-label="닫기"
-              className="absolute top-1 right-2.5 z-10"
-            />
+              className="absolute top-2 right-3 z-10 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors active:bg-grey-20 active:mix-blend-multiply"
+            >
+              <CloseIcon className="size-5 text-grey-500" />
+            </button>
           )}
           <div
             className={cn(
