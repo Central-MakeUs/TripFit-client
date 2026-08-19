@@ -68,35 +68,39 @@ export async function request<T>(
 // 동시에 여러 요청이 401을 받아도 재발급은 한 번만 일어나도록 진행 중인 Promise를 공유한다.
 // /api/v1/auth/로 시작하는 요청은 아래 401 인터셉터가 재시도 대상에서 제외하므로,
 // 이 요청이 다시 401을 받아도 재귀적으로 재발급을 또 시도하지 않는다.
+//
+// refreshToken은 서버가 HttpOnly 쿠키로만 내려주고 JS로는 값을 읽거나 저장할 수 없다 —
+// 브라우저가 요청마다 자동으로 실어 보내므로(withCredentials: true), 여기서는 쿠키
+// 존재 여부를 미리 판단하지 않고 항상 refresh를 시도한다. 쿠키가 없거나 이미 회전으로
+// 폐기된 값이면 서버가 401(AUTH_INVALID_REFRESH/AUTH_REFRESH_REUSE)로 거부하고, 그
+// 경우는 아래 401/403 분기에서 그대로 로그아웃 처리된다.
 let refreshPromise: Promise<string> | null = null;
 
-type RefreshAccessTokenResponseT = {
+type PostAuthRefreshResponseT = {
   accessToken: string;
-  refreshToken: string;
+  expiresIn: number;
 };
 
-const refreshAccessToken = (): Promise<string> => {
-  const { refreshToken } = useAuthStore.getState();
-  // refreshToken이 없으면 재발급이 애초에 불가능한, 확실한 인증 실패 상황이다.
-  // 일반 Error로 던지면 아래 401/403 판별(instanceof ApiError)을 통과하지 못해 로그아웃
-  // 처리가 되지 않고 조용히 실패만 반복되므로, 같은 경로를 타도록 ApiError(401)로 던진다.
-  if (!refreshToken) {
-    return Promise.reject(new ApiError('로그인이 필요합니다.', undefined, 401));
-  }
-
+// 앱 부팅 시 silent refresh(useSilentRefresh)에서도 재사용한다 — 401 인터셉터를
+// 거치지 않고도 같은 in-flight 공유·저장 로직을 그대로 쓸 수 있어야 하기 때문이다.
+export const postAuthRefresh = (): Promise<string> => {
   if (!refreshPromise) {
-    refreshPromise = request<RefreshAccessTokenResponseT>(
-      '/api/v1/auth/refresh',
-      {
-        method: 'POST',
-        data: { refreshToken },
-      },
-    )
-      .then(({ accessToken, refreshToken: nextRefreshToken }) => {
-        // 서버가 호출마다 refresh token을 회전시키고 기존 값은 그 즉시 폐기하므로,
-        // 반드시 이 응답의 새 값으로 교체해야 다음 재발급이 실패하지 않는다.
+    // 요청이 진행되는 동안 사용자가 로그아웃하거나 다른 계정으로 로그인하면
+    // sessionRevision이 바뀐다 — 그 사이 뒤늦게 도착한 이 결과로 새 세션의
+    // accessToken을 덮어쓰지 않도록 시작 시점 값을 캡처해둔다.
+    const sessionRevisionAtStart = useAuthStore.getState().sessionRevision;
+    refreshPromise = request<PostAuthRefreshResponseT>('/api/v1/auth/refresh', {
+      method: 'POST',
+    })
+      .then(({ accessToken }) => {
+        if (
+          useAuthStore.getState().sessionRevision !== sessionRevisionAtStart
+        ) {
+          throw new Error(
+            '세션이 변경되어 이전 refresh 결과를 적용하지 않습니다.',
+          );
+        }
         useAuthStore.getState().setAccessToken(accessToken);
-        useAuthStore.getState().setRefreshToken(nextRefreshToken);
         return accessToken;
       })
       .finally(() => {
@@ -125,7 +129,7 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retried = true;
       try {
-        const accessToken = await refreshAccessToken();
+        const accessToken = await postAuthRefresh();
         originalRequest.headers = {
           ...originalRequest.headers,
           Authorization: `Bearer ${accessToken}`,
