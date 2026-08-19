@@ -55,15 +55,23 @@ function ShareSheet({
     null,
   );
   const [isLinkCopiedAlertOpen, setIsLinkCopiedAlertOpen] = useState(false);
+  // 'pending' 동안은 공유 버튼을 비활성화한다 — 로드가 끝나기 전에 눌러버리면
+  // 클릭 시점에 다시 로드를 기다리게 되고, 그 사이 사용자 제스처가 끊겨 PC의
+  // sendDefault() 내부 window.open()이 팝업 차단에 걸린다(Cannot read
+  // properties of null (reading 'focus')로 이어짐). 로드 실패('error')는 영영
+  // 눌러보지도 못하게 막지 않고 버튼을 다시 활성화해 재시도할 수 있게 한다.
+  const [kakaoLoadStatus, setKakaoLoadStatus] = useState<
+    'pending' | 'ready' | 'error'
+  >('pending');
 
   useEffect(() => {
     if (open) {
       setTitleValue(initialTitleValue);
       setDescriptionValue(initialDescriptionValue);
-      // 공유 버튼 클릭 시점에 SDK 로드를 기다리면, 그 사이 사용자 제스처가
-      // 끊겨 PC의 sendDefault() 내부 window.open()이 팝업 차단에 걸릴 수 있다 —
-      // 시트가 열리자마자 미리 로드해둬서 클릭 시엔 곧바로 실행되게 한다.
-      ensureKakaoInitialized().catch(() => {});
+      setKakaoLoadStatus('pending');
+      ensureKakaoInitialized()
+        .then(() => setKakaoLoadStatus('ready'))
+        .catch(() => setKakaoLoadStatus('error'));
     }
   }, [open, initialTitleValue, initialDescriptionValue]);
 
@@ -80,8 +88,11 @@ function ShareSheet({
         buttonTitle,
       });
     } catch (error) {
+      // 우리가 직접 던진(new Error(...)) 메시지만 그대로 보여준다 — 카카오 SDK
+      // 내부에서 새는 TypeError 등(예: null.focus() 접근) 원본 문구를 사용자에게
+      // 그대로 노출하지 않기 위해 error.name === 'Error'로 한정한다.
       setShareErrorMessage(
-        error instanceof Error
+        error instanceof Error && error.name === 'Error'
           ? error.message
           : '공유하기에 실패했어요. 잠시 후 다시 시도해주세요.',
       );
@@ -156,6 +167,7 @@ function ShareSheet({
       <CtaButtonGroup
         primaryText="공유하기"
         primaryColor="secondary"
+        primaryDisabled={kakaoLoadStatus === 'pending'}
         onPrimaryClick={handleShare}
         secondaryText="취소"
         secondaryColor="secondary"
