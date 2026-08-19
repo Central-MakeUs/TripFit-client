@@ -117,7 +117,10 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
   useEffect(() => {
     if (!needsJoin) return;
     postTripsJoinMutation({ inviteCode: inviteCode! })
-      .then((data) => setMemberStatusOverride(data.myMemberStatus))
+      .then((data) => {
+        setMemberStatusOverride(data.myMemberStatus);
+        refetchTrips();
+      })
       .catch((error) => {
         setJoinErrorMessage(
           error instanceof Error ? error.message : '참여하지 못했어요.',
