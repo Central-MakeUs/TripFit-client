@@ -10,7 +10,8 @@ export type PostAuthLoginRequestT = {
 
 export type PostAuthLoginResponseT = {
   accessToken: string;
-  refreshToken: string;
+  // refreshToken은 응답 바디가 아니라 서버가 Set-Cookie(HttpOnly)로 내려준다 — 이
+  // 필드는 존재하지 않는다.
   expiresIn: number;
   user: UserSummaryT;
 };

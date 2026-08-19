@@ -182,14 +182,23 @@ function GroupCalendarSection({
     onShowRecommendation();
   };
 
+  // filter가 'all'이면 전체 멤버 기준(undefined로 넘겨 필터링 안 함), 특정
+  // 참여자를 선택했으면 그 사람의 id만 넘겨 해당 참여자 기준으로만 계산한다.
+  const filterMemberId = filter === 'all' ? undefined : filter;
+
   const getDayStatus = (date: Date) =>
     roomScheduleCalendarData
-      ? getDayAvailabilityStatus(roomScheduleCalendarData, date)
+      ? getDayAvailabilityStatus(roomScheduleCalendarData, date, filterMemberId)
       : 'unavailable';
 
   const getDayParticipants = (date: Date) =>
     roomScheduleCalendarData
-      ? getDayDetailParticipants(roomScheduleCalendarData, participants, date)
+      ? getDayDetailParticipants(
+          roomScheduleCalendarData,
+          participants,
+          date,
+          filterMemberId,
+        )
       : { needsAttention: [], available: [] };
 
   const getMyDayScheduleValue = (date: Date) =>

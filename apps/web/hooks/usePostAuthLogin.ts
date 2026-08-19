@@ -16,7 +16,6 @@ export const usePostAuthLogin = () => {
       setAuth({
         userId: data.user.id,
         accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
         email: data.user.email,
         firstName: data.user.firstName,
         lastName: data.user.lastName,
