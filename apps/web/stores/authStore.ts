@@ -6,7 +6,12 @@ import { SocialProviderT } from '@/types/auth';
 export type AuthStateT = {
   userId: string | null;
   accessToken: string | null;
-  refreshToken: string | null;
+  // 로그인/로그아웃이 일어날 때마다 증가하는 메모리 전용 카운터. silent refresh처럼
+  // 시간이 걸리는 요청이 진행되는 도중 사용자가 로그아웃하거나 다른 계정으로
+  // 로그인하면, 뒤늦게 도착한 그 요청의 결과가 새 세션을 덮어쓸 수 있다 — 요청
+  // 시작 시점의 값을 캡처해두고 끝난 뒤 비교해, 그 사이 세션이 바뀌었으면 결과를
+  // 버리는 용도로 쓴다(apis/request.ts의 postAuthRefresh 참고).
+  sessionRevision: number;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -23,7 +28,6 @@ export type AuthStateT = {
   setAuth: (auth: {
     userId: string;
     accessToken: string;
-    refreshToken: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -37,7 +41,6 @@ export type AuthStateT = {
     isGoogleCalendarConnected: boolean;
   }) => void;
   setAccessToken: (accessToken: string) => void;
-  setRefreshToken: (refreshToken: string) => void;
   setName: (name: {
     firstName: string;
     lastName: string;
@@ -61,7 +64,6 @@ export type AuthStateT = {
 const INITIAL_AUTH_STATE = {
   userId: null,
   accessToken: null,
-  refreshToken: null,
   email: null,
   firstName: null,
   lastName: null,
@@ -74,6 +76,7 @@ const INITIAL_AUTH_STATE = {
   notificationEnabled: false,
   isGoogleCalendarConnected: false,
   pushDeviceToken: null,
+  sessionRevision: 0,
 };
 
 // 로그아웃/탈퇴처럼 사용자가 의도적으로 인증을 끝낸 경우를 표시해두는 플래그.
@@ -107,26 +110,34 @@ export const useAuthStore = create<AuthStateT>()(
   persist(
     (set) => ({
       ...INITIAL_AUTH_STATE,
-      setAuth: (auth) => set(auth),
+      setAuth: (auth) =>
+        set((state) => ({
+          ...auth,
+          sessionRevision: state.sessionRevision + 1,
+        })),
       setAccessToken: (accessToken) => set({ accessToken }),
-      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
       setPushDeviceToken: (pushDeviceToken) => set({ pushDeviceToken }),
       setScheduleStatus: (status) => set(status),
       setGoogleCalendarConnected: (isGoogleCalendarConnected) =>
         set({ isGoogleCalendarConnected }),
-      clear: () => set(INITIAL_AUTH_STATE),
+      clear: () =>
+        set((state) => ({
+          ...INITIAL_AUTH_STATE,
+          sessionRevision: state.sessionRevision + 1,
+        })),
     }),
     {
       name: 'tripfit-auth',
-      // 안전하게 저장해도 되는 필드만 명시(allow-list)한다 — refreshToken처럼 유효기간이
-      // 길어 탈취 시 피해가 큰 값은 여기 없으면 자동으로 localStorage에서 제외된다.
-      // accessToken은 만료가 짧아 새로고침 편의를 위해 남겨두되, 만료된 뒤에는 refreshToken이
-      // 없어 재발급에 실패하고 자연스럽게 재로그인 화면으로 이동한다.
+      // 안전하게 저장해도 되는 필드만 명시(allow-list)한다 — 여기 없는 필드는 자동으로
+      // localStorage에서 제외된다. refreshToken은 애초에 이 스토어의 필드가 아니다(서버가
+      // HttpOnly 쿠키로만 내려줘서 JS가 값을 읽을 수도 저장할 수도 없다).
+      // accessToken도 의도적으로 여기서 뺀다 — XSS 노출 표면을 최소화하기 위해 JS가
+      // 읽을 수 있는 저장소(localStorage)에는 아예 안 남기고 메모리로만 유지하며, 대신
+      // 앱 부팅 시(useSilentRefresh) 쿠키 기반 refresh로 매번 새로 받아온다.
       partialize: (state) => ({
         userId: state.userId,
-        accessToken: state.accessToken,
         email: state.email,
         firstName: state.firstName,
         lastName: state.lastName,
