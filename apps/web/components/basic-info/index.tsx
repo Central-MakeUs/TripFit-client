@@ -206,19 +206,16 @@ function BasicInfo({
   };
 
   const handleHasRegularScheduleNext = async (hasRegularSchedule: boolean) => {
-    setValue((prev) => ({
-      ...prev,
-      hasRegularSchedule,
-      regularSchedules: hasRegularSchedule ? prev.regularSchedules : [],
-    }));
     if (hasRegularSchedule) {
+      setValue((prev) => ({ ...prev, hasRegularSchedule: true }));
       navigateTo('regularScheduleDetail');
       return;
     }
     // "정기 일정 없어요"를 고른 즉시 기존 정기 일정을 전부 지운다 — 이 화면에
     // 들어오기 전 다른 방에서 정기 일정을 입력해뒀을 수도 있으므로, 답변과 실제
     // 저장된 값이 어긋나지 않게 맞춘다. 연차·휴일 정보는 이 답변과 무관하게 항상
-    // 이어서 물어본다(정기 일정 없이도 연차는 쓸 수 있다).
+    // 이어서 물어본다(정기 일정 없이도 연차는 쓸 수 있다). 삭제가 실패하면 로컬
+    // 값을 건드리지 않아, 실제로는 남아있는 서버 데이터와 화면이 어긋나지 않는다.
     try {
       await onDeleteAllRegularSchedules?.();
     } catch (error) {
@@ -229,6 +226,11 @@ function BasicInfo({
       );
       return;
     }
+    setValue((prev) => ({
+      ...prev,
+      hasRegularSchedule: false,
+      regularSchedules: [],
+    }));
     navigateTo('annualLeaveCount');
   };
 
