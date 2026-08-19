@@ -59,6 +59,14 @@ function ParticipantManageList({
                 {participant.isHost && (
                   <Tag category="icon" color="blue" type="primary" />
                 )}
+                {participant.status === 'SCHEDULE_PENDING' && (
+                  <Tag
+                    category="text"
+                    color="red"
+                    type="secondary"
+                    text="일정 확인 전"
+                  />
+                )}
               </div>
             </div>
             {canRemoveParticipants && !participant.isHost && (
