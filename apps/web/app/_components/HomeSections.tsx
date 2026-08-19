@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import ArrowDownIcon from '@/assets/icons/arrow-down-200.svg';
 import ArrowRightIcon from '@/assets/icons/arrow-right-200.svg';
-import emptyTripsSuitcase from '@/assets/images/empty-trips-suitcase.png';
+import emptyTripsSuitcase from '@/assets/images/suitcase_icon.webp';
 import Button from '@/components/button';
 import RoomCardCarousel from '@/components/room-card-carousel';
 import { RoomCardProps } from '@/components/room-card';

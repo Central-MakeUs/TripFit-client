@@ -100,6 +100,9 @@ type BasicInfoProps = {
   completeSecondaryText?: string;
   /** 완료 화면 보조 버튼 클릭 시 onComplete와 함께 호출할 추가 동작 */
   onCompleteSecondaryClick?: () => void;
+  /** true면 완료 화면에 컨페티 연출을 함께 보여줌 — 지정된 완료 화면(여행방 생성 완료,
+   * 회원가입 기본정보 완료)에서만 켠다. calendarConnectComplete 화면엔 영향 없음 */
+  completeShowConfetti?: boolean;
 };
 
 function BasicInfo({
@@ -131,6 +134,7 @@ function BasicInfo({
   onCompletePrimaryClick,
   completeSecondaryText,
   onCompleteSecondaryClick,
+  completeShowConfetti = false,
 }: BasicInfoProps) {
   const router = useRouter();
   const [screenHistory, setScreenHistory] = useState<BasicInfoScreen[]>([
@@ -350,6 +354,7 @@ function BasicInfo({
         onSecondaryClick={
           completeSecondaryText ? handleCompleteSecondaryClick : undefined
         }
+        showConfetti={completeShowConfetti}
         showHeader
         onBack={handleBack}
         onClose={onClose}

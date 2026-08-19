@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-import calendarConnectIllustration from '@/assets/images/calendar-connect-illustration.png';
+import calendarConnectIllustration from '@/assets/images/calendar_icon.webp';
 import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';

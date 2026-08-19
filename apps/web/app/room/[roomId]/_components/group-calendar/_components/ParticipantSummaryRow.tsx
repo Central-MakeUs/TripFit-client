@@ -32,7 +32,7 @@ function ParticipantSummaryRow({
           ))}
         </div>
         {first && (
-          <p className="text-caption-04 text-grey-400">
+          <p className="text-caption-03 text-grey-400">
             {first.name} 외 {rest.length}명
           </p>
         )}

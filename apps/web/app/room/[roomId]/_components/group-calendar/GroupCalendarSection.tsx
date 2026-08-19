@@ -359,11 +359,12 @@ function GroupCalendarSection({
       <Header
         variant="page"
         titleAlign="left"
+        size="lg"
         onBack={() => router.push('/')}
         title={
           <div className="flex flex-col">
             <span className="text-body-03 text-black">{room.title}</span>
-            <span className="text-caption-05 text-grey-400">
+            <span className="text-caption-04 text-grey-400">
               {format(minDate, 'yy.MM.dd')} - {format(maxDate, 'yy.MM.dd')}
             </span>
           </div>
@@ -387,7 +388,7 @@ function GroupCalendarSection({
 
       <CalendarLegend onClickFilter={() => setIsFilterOpen(true)} />
 
-      <div className="flex w-full flex-1 flex-col px-5 py-4">
+      <div className="flex w-full flex-1 flex-col gap-8 px-5 py-4">
         {months.map((month) => (
           <Calendar
             key={month.toISOString()}

@@ -163,6 +163,7 @@ function RoomCard(props: RoomCardProps) {
             size="default"
             onClick={handlePin}
             aria-label={isPinned ? '고정 해제' : '고정하기'}
+            className="-mr-2.5"
             icon={
               isPinned ? (
                 <KeepFillIcon className="text-blue-700" />

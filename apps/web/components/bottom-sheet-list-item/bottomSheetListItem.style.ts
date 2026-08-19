@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 
 export const bottomSheetListItemStyle = cva(
-  'text-body-05 flex w-full cursor-pointer items-center rounded-lg border px-3 transition-colors',
+  'text-body-05 flex w-full cursor-pointer items-center rounded-2xl border px-3 transition-colors',
   {
     variants: {
       selected: {
