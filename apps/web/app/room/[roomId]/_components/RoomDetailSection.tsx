@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { addYears, format, max, parseISO, subDays } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import { ApiError } from '@/apis/request';
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/components/basic-info/basicInfo.const';
 import Header from '@/components/header';
 import Spinner from '@/components/spinner';
+import { useDeleteAllRegularSchedules } from '@/hooks/useDeleteAllRegularSchedules';
 import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
 import { useGetTrips } from '@/hooks/useGetTrips';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
@@ -21,6 +23,7 @@ import { useSaveRegularSchedule } from '@/hooks/useSaveRegularSchedule';
 import { useSaveVacationPolicy } from '@/hooks/useSaveVacationPolicy';
 import { useAuthStore } from '@/stores/authStore';
 import { IndividualScheduleValueT } from '@/types/schedule';
+import { RoomMemberStatusT } from '@/types/room';
 import { mapRegularScheduleItemToClient } from '@/utils/mapRegularSchedule';
 import { mapScheduleCalendarToIndividualScheduleValue } from '@/utils/mapScheduleCalendar';
 import { mapVacationPolicyToClient } from '@/utils/mapVacationPolicy';
@@ -30,11 +33,9 @@ import PreScheduleRequiredModal from '../../_common/_components/PreScheduleRequi
 import ShareSheet from '../../_common/_components/ShareSheet';
 import { SCHEDULE_REQUEST_SHARE_DESCRIPTION } from '../../_common/_consts/shareMessages';
 import { useScheduleConfirmGate } from '../../_common/_hooks/useScheduleConfirmGate';
-import { useDeleteTripsJoinHold } from '../_common/_hooks/useDeleteTripsJoinHold';
 import { useGetRoomMembers } from '../_common/_hooks/useGetRoomMembers';
 import { useGetRoom } from '../../_common/_hooks/useGetRoom';
 import { usePostTripsJoin } from '../_common/_hooks/usePostTripsJoin';
-import { usePostTripsJoinHold } from '../_common/_hooks/usePostTripsJoinHold';
 import GroupCalendarSection from './group-calendar/GroupCalendarSection';
 import RecommendationSection from './recommendation/RecommendationSection';
 
@@ -59,20 +60,92 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     string | null
   >(null);
   const [joinErrorMessage, setJoinErrorMessage] = useState<string | null>(null);
-  const [leaveErrorMessage, setLeaveErrorMessage] = useState<string | null>(
-    null,
+
+  // 사전 일정(정기+연차·휴일 정보) 입력을 마쳤는지는 hasCompletedPreSchedule
+  // 하나로만 판단한다 — 정기·개별 일정 건수 조합으로 판단하면 개별 일정만 등록한
+  // 사용자가 정기 일정 확인/입력 모달을 잘못 보는 문제(QA 이슈)가 생긴다.
+  const hasCompletedPreSchedule = useAuthStore(
+    (state) => state.hasCompletedPreSchedule,
   );
-  // 초대 코드가 있으면 아직 이 방 멤버가 아닐 수 있으니, 실패가 뻔한 조회부터
-  // 하지 않고 join을 먼저 시도한 뒤에야 방/멤버 조회를 켠다. 초대 코드가
-  // 없는 일반 진입(이미 멤버)은 처음부터 그대로 조회한다.
-  const [enableRoomQueries, setEnableRoomQueries] = useState(() => !inviteCode);
-  const {
-    roomData,
-    isGetRoomLoading,
-    isGetRoomError,
-    getRoomError,
-    refetchRoom,
-  } = useGetRoom(roomId, { enabled: enableRoomQueries });
+
+  // hasCompletedPreSchedule는 persist된 store 값이라, 하이드레이션이 끝나기 전엔 이미
+  // 사전 일정을 입력한 사용자도 잠깐 기본값(false)으로 보인다 — 그 사이 아래
+  // 판단이 잘못될 수 있으므로 하이드레이션 완료 여부를 별도로 추적한다.
+  const [hasHydrated, setHasHydrated] = useState(false);
+  useEffect(() => {
+    setHasHydrated(useAuthStore.persist.hasHydrated());
+    return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
+  }, []);
+
+  // 방/멤버 조회(ACTIVE 전용 API)와 무관하게 항상 내려오는 내 트립 목록에서
+  // myRole·myMemberStatus를 얻는다 — SCHEDULE_PENDING(activate 전) 상태에서도
+  // 방장·참여자 여부와 일정 확인 완료 여부를 이걸로 먼저 판단할 수 있다.
+  const { tripsData, isTripsLoading, refetchTrips } = useGetTrips({
+    scope: 'all',
+  });
+  const currentTrip = tripsData?.find((trip) => trip.tripId === roomId);
+  const isHost = currentTrip?.myRole === 'OWNER';
+  const tripMinDate = currentTrip
+    ? parseISO(currentTrip.startRange)
+    : undefined;
+  const tripMaxDate = currentTrip ? parseISO(currentTrip.endRange) : undefined;
+
+  // join(POST /trips/join) 성공·activate(POST /trips/{roomId}/activate) 성공
+  // 직후엔 트립 목록이 아직 그 결과를 반영하지 못했으므로, 그 사이엔 이 값으로
+  // currentTrip의 myMemberStatus를 덮어써 화면 분기가 즉시 따라오게 한다.
+  const [memberStatusOverride, setMemberStatusOverride] =
+    useState<RoomMemberStatusT | null>(null);
+  const myMemberStatus = memberStatusOverride ?? currentTrip?.myMemberStatus;
+
+  // 트립 목록에 이 방이 없으면(초대 링크로 처음 들어와 아직 멤버가 아닌 경우)
+  // join을 먼저 시도해 멤버십을 만든다 — 이미 멤버인 사람이 링크를 다시 열어도
+  // 멱등이라 안전하지만, 트립 목록에서 이미 확인되면 굳이 다시 부르지 않는다.
+  const { postTripsJoinMutation, isPostTripsJoinPending } = usePostTripsJoin();
+  const needsJoin =
+    hasHydrated &&
+    !isTripsLoading &&
+    !!inviteCode &&
+    !currentTrip &&
+    memberStatusOverride === null &&
+    joinErrorMessage === null;
+
+  const handleDismissJoinError = () => {
+    setJoinErrorMessage(null);
+    router.push('/');
+  };
+
+  useEffect(() => {
+    if (!needsJoin) return;
+    postTripsJoinMutation({ inviteCode: inviteCode! })
+      .then((data) => setMemberStatusOverride(data.myMemberStatus))
+      .catch((error) => {
+        setJoinErrorMessage(
+          error instanceof Error ? error.message : '참여하지 못했어요.',
+        );
+      });
+    // postTripsJoinMutation은 매 렌더마다 새로 만들어지는 클로저라 의존성에 넣으면
+    // needsJoin이 안 바뀌어도 재실행된다 — 이 값이 바뀔 때만(참여 시도가
+    // 필요해졌을 때만) 한 번 실행하면 되므로 제외한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsJoin]);
+
+  const needsScheduleEntry = myMemberStatus === 'SCHEDULE_PENDING';
+  // ACTIVE로 확인됐거나(myMemberStatus), 애초에 이 방 멤버가 아닌 것으로 보이는
+  // 경우(초대 코드 없이 잘못된 접근 등)엔 실제 API 응답(403 TRIP_ACCESS_DENIED
+  // 등)으로 에러 처리하도록 그대로 조회를 켠다 — join 시도 중이거나, join이
+  // 실패했거나, 트립 목록이 아직 안 와서 myMemberStatus를 모르는 동안
+  // (!isTripsLoading 전)엔 꺼둔다 — 그렇지 않으면 join 실패 시에도(needsJoin이
+  // joinErrorMessage 때문에 false로 빠지므로) 이 방 멤버가 아닌 것처럼 조회가
+  // 나가버린다.
+  const enableRoomQueries =
+    hasHydrated &&
+    !isTripsLoading &&
+    !needsJoin &&
+    !needsScheduleEntry &&
+    joinErrorMessage === null;
+
+  const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
+    useGetRoom(roomId, { enabled: enableRoomQueries });
   const {
     roomMembersData,
     isGetRoomMembersLoading,
@@ -80,108 +153,22 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     refetchRoomMembers,
   } = useGetRoomMembers(roomId, { enabled: enableRoomQueries });
   const { confirmSchedule, confirmErrorModal } = useScheduleConfirmGate();
-  const { postTripsJoinMutation } = usePostTripsJoin();
-  const { postTripsJoinHoldMutation } = usePostTripsJoinHold();
-  const { deleteTripsJoinHoldMutation } = useDeleteTripsJoinHold();
 
-  const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
-  const isAllFree = useAuthStore((state) => state.isAllFree);
-  const hasSavedSchedule = hasPreSchedule || isAllFree;
-
-  // hasPreSchedule/isAllFree는 persist된 store 값이라, 하이드레이션이 끝나기
-  // 전엔 이미 일정을 입력한 사용자도 잠깐 기본값(false)으로 보인다 — 그 사이
-  // needsScheduleEntry가 true로 잘못 계산돼 일정 입력 모달이 짧게 노출되는 걸
-  // 막기 위해 하이드레이션 완료 여부를 별도로 추적한다.
-  const [hasHydrated, setHasHydrated] = useState(false);
-  useEffect(() => {
-    setHasHydrated(useAuthStore.persist.hasHydrated());
-    return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
-  }, []);
-
-  // activate(POST /trips/{roomId}/activate)는 방장 전용 API라, getRoom()이
-  // SCHEDULE_ENTRY_REQUIRED/SCHEDULE_ACTIVATION_REQUIRED로 에러난 상태에선
-  // roomData가 없어 room.isHost를 못 쓰므로, 홈 화면과 동일하게 내 트립
-  // 목록(myRole)을 따로 조회해 host 여부를 판단한다 — 활성화 여부와 무관하게
-  // 항상 내려온다.
-  const { tripsData, isTripsLoading } = useGetTrips({ scope: 'all' });
-  const currentTrip = tripsData?.find((trip) => trip.tripId === roomId);
-  const isHost = currentTrip?.myRole === 'OWNER';
-  // roomData는 SCHEDULE_ENTRY_REQUIRED/SCHEDULE_ACTIVATION_REQUIRED 에러 상태에선
-  // 비어 있어 여행 예상 기간을 알 수 없으므로, 활성화 여부와 무관하게 항상 내려오는
-  // tripsData(홈 목록 조회)에서 대신 가져와 일정 입력/수정 캘린더를 이 기간으로 제한한다.
-  const tripMinDate = currentTrip
-    ? parseISO(currentTrip.startRange)
-    : undefined;
-  const tripMaxDate = currentTrip ? parseISO(currentTrip.endRange) : undefined;
-
-  // 초대 코드가 있는데 아직 방/멤버 조회를 안 켠 상태 — 이 방 멤버인지 여부를
-  // 미리 알 수 없으니, join을 먼저 시도(또는 그 전에 일정 입력부터)해야 한다.
-  // 방 조회 자체에서 나는 TRIP_ACCESS_DENIED(이미 멤버인 줄 알았는데 아니었던
-  // 경우 등 예외 상황)까지 함께 대비한다.
-  const needsJoin =
-    hasHydrated &&
-    !!inviteCode &&
-    (!enableRoomQueries || getRoomError?.code === 'TRIP_ACCESS_DENIED');
-
-  // 일정을 아직 못 쓰는 상태(한 번도 입력 안 함 또는 이 트립 활성화 전)는
-  // 전부 하나로 묶어서 일정 입력 마법사로 보낸다. 백엔드가 이 코드를 안
-  // 내려주는 경우까지 대비해, 정기/개별 일정을 한 번도 입력한 적 없는
-  // (hasPreSchedule/isAllFree 둘 다 false) 사용자는 방 조회가 성공했더라도
-  // 클라이언트 쪽에서 한 번 더 막는다. 다른 에러(권한 없음 등)일 때까지
-  // 이걸로 덮어버리면 안 되므로 getRoomError가 없을 때만 적용한다.
-  // 초대 링크로 처음 들어온 신규 유저(아직 일정 자체가 없는 경우)도 참여
-  // 전에 일정 입력부터 마쳐야 하므로 같은 마법사로 보낸다.
-  const needsScheduleEntry =
-    getRoomError?.code === 'SCHEDULE_ENTRY_REQUIRED' ||
-    getRoomError?.code === 'SCHEDULE_ACTIVATION_REQUIRED' ||
-    (needsJoin && !hasPreSchedule && !isAllFree) ||
-    (enableRoomQueries && !isGetRoomError && !hasPreSchedule && !isAllFree);
-
-  // 이미 일정을 입력해둔 사용자가 초대 링크로 새 방에 들어온 경우 — 일정
-  // 입력 마법사 없이 초대 코드로 바로 참여 처리만 하면 된다.
-  const needsJoinOnly = needsJoin && !needsScheduleEntry;
-
-  // AlertModal은 primaryText 클릭뿐 아니라 Escape/배경 클릭으로도 onOpenChange(false)를
-  // 호출한다 — 두 경로 모두 같은 동작(에러 닫고 홈으로 이동)을 하도록 하나로 묶는다.
-  const handleDismissJoinError = () => {
-    setJoinErrorMessage(null);
-    router.push('/');
-  };
-
-  const handleJoinTrip = async (): Promise<boolean> => {
-    if (!inviteCode) return true;
-    try {
-      await postTripsJoinMutation({ inviteCode });
-      return true;
-    } catch (error) {
-      setJoinErrorMessage(
-        error instanceof Error ? error.message : '참여하지 못했어요.',
-      );
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    if (!needsJoinOnly) return;
-    handleJoinTrip().then((joined) => {
-      if (joined) setEnableRoomQueries(true);
-    });
-    // handleJoinTrip은 매 렌더마다 새로 만들어지는 클로저라 의존성에 넣으면
-    // needsJoinOnly가 안 바뀌어도 재실행된다 — 이 값이 바뀔 때만(참여 시도가
-    // 필요해졌을 때만) 한 번 실행하면 되므로 제외한다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsJoinOnly]);
-
+  // hasCompletedPreSchedule(연차·휴일 정보 저장 여부)로 게이팅하지 않는다 —
+  // 정기 일정만 저장해두고 연차·휴일 정보는 아직 저장 안 한(마이페이지에서
+  // 중간에 나간 등) 사용자는 hasCompletedPreSchedule이 false여도 정기 일정
+  // 데이터가 실제로 존재할 수 있다. "정기 일정이 있나요?"에서 "네"를 골라도
+  // 그 데이터를 그대로 보여줘야 하므로 항상 조회한다.
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    refetchRegularSchedules,
     addRegularSchedule,
     editRegularSchedule,
     removeRegularSchedule,
-  } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
+  } = useSaveRegularSchedule();
+  const { deleteAllRegularSchedulesMutation } = useDeleteAllRegularSchedules();
   const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
-    useSaveVacationPolicy({ enabled: hasSavedSchedule });
+    useSaveVacationPolicy();
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
 
   const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
@@ -237,43 +224,28 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
       }
     } catch (error) {
       setScheduleErrorMessage(
-        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+        error instanceof ApiError && error.code === 'INVALID_INPUT'
+          ? '저장 가능한 기간을 벗어났어요.'
+          : error instanceof Error
+            ? error.message
+            : '저장 중 문제가 발생했어요.',
       );
       return false;
     }
-    // 초대 링크로 들어온 신규 유저는 일정 입력을 마친 뒤에야 초대 코드로
-    // 참여 처리를 한다 — 참여 자체가 실패하면 완료 화면으로 넘어가지 않는다.
-    if (needsJoin && !(await handleJoinTrip())) return false;
-    // activate는 방장 전용이라, 방장이 처음 일정을 입력하는 경우에만 여기서
-    // 트립을 활성화한다. 참여자는 자기 일정 저장만으로 완료 화면으로 넘어간다.
-    return isHost ? confirmSchedule(roomId) : true;
+    // activate는 방장·참여자 모두 동일하게 호출한다 — join(참여자) 또는
+    // create(방장)로 SCHEDULE_PENDING 멤버가 된 뒤, 일정 확인을 마치면 이 호출로
+    // ACTIVE가 되어야 방 상세에 들어갈 수 있다.
+    return confirmSchedule(roomId);
   };
 
-  // 기존에 저장된 일정이 있으면(hasSavedSchedule) 그 내용을 확인/수정하는
-  // 화면(regularScheduleDetail)으로, 없으면 처음 묻는 화면(hasRegularSchedule)으로
-  // 들어간다 — ConfirmScheduleModal/PreScheduleRequiredModal 각각의 onConfirm.
-  // 초대 링크로 들어와 아직 멤버가 아닌 경우(needsJoin)엔, 일정 입력에 걸리는
-  // 시간 동안 다른 사람에게 마지막 자리를 뺏기지 않도록 화면을 열기 직전에
-  // 정원을 10분간 hold한다. 정원이 가득 찼으면(409) 화면을 열지 않고 안내한다.
-  const handleStartBasicInfo = async () => {
-    if (needsJoin && inviteCode) {
-      try {
-        await postTripsJoinHoldMutation({ inviteCode });
-      } catch (error) {
-        setJoinErrorMessage(
-          error instanceof Error ? error.message : '참여하지 못했어요.',
-        );
-        return;
-      }
-    }
-    // hasSavedSchedule(hasPreSchedule||isAllFree)은 "정기 또는 개별 일정 중
-    // 하나라도 있으면 true"라, 개별 일정만 있고 정기 일정은 0건인 사용자에게도
-    // regularScheduleDetail을 열어 빈 목록을 보여주는 버그가 있었다 — 실제 정기
-    // 일정 개수로 판단하도록 이 시점에 다시 조회해서 확정한다(백그라운드
-    // 프리페치가 이미 끝나 있으면 캐시를 그대로 반환해 사실상 즉시 resolve된다).
-    const { data: items } = await refetchRegularSchedules();
+  // 사전 일정 입력을 이미 마쳤으면(hasCompletedPreSchedule) "일정 변경이
+  // 있나요?" 안내 화면(scheduleChanged)으로, 아니면 처음 묻는 화면
+  // (hasRegularSchedule)으로 들어간다 — ConfirmScheduleModal/
+  // PreScheduleRequiredModal 각각의 onConfirm. 정기 일정 건수로 재확인하지
+  // 않는다 — hasCompletedPreSchedule 하나가 기준이다.
+  const handleStartBasicInfo = () => {
     setBasicInfoInitialScreen(
-      (items ?? []).length > 0 ? 'regularScheduleDetail' : 'hasRegularSchedule',
+      hasCompletedPreSchedule ? 'scheduleChanged' : 'hasRegularSchedule',
     );
     setIsBasicInfoOpen(true);
   };
@@ -298,7 +270,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     );
   }
 
-  if (needsJoinOnly) {
+  if (needsJoin || isPostTripsJoinPending) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header
@@ -322,12 +294,41 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
     );
   }
 
+  if (joinErrorMessage !== null) {
+    return (
+      <div className="flex w-full flex-1 flex-col">
+        <Header
+          variant="page"
+          title="여행방 상세"
+          onBack={() => router.push('/')}
+        />
+        <AlertModal
+          open
+          onOpenChange={(open) => !open && handleDismissJoinError()}
+          variant="danger"
+          title="참여하지 못했어요"
+          description={joinErrorMessage}
+          primaryText="확인"
+          onPrimaryClick={handleDismissJoinError}
+        />
+      </div>
+    );
+  }
+
   if (needsScheduleEntry) {
     if (isBasicInfoOpen) {
-      if (
-        basicInfoInitialScreen === 'regularScheduleDetail' &&
-        (isRegularSchedulesLoading || isVacationPolicyLoading)
-      ) {
+      // 갱신 입력은 scheduleChanged(안내 화면) 또는 regularScheduleDetail(목록
+      // 화면) 어느 쪽으로 시작하든 같은 기존 데이터가 필요하다 — 두 값 모두
+      // 갱신 입력 진입을 뜻한다.
+      const isReturningUserEntry =
+        basicInfoInitialScreen === 'scheduleChanged' ||
+        basicInfoInitialScreen === 'regularScheduleDetail';
+
+      // "정기 일정이 있나요?"에서 "네"를 고른 최초 입력이어도, 마이페이지 등에서
+      // 이미 정기 일정을 저장해뒀을 수 있다(연차·휴일 정보만 아직 저장 안 해
+      // hasCompletedPreSchedule은 false인 경우) — 그 데이터를 빈 폼으로 덮어쓰지
+      // 않도록 항상 로딩이 끝난 뒤에 위저드를 연다.
+      if (isRegularSchedulesLoading || isVacationPolicyLoading) {
         return (
           <div className="flex w-full flex-1 items-center justify-center">
             <Spinner />
@@ -345,26 +346,18 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           <BasicInfo
             allowSkip={false}
             initialScreen={basicInfoInitialScreen}
-            initialValue={
-              basicInfoInitialScreen === 'regularScheduleDetail'
-                ? {
-                    ...DEFAULT_BASIC_INFO_VALUE,
-                    hasRegularSchedule: savedItems.length > 0,
-                    regularSchedules: savedItems.map(
-                      mapRegularScheduleItemToClient,
-                    ),
-                    annualLeaveCount:
-                      vacationPolicyValue?.annualLeaveCount ?? null,
-                    leaveNoticeDays:
-                      vacationPolicyValue?.leaveNoticeDays ?? null,
-                    includeHalfDayHoliday:
-                      vacationPolicyValue?.includeHalfDayHoliday ??
-                      DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
-                  }
-                : undefined
-            }
+            initialValue={{
+              ...DEFAULT_BASIC_INFO_VALUE,
+              hasRegularSchedule: savedItems.length > 0,
+              regularSchedules: savedItems.map(mapRegularScheduleItemToClient),
+              annualLeaveCount: vacationPolicyValue?.annualLeaveCount ?? null,
+              leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
+              includeHalfDayHoliday:
+                vacationPolicyValue?.includeHalfDayHoliday ??
+                DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
+            }}
             individualScheduleHeading={
-              basicInfoInitialScreen === 'regularScheduleDetail' ? (
+              isReturningUserEntry ? (
                 <>
                   여행 기간 중 여행이 어렵거나
                   <br />
@@ -373,7 +366,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
               ) : undefined
             }
             individualScheduleDescription={
-              basicInfoInitialScreen === 'regularScheduleDetail'
+              isReturningUserEntry
                 ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
                 : undefined
             }
@@ -382,31 +375,19 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             // 플로우 첫 화면(정기 일정 입력 화면)에서 뒤로가기로 위저드 자체를
             // 벗어날 때만 호출됨 — 위저드 내부 이동(개별 일정 → 정기 일정 등)은
             // BasicInfo가 자체 screenHistory로 처리하고 onExit을 타지 않는다.
-            // hold 해제가 끝나기 전에 화면을 나가면 다른 사용자가 자리를 못 받는
-            // 채로 TTL까지 남으므로, 해제가 완료된 뒤에만 이전 화면으로 이동한다.
-            // 실패하면 현재 화면에 남겨 재시도할 수 있게 한다.
-            onExit={async () => {
-              if (needsJoin) {
-                try {
-                  await deleteTripsJoinHoldMutation(roomId);
-                } catch (error) {
-                  setLeaveErrorMessage(
-                    error instanceof Error
-                      ? error.message
-                      : '참여를 취소하지 못했어요.',
-                  );
-                  return;
-                }
-              }
-              router.back();
-            }}
+            // join은 이미 완료돼 있어(SCHEDULE_PENDING) 되돌릴 필요가 없으므로,
+            // 그냥 이전 화면으로 이동하면 된다 — 다음에 다시 들어오면 이 화면부터
+            // 재개된다.
+            onExit={() => router.back()}
             onComplete={() => {
               setIsBasicInfoOpen(false);
-              setEnableRoomQueries(true);
+              setMemberStatusOverride('ACTIVE');
+              refetchTrips();
               refetchRoom();
               refetchRoomMembers();
             }}
             onVacationPolicyNext={handleSaveVacationPolicy}
+            onDeleteAllRegularSchedules={deleteAllRegularSchedulesMutation}
             onAddRegularSchedule={addRegularSchedule}
             onEditRegularSchedule={editRegularSchedule}
             onRemoveRegularSchedule={removeRegularSchedule}
@@ -427,24 +408,6 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             primaryText="확인"
             onPrimaryClick={() => setScheduleErrorMessage(null)}
           />
-          <AlertModal
-            open={leaveErrorMessage !== null}
-            onOpenChange={(open) => !open && setLeaveErrorMessage(null)}
-            variant="danger"
-            title="나가지 못했어요"
-            description={leaveErrorMessage ?? ''}
-            primaryText="확인"
-            onPrimaryClick={() => setLeaveErrorMessage(null)}
-          />
-          <AlertModal
-            open={joinErrorMessage !== null}
-            onOpenChange={(open) => !open && setJoinErrorMessage(null)}
-            variant="danger"
-            title="참여하지 못했어요"
-            description={joinErrorMessage ?? ''}
-            primaryText="확인"
-            onPrimaryClick={() => setJoinErrorMessage(null)}
-          />
         </>
       );
     }
@@ -456,7 +419,7 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
           title="여행방 상세"
           onBack={() => router.push('/')}
         />
-        {hasSavedSchedule ? (
+        {hasCompletedPreSchedule ? (
           <ConfirmScheduleModal
             open
             onOpenChange={() => {}}
@@ -469,15 +432,6 @@ function RoomDetailSection({ roomId }: RoomDetailSectionProps) {
             onConfirm={handleStartBasicInfo}
           />
         )}
-        <AlertModal
-          open={joinErrorMessage !== null}
-          onOpenChange={(open) => !open && handleDismissJoinError()}
-          variant="danger"
-          title="참여하지 못했어요"
-          description={joinErrorMessage ?? ''}
-          primaryText="확인"
-          onPrimaryClick={handleDismissJoinError}
-        />
       </div>
     );
   }

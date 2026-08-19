@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { differenceInCalendarDays, format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
+import { ApiError } from '@/apis/request';
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import {
@@ -15,6 +16,7 @@ import CtaButtonGroup from '@/components/cta-button-group';
 import Header from '@/components/header';
 import ProgressBar from '@/components/progress-bar';
 import Spinner from '@/components/spinner';
+import { useDeleteAllRegularSchedules } from '@/hooks/useDeleteAllRegularSchedules';
 import { useGetScheduleCalendar } from '@/hooks/useGetScheduleCalendar';
 import { usePatchPersonalSchedule } from '@/hooks/usePatchPersonalSchedule';
 import { useRefreshScheduleStatus } from '@/hooks/useRefreshScheduleStatus';
@@ -86,20 +88,26 @@ function RoomCreateForm() {
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
 
-  const hasPreSchedule = useAuthStore((state) => state.hasPreSchedule);
-  const isAllFree = useAuthStore((state) => state.isAllFree);
-  const hasSavedSchedule = hasPreSchedule || isAllFree;
+  // 사전 일정 입력을 마쳤는지는 hasCompletedPreSchedule 하나로만 판단한다 — 정기
+  // 일정 프리페치 여부도 이 값 기준이다.
+  const hasCompletedPreSchedule = useAuthStore(
+    (state) => state.hasCompletedPreSchedule,
+  );
 
+  // hasCompletedPreSchedule로 게이팅하지 않는다 — 정기 일정만 저장해두고
+  // 연차·휴일 정보는 아직 저장 안 한 사용자는 hasCompletedPreSchedule이
+  // false여도 정기 일정 데이터가 실제로 존재할 수 있다(RoomDetailSection과
+  // 동일한 이유).
   const {
     regularSchedulesData,
     isRegularSchedulesLoading,
-    refetchRegularSchedules,
     addRegularSchedule,
     editRegularSchedule,
     removeRegularSchedule,
-  } = useSaveRegularSchedule({ enabled: hasSavedSchedule });
+  } = useSaveRegularSchedule();
+  const { deleteAllRegularSchedulesMutation } = useDeleteAllRegularSchedules();
   const { vacationPolicyData, isVacationPolicyLoading, saveVacationPolicy } =
-    useSaveVacationPolicy({ enabled: hasSavedSchedule });
+    useSaveVacationPolicy();
 
   const handleSaveVacationPolicy = async (value: BasicInfoValue) => {
     try {
@@ -146,7 +154,11 @@ function RoomCreateForm() {
       }
     } catch (error) {
       setScheduleErrorMessage(
-        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+        error instanceof ApiError && error.code === 'INVALID_INPUT'
+          ? '저장 가능한 기간을 벗어났어요.'
+          : error instanceof Error
+            ? error.message
+            : '저장 중 문제가 발생했어요.',
       );
       return false;
     }
@@ -245,13 +257,11 @@ function RoomCreateForm() {
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
   };
 
-  const handleGoToRoom = async () => {
-    // hasSavedSchedule(hasPreSchedule||isAllFree) 대신 실제 정기 일정 개수로
-    // 판단한다 — 개별 일정만 있고 정기 일정은 0건인 사용자에게 빈 목록을 보여주며
-    // 재입력을 강제하는 버그를 막기 위함(RoomDetailSection과 동일한 이유).
-    const { data: items } = await refetchRegularSchedules();
+  const handleGoToRoom = () => {
+    // 정기 일정 건수로 재확인하지 않는다 — hasCompletedPreSchedule 하나가
+    // 기준이다(RoomDetailSection과 동일한 이유).
     setScheduleModal(
-      (items ?? []).length > 0 ? 'confirmSchedule' : 'preSchedule',
+      hasCompletedPreSchedule ? 'confirmSchedule' : 'preSchedule',
     );
   };
 
@@ -262,10 +272,18 @@ function RoomCreateForm() {
   };
 
   if (isBasicInfoOpen) {
-    if (
-      basicInfoInitialScreen === 'regularScheduleDetail' &&
-      (isRegularSchedulesLoading || isVacationPolicyLoading)
-    ) {
+    // 갱신 입력은 scheduleChanged(안내 화면) 또는 regularScheduleDetail(목록
+    // 화면) 어느 쪽으로 시작하든 같은 기존 데이터가 필요하다 — 두 값 모두
+    // 갱신 입력 진입을 뜻한다.
+    const isReturningUserEntry =
+      basicInfoInitialScreen === 'scheduleChanged' ||
+      basicInfoInitialScreen === 'regularScheduleDetail';
+
+    // "정기 일정이 있나요?"에서 "네"를 고른 최초 입력이어도, 마이페이지 등에서
+    // 이미 정기 일정을 저장해뒀을 수 있다(연차·휴일 정보만 아직 저장 안 해
+    // hasCompletedPreSchedule은 false인 경우) — 그 데이터를 빈 폼으로 덮어쓰지
+    // 않도록 항상 로딩이 끝난 뒤에 위저드를 연다.
+    if (isRegularSchedulesLoading || isVacationPolicyLoading) {
       return (
         <div className="flex w-full flex-1 items-center justify-center">
           <Spinner />
@@ -283,29 +301,22 @@ function RoomCreateForm() {
         <BasicInfo
           allowSkip={false}
           initialScreen={basicInfoInitialScreen}
-          initialValue={
-            basicInfoInitialScreen === 'regularScheduleDetail'
-              ? {
-                  ...DEFAULT_BASIC_INFO_VALUE,
-                  hasRegularSchedule: savedItems.length > 0,
-                  regularSchedules: savedItems.map(
-                    mapRegularScheduleItemToClient,
-                  ),
-                  annualLeaveCount:
-                    vacationPolicyValue?.annualLeaveCount ?? null,
-                  leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
-                  includeHalfDayHoliday:
-                    vacationPolicyValue?.includeHalfDayHoliday ??
-                    DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
-                }
-              : undefined
-          }
+          initialValue={{
+            ...DEFAULT_BASIC_INFO_VALUE,
+            hasRegularSchedule: savedItems.length > 0,
+            regularSchedules: savedItems.map(mapRegularScheduleItemToClient),
+            annualLeaveCount: vacationPolicyValue?.annualLeaveCount ?? null,
+            leaveNoticeDays: vacationPolicyValue?.leaveNoticeDays ?? null,
+            includeHalfDayHoliday:
+              vacationPolicyValue?.includeHalfDayHoliday ??
+              DEFAULT_BASIC_INFO_VALUE.includeHalfDayHoliday,
+          }}
           // '정기 일정 있나요' 질문부터 새로 시작하면(=사전 일정 등록이 아예 안 된 신규
-          // 유저) 개별 일정 화면도 원래 안내 문구를 그대로 쓰고, regularScheduleDetail로
-          // 바로 시작하면(=이미 저장된 일정을 고치는 '일정 수정' 진입) 어떤 날짜를
-          // 다시 확인해야 하는지 알려주는 문구로 바꾼다.
+          // 유저) 개별 일정 화면도 원래 안내 문구를 그대로 쓰고, 갱신 입력(scheduleChanged
+          // 안내 화면 또는 regularScheduleDetail로 바로 진입)이면 어떤 날짜를 다시
+          // 확인해야 하는지 알려주는 문구로 바꾼다.
           individualScheduleHeading={
-            basicInfoInitialScreen === 'regularScheduleDetail' ? (
+            isReturningUserEntry ? (
               <>
                 여행 기간 중 여행이 어렵거나
                 <br />
@@ -314,7 +325,7 @@ function RoomCreateForm() {
             ) : undefined
           }
           individualScheduleDescription={
-            basicInfoInitialScreen === 'regularScheduleDetail'
+            isReturningUserEntry
               ? '앞서 입력한 출근 날은 여행 불가능한 날짜로 표시해 뒀어요.'
               : undefined
           }
@@ -322,6 +333,7 @@ function RoomCreateForm() {
           individualScheduleMaxDate={tripPeriod.endDate ?? undefined}
           onExit={() => setIsBasicInfoOpen(false)}
           onVacationPolicyNext={handleSaveVacationPolicy}
+          onDeleteAllRegularSchedules={deleteAllRegularSchedulesMutation}
           onAddRegularSchedule={addRegularSchedule}
           onEditRegularSchedule={editRegularSchedule}
           onRemoveRegularSchedule={removeRegularSchedule}
@@ -446,7 +458,7 @@ function RoomCreateForm() {
       <ConfirmScheduleModal
         open={scheduleModal === 'confirmSchedule'}
         onOpenChange={(open) => !open && setScheduleModal('none')}
-        onConfirm={() => handleStartBasicInfo('regularScheduleDetail')}
+        onConfirm={() => handleStartBasicInfo('scheduleChanged')}
       />
       <AlertModal
         open={isErrorAlertOpen}
