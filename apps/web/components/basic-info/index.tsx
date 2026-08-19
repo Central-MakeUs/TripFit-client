@@ -4,7 +4,6 @@ import { ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import CloseIcon from '@/assets/icons/close.svg';
-import AlertModal from '@/components/alert-modal';
 import CheckCompleteStep from '@/components/check-complete-step';
 import Header from '@/components/header';
 import IconButton from '@/components/icon-button';
@@ -24,6 +23,7 @@ import HasRegularScheduleStep from './steps/HasRegularScheduleStep';
 import IncludeHalfDayHolidayStep from './steps/IncludeHalfDayHolidayStep';
 import LeaveNoticeDaysStep from './steps/LeaveNoticeDaysStep';
 import RegularScheduleDetailStep from './steps/RegularScheduleDetailStep';
+import ScheduleChangedStep from './steps/ScheduleChangedStep';
 
 type BasicInfoProps = {
   initialValue?: BasicInfoValue;
@@ -49,6 +49,10 @@ type BasicInfoProps = {
   onRemoveRegularSchedule?: (id: string) => Promise<void>;
   /** 정기 일정 추가·수정·삭제 중 하나라도 실패하면 호출됨 — 부모가 공통 에러 안내(AlertModal)를 띄운다 */
   onRegularScheduleError?: (message: string) => void;
+  /** "정기 일정이 있나요?"에서 "아니요"를 고른 즉시 호출됨 — 본인 정기 일정 전체
+   * 삭제. regularScheduleDetail 화면으로 진입시키는 모든 곳(hasRegularSchedule 화면을
+   * 실제로 띄우는 곳)은 필수로 넘겨야 한다 */
+  onDeleteAllRegularSchedules?: () => Promise<void>;
   /** 개별 일정 화면 진입 직전(정기 일정 없음 확정 시 또는 반차/공휴일 스텝 다음)에 호출됨 — 반환값이 있으면 개별 일정 초기값을 그 값으로 교체함(예: 방금 저장된 정기 일정을 반영한 병합 캘린더로 갱신) */
   onBeforeIndividualSchedule?: () =>
     | Promise<IndividualScheduleValueT | void>
@@ -97,10 +101,6 @@ type BasicInfoProps = {
   onConnectGoogleCalendar?: () => boolean | Promise<boolean>;
   /** true면 반차/공휴일 포함 여부 스텝이 마지막 스텝이 되어 개별 일정 입력 없이 바로 완료됨 (내 일정 관리처럼 개별 일정을 별도 메뉴로 다루는 플로우에 사용) */
   endsAtIncludeHalfDayHoliday?: boolean;
-  /** true면 "정기 일정 없어요" 선택 시 "여행이 어려운 날짜를 직접 입력하시겠어요?"
-   * 확인 모달을 띄운다. "직접 입력"을 고르면 연차/공휴일 스텝을 건너뛰고 바로
-   * 개별 일정 입력으로 이동하고, "건너뛰기"를 고르면 홈으로 나간다(회원가입 전용) */
-  confirmDirectInputOnNoRegularSchedule?: boolean;
   /** 완료 화면의 헤더 타이틀 — 미지정 시 "기본 정보 입력" */
   completeTitle?: string;
   /** 완료 화면 헤딩 — 미지정 시 "기본 정보 등록이 완료되었습니다!" */
@@ -139,6 +139,7 @@ function BasicInfo({
     );
   },
   onRegularScheduleError = () => {},
+  onDeleteAllRegularSchedules,
   onBeforeIndividualSchedule,
   onBeforeComplete,
   allowSkip = true,
@@ -155,7 +156,6 @@ function BasicInfo({
   calendarConnectContinuesToSchedule = false,
   onConnectGoogleCalendar,
   endsAtIncludeHalfDayHoliday = false,
-  confirmDirectInputOnNoRegularSchedule = false,
   completeTitle,
   completeHeading,
   completeDescription,
@@ -175,8 +175,6 @@ function BasicInfo({
   // 오버라이드로 저장돼버려서 이후 정기 패턴이 바뀌어도 그 값에 고정되어버린다.
   const [individualScheduleBackdrop, setIndividualScheduleBackdrop] =
     useState<IndividualScheduleValueT>({});
-  const [isDirectInputConfirmOpen, setIsDirectInputConfirmOpen] =
-    useState(false);
   // 앱(WebView)에서는 네이티브 구글 SDK 응답(계정 선택·동의 화면)을 기다리는 동안
   // 이 화면을 벗어나지 않고 그대로 대기한다 — 그 사이 버튼이 중복 클릭되지 않게 막는다.
   const [isConnectingGoogleCalendar, setIsConnectingGoogleCalendar] =
@@ -207,7 +205,7 @@ function BasicInfo({
     setScreenHistory((prev) => prev.slice(0, -1));
   };
 
-  const handleHasRegularScheduleNext = (hasRegularSchedule: boolean) => {
+  const handleHasRegularScheduleNext = async (hasRegularSchedule: boolean) => {
     setValue((prev) => ({
       ...prev,
       hasRegularSchedule,
@@ -217,20 +215,28 @@ function BasicInfo({
       navigateTo('regularScheduleDetail');
       return;
     }
-    // "정기 일정 없어요"를 고른 사용자에게는 연차 3문항을 묻지 않는다 — 연차 화면은
-    // 정기 일정을 실제로 입력·수정하는 경로에서만 태운다. confirmDirectInputOnNoRegularSchedule이
-    // 켜진 곳(회원가입)은 "직접 입력하시겠어요?" 확인 모달을 거치고, 그 외(방 입장 등
-    // 필수 플로우)는 건너뛰기 버튼 없이 바로 개별 일정 화면으로 넘어간다.
-    if (confirmDirectInputOnNoRegularSchedule) {
-      setIsDirectInputConfirmOpen(true);
+    // "정기 일정 없어요"를 고른 즉시 기존 정기 일정을 전부 지운다 — 이 화면에
+    // 들어오기 전 다른 방에서 정기 일정을 입력해뒀을 수도 있으므로, 답변과 실제
+    // 저장된 값이 어긋나지 않게 맞춘다. 연차·휴일 정보는 이 답변과 무관하게 항상
+    // 이어서 물어본다(정기 일정 없이도 연차는 쓸 수 있다).
+    try {
+      await onDeleteAllRegularSchedules?.();
+    } catch (error) {
+      onRegularScheduleError(
+        error instanceof Error
+          ? error.message
+          : '정기 일정을 삭제하지 못했어요.',
+      );
       return;
     }
-    enterIndividualSchedule();
+    navigateTo('annualLeaveCount');
   };
 
-  const handleConfirmDirectInput = () => {
-    setIsDirectInputConfirmOpen(false);
-    enterIndividualSchedule();
+  // "일정 변경이 있나요?"는 답변과 무관하게 항상 같은 화면(정기 일정 수정)으로
+  // 이어진다 — 실제 분기 목적이 아니라, 갱신 입력 사용자에게 "처음부터 다시
+  // 입력하는 게 아니라 기존 정보를 확인·수정하는 과정"임을 안내하기 위함이다.
+  const handleScheduleChangedNext = () => {
+    navigateTo('regularScheduleDetail');
   };
 
   const enterIndividualSchedule = async () => {
@@ -422,6 +428,9 @@ function BasicInfo({
             onSkip={allowSkip ? handleSkip : undefined}
           />
         )}
+        {screen === 'scheduleChanged' && (
+          <ScheduleChangedStep onNext={handleScheduleChangedNext} />
+        )}
         {screen === 'regularScheduleDetail' && (
           <RegularScheduleDetailStep
             value={value.regularSchedules}
@@ -430,6 +439,15 @@ function BasicInfo({
             }
             onNext={handleRegularScheduleDetailNext}
             onSkip={allowSkip ? handleSkip : undefined}
+            // 위저드가 'hasRegularSchedule'(최초 입력 질문)로 시작하지 않았다면
+            // ─ 즉 'scheduleChanged'(갱신 입력 안내)를 거쳤거나 부모가
+            // initialScreen="regularScheduleDetail"로 곧장 연 경우(마이페이지·
+            // 여행방 내 수정) ─ 목록이 비어 있어도 목록 화면으로 시작한다.
+            // "네"를 고르고 들어온 최초 입력만 목록 길이로 판단하는 기존
+            // 동작을 그대로 쓴다.
+            startInListView={
+              screenHistory[0] !== 'hasRegularSchedule' ? true : undefined
+            }
             onAddSchedule={onAddRegularSchedule}
             onEditSchedule={onEditRegularSchedule}
             onRemoveSchedule={onRemoveRegularSchedule}
@@ -474,24 +492,6 @@ function BasicInfo({
           />
         )}
       </div>
-      <AlertModal
-        open={isDirectInputConfirmOpen}
-        onOpenChange={setIsDirectInputConfirmOpen}
-        icon={null}
-        title={
-          <>
-            여행이 어려운 날짜를
-            <br />
-            직접 입력하시겠어요?
-          </>
-        }
-        description="입력한 날짜는 제외하고 추천할게요"
-        secondaryText="건너뛰기"
-        onSecondaryClick={handleSkip}
-        primaryText="직접 입력"
-        primaryColor="primary"
-        onPrimaryClick={handleConfirmDirectInput}
-      />
     </div>
   );
 }

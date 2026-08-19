@@ -2,6 +2,7 @@ import { IndividualScheduleValueT, RegularScheduleT } from '@/types/schedule';
 
 export type BasicInfoScreen =
   | 'hasRegularSchedule'
+  | 'scheduleChanged'
   | 'regularScheduleDetail'
   | 'annualLeaveCount'
   | 'leaveNoticeDays'
@@ -13,7 +14,7 @@ export type BasicInfoScreen =
 
 // 프로그래스바 표시 단위 — 여러 화면이 하나의 진행 단계로 묶임
 export const BASIC_INFO_PROGRESS_STEPS: BasicInfoScreen[][] = [
-  ['hasRegularSchedule', 'regularScheduleDetail'],
+  ['hasRegularSchedule', 'scheduleChanged', 'regularScheduleDetail'],
   ['annualLeaveCount', 'leaveNoticeDays', 'includeHalfDayHoliday'],
   ['individualSchedule'],
   ['complete'],
