@@ -76,20 +76,30 @@ export async function request<T>(
 // 경우는 아래 401/403 분기에서 그대로 로그아웃 처리된다.
 let refreshPromise: Promise<string> | null = null;
 
-type RefreshAccessTokenResponseT = {
+type PostAuthRefreshResponseT = {
   accessToken: string;
   expiresIn: number;
 };
 
 // 앱 부팅 시 silent refresh(useSilentRefresh)에서도 재사용한다 — 401 인터셉터를
 // 거치지 않고도 같은 in-flight 공유·저장 로직을 그대로 쓸 수 있어야 하기 때문이다.
-export const refreshAccessToken = (): Promise<string> => {
+export const postAuthRefresh = (): Promise<string> => {
   if (!refreshPromise) {
-    refreshPromise = request<RefreshAccessTokenResponseT>(
-      '/api/v1/auth/refresh',
-      { method: 'POST' },
-    )
+    // 요청이 진행되는 동안 사용자가 로그아웃하거나 다른 계정으로 로그인하면
+    // sessionRevision이 바뀐다 — 그 사이 뒤늦게 도착한 이 결과로 새 세션의
+    // accessToken을 덮어쓰지 않도록 시작 시점 값을 캡처해둔다.
+    const sessionRevisionAtStart = useAuthStore.getState().sessionRevision;
+    refreshPromise = request<PostAuthRefreshResponseT>('/api/v1/auth/refresh', {
+      method: 'POST',
+    })
       .then(({ accessToken }) => {
+        if (
+          useAuthStore.getState().sessionRevision !== sessionRevisionAtStart
+        ) {
+          throw new Error(
+            '세션이 변경되어 이전 refresh 결과를 적용하지 않습니다.',
+          );
+        }
         useAuthStore.getState().setAccessToken(accessToken);
         return accessToken;
       })
@@ -119,7 +129,7 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retried = true;
       try {
-        const accessToken = await refreshAccessToken();
+        const accessToken = await postAuthRefresh();
         originalRequest.headers = {
           ...originalRequest.headers,
           Authorization: `Bearer ${accessToken}`,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { ApiError, refreshAccessToken } from '@/apis/request';
+import { ApiError, postAuthRefresh } from '@/apis/request';
 import { useAuthStore } from '@/stores/authStore';
 
 export type SilentRefreshStatusT =
@@ -32,7 +32,7 @@ export const useSilentRefresh = (hasHydrated: boolean) => {
       return;
     }
     setStatus('pending');
-    refreshAccessToken()
+    postAuthRefresh()
       .then(() => setStatus('authenticated'))
       .catch((error) => {
         if (
@@ -46,7 +46,7 @@ export const useSilentRefresh = (hasHydrated: boolean) => {
         setStatus('network-error');
       });
     // userId는 이 effect가 실행되는 시점(hasHydrated가 true로 바뀌거나 재시도할
-    // 때)의 값만 필요하다 — refreshAccessToken 성공/clear() 이후 userId가 바뀌어도
+    // 때)의 값만 필요하다 — postAuthRefresh 성공/clear() 이후 userId가 바뀌어도
     // 이 effect를 다시 돌릴 이유가 없으므로 의존성에서 제외한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated, retryCount]);

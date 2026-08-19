@@ -6,6 +6,12 @@ import { SocialProviderT } from '@/types/auth';
 export type AuthStateT = {
   userId: string | null;
   accessToken: string | null;
+  // 로그인/로그아웃이 일어날 때마다 증가하는 메모리 전용 카운터. silent refresh처럼
+  // 시간이 걸리는 요청이 진행되는 도중 사용자가 로그아웃하거나 다른 계정으로
+  // 로그인하면, 뒤늦게 도착한 그 요청의 결과가 새 세션을 덮어쓸 수 있다 — 요청
+  // 시작 시점의 값을 캡처해두고 끝난 뒤 비교해, 그 사이 세션이 바뀌었으면 결과를
+  // 버리는 용도로 쓴다(apis/request.ts의 postAuthRefresh 참고).
+  sessionRevision: number;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -70,6 +76,7 @@ const INITIAL_AUTH_STATE = {
   notificationEnabled: false,
   isGoogleCalendarConnected: false,
   pushDeviceToken: null,
+  sessionRevision: 0,
 };
 
 // 로그아웃/탈퇴처럼 사용자가 의도적으로 인증을 끝낸 경우를 표시해두는 플래그.
@@ -103,7 +110,11 @@ export const useAuthStore = create<AuthStateT>()(
   persist(
     (set) => ({
       ...INITIAL_AUTH_STATE,
-      setAuth: (auth) => set(auth),
+      setAuth: (auth) =>
+        set((state) => ({
+          ...auth,
+          sessionRevision: state.sessionRevision + 1,
+        })),
       setAccessToken: (accessToken) => set({ accessToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
@@ -111,7 +122,11 @@ export const useAuthStore = create<AuthStateT>()(
       setScheduleStatus: (status) => set(status),
       setGoogleCalendarConnected: (isGoogleCalendarConnected) =>
         set({ isGoogleCalendarConnected }),
-      clear: () => set(INITIAL_AUTH_STATE),
+      clear: () =>
+        set((state) => ({
+          ...INITIAL_AUTH_STATE,
+          sessionRevision: state.sessionRevision + 1,
+        })),
     }),
     {
       name: 'tripfit-auth',
