@@ -115,13 +115,14 @@ export const useAuthStore = create<AuthStateT>()(
     }),
     {
       name: 'tripfit-auth',
-      // 안전하게 저장해도 되는 필드만 명시(allow-list)한다 — refreshToken처럼 유효기간이
-      // 길어 탈취 시 피해가 큰 값은 여기 없으면 자동으로 localStorage에서 제외된다.
-      // accessToken은 만료가 짧아 새로고침 편의를 위해 남겨두되, 만료된 뒤에는 refreshToken이
-      // 없어 재발급에 실패하고 자연스럽게 재로그인 화면으로 이동한다.
+      // 안전하게 저장해도 되는 필드만 명시(allow-list)한다 — 여기 없는 필드는 자동으로
+      // localStorage에서 제외된다. refreshToken은 애초에 이 스토어의 필드가 아니다(서버가
+      // HttpOnly 쿠키로만 내려줘서 JS가 값을 읽을 수도 저장할 수도 없다).
+      // accessToken도 의도적으로 여기서 뺀다 — XSS 노출 표면을 최소화하기 위해 JS가
+      // 읽을 수 있는 저장소(localStorage)에는 아예 안 남기고 메모리로만 유지하며, 대신
+      // 앱 부팅 시(useSilentRefresh) 쿠키 기반 refresh로 매번 새로 받아온다.
       partialize: (state) => ({
         userId: state.userId,
-        accessToken: state.accessToken,
         email: state.email,
         firstName: state.firstName,
         lastName: state.lastName,

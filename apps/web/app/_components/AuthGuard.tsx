@@ -3,6 +3,9 @@
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
+import Button from '@/components/button';
+import Spinner from '@/components/spinner';
+import { useSilentRefresh } from '@/hooks/useSilentRefresh';
 import {
   consumeAuthGuardRedirectSuppression,
   useAuthStore,
@@ -63,6 +66,12 @@ function AuthGuardEffects() {
     return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
   }, []);
 
+  // 로그인한 채 공개 경로에 바로 착지한 경우(예: /privacy-policy 링크로 진입)에도
+  // accessToken을 미리 받아둬야, 아래 PushTokenRegistrar 등이 "로그인 안 됨"으로
+  // 오판하지 않는다. 공개 경로는 실패해도(network-error 포함) children을 그대로
+  // 보여주므로 상태값 자체는 여기서 쓰지 않는다.
+  useSilentRefresh(hasHydrated);
+
   if (!hasHydrated) return null;
 
   return (
@@ -100,8 +109,19 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     return useAuthStore.persist.onFinishHydration(() => setHasHydrated(true));
   }, []);
 
+  // accessToken은 메모리 전용이라 새로고침 직후엔 항상 null이다 — silent refresh가
+  // 끝나기 전에 isBlocked를 계산하면 실제로는 로그인된 사용자도 잠깐 "미로그인"으로
+  // 오판해 /signup으로 튕겨나갈 수 있다. 이 판단이 끝날 때까지 기다린다.
+  const { status: silentRefreshStatus, retry: retrySilentRefresh } =
+    useSilentRefresh(hasHydrated);
+
+  // network-error(쿠키 없음/만료가 아니라 순수 네트워크 오류)는 세션이 실제로
+  // 끊긴 게 아니므로 로그인 화면으로 보내지 않는다 — 아래에서 재시도 화면을
+  // 대신 보여준다.
   const isBlocked =
     hasHydrated &&
+    silentRefreshStatus !== 'pending' &&
+    silentRefreshStatus !== 'network-error' &&
     !isPublicPath(pathname) &&
     (!accessToken || (!hasName && pathname !== '/signup'));
 
@@ -127,7 +147,22 @@ function AuthGuardInner({ children }: AuthGuardProps) {
     router.replace(`/signup?redirect=${encodeURIComponent(pathWithQuery)}`);
   }, [isBlocked, pathname, pathWithQuery, router, accessToken]);
 
-  if (!hasHydrated || isBlocked) return null;
+  // 이 대기는 하이드레이션 확인(거의 즉시)뿐 아니라 실제 네트워크 왕복(silent
+  // refresh)까지 포함해 예전보다 길어질 수 있다 — 빈 화면만 보이면 느린 네트워크에서
+  // "멈춘 것처럼" 보이므로 스피너로 진행 중임을 알려준다.
+  if (!hasHydrated || silentRefreshStatus === 'pending') {
+    return (
+      <div className="flex w-full flex-1 items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (silentRefreshStatus === 'network-error') {
+    return <SilentRefreshNetworkError onRetry={retrySilentRefresh} />;
+  }
+
+  if (isBlocked) return null;
 
   return (
     <>
@@ -136,6 +171,29 @@ function AuthGuardInner({ children }: AuthGuardProps) {
       <NotificationReceivedHandler />
       {children}
     </>
+  );
+}
+
+// 세션 자체는 살아있는데(로그아웃된 게 아님) 부팅 시 로그인 상태 확인 요청만
+// 네트워크 문제로 실패한 경우 — 로그인 화면으로 보내면 "로그아웃된 것처럼" 보여
+// 혼란을 준다. 재시도만으로 정상화되므로 여기서 바로 다시 시도할 수 있게 한다.
+type SilentRefreshNetworkErrorProps = {
+  onRetry: () => void;
+};
+
+function SilentRefreshNetworkError({
+  onRetry,
+}: SilentRefreshNetworkErrorProps) {
+  return (
+    <main className="flex w-full flex-1 flex-col items-center justify-center gap-4 px-5 text-center">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-body-01">연결이 원활하지 않아요</h1>
+        <p className="text-body-06 text-grey-500">
+          네트워크 상태를 확인한 뒤 다시 시도해주세요
+        </p>
+      </div>
+      <Button text="다시 시도" onClick={onRetry} className="w-full max-w-70" />
+    </main>
   );
 }
 
