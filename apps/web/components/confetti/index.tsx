@@ -9,6 +9,7 @@ type ConfettiProps = {
 // 원본 그대로 재생되도록 next/image 대신 일반 img 태그로 렌더링한다.
 function Confetti({ className }: ConfettiProps) {
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={confettiGif.src}
       alt=""
