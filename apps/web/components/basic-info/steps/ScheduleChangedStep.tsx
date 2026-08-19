@@ -23,8 +23,13 @@ function ScheduleChangedStep({ onNext }: ScheduleChangedStepProps) {
   };
 
   return (
-    <div className="flex flex-1 flex-col">
-      <h2 className="text-body-01 pt-3 pb-0.5">일정 변경이 있나요?</h2>
+    <section
+      aria-labelledby="schedule-changed-heading"
+      className="flex flex-1 flex-col"
+    >
+      <h2 id="schedule-changed-heading" className="text-body-01 pt-3 pb-0.5">
+        일정 변경이 있나요?
+      </h2>
       <p className="text-caption-01 text-grey-400 pb-13">
         기존에 입력한 일정을 확인하고 필요한 부분만 수정해주세요
       </p>
@@ -66,7 +71,7 @@ function ScheduleChangedStep({ onNext }: ScheduleChangedStepProps) {
           </div>
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
