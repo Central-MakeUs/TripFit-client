@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 import SettingsIcon from '@/assets/icons/settings.svg';
+import { ApiError } from '@/apis/request';
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import {
@@ -167,7 +168,11 @@ function GroupCalendarSection({
       }
     } catch (error) {
       setScheduleErrorMessage(
-        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+        error instanceof ApiError && error.code === 'INVALID_INPUT'
+          ? '저장 가능한 기간을 벗어났어요.'
+          : error instanceof Error
+            ? error.message
+            : '저장 중 문제가 발생했어요.',
       );
       return;
     }

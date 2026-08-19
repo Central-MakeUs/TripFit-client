@@ -5,6 +5,7 @@ import { addYears, format, max, parseISO, subDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 import ArrowRightIcon from '@/assets/icons/arrow-right-300.svg';
+import { ApiError } from '@/apis/request';
 import AlertModal from '@/components/alert-modal';
 import BasicInfo from '@/components/basic-info';
 import {
@@ -131,7 +132,7 @@ function MyScheduleSection() {
   const { refreshScheduleStatus } = useRefreshScheduleStatus();
   const { patchPersonalScheduleMutation } = usePatchPersonalSchedule();
 
-  // 캘린더 연동 직후 서버가 구글 일정을 동기화해 hasPreSchedule/isAllFree가 바뀔 수
+  // 캘린더 연동 직후 서버가 구글 일정을 동기화해 hasCompletedPreSchedule가 바뀔 수
   // 있는데, 브라우저 리다이렉트로 돌아온 경우(위 useEffect가 이 값을 채움)엔 그 시점의
   // accessToken 응답을 다시 받을 방법이 없어 이 상태가 갱신 안 된 채로 남는다 —
   // calendarConnectResumeScreen이 채워지는 시점에 맞춰 한 번 더 재조회한다.
@@ -254,7 +255,11 @@ function MyScheduleSection() {
       }
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : '저장 중 문제가 발생했어요.',
+        error instanceof ApiError && error.code === 'INVALID_INPUT'
+          ? '저장 가능한 기간을 벗어났어요.'
+          : error instanceof Error
+            ? error.message
+            : '저장 중 문제가 발생했어요.',
       );
       return;
     }
