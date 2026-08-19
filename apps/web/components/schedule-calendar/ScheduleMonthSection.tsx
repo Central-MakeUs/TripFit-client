@@ -5,7 +5,7 @@ import { useMonthGrid } from '@/hooks/useMonthGrid';
 import { DayScheduleValueT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
 
-import { getDateKey } from './scheduleCalendar.const';
+import { getDateKey, getMonthSectionId } from './scheduleCalendar.const';
 
 const hasScheduleData = (dayValue?: DayScheduleValueT) =>
   Boolean(
@@ -45,7 +45,7 @@ function ScheduleMonthSection({
   const effectiveMinDate = minDate && isAfter(minDate, today) ? minDate : today;
 
   return (
-    <div className="w-full">
+    <div className="w-full" id={getMonthSectionId(year, month)}>
       <h3 className="text-body-05 mb-5">
         {format(currentMonth, 'yyyy년 M월')}
       </h3>

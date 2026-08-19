@@ -58,6 +58,18 @@ function RoomInfoView({
     onInvite();
   };
 
+  // 자리가 다 찼어도, 그중 일부가 아직 일정 확인 전(SCHEDULE_PENDING)이면 그
+  // 사람을 내보내는 것만이 자리를 되찾는 유일한 방법이다 — 방장에게 그 사실을
+  // 알려준다.
+  const hasPendingParticipant = participants.some(
+    (participant) => participant.status === 'SCHEDULE_PENDING',
+  );
+
+  // 미확정(SCHEDULE_PENDING) 상태에서 나가기를 호출하면 403 SCHEDULE_ACTIVATION_REQUIRED가
+  // 온다 — 애초에 활성화된 참여자에게만 버튼을 보여준다.
+  const isMeActive =
+    participants.find((participant) => participant.isMe)?.status === 'ACTIVE';
+
   const handleConfirmRemove = () => {
     if (participantToRemove) onRemoveParticipant(participantToRemove);
     setParticipantToRemove(null);
@@ -142,13 +154,15 @@ function RoomInfoView({
             </p>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsLeaveConfirmOpen(true)}
-            className="w-full cursor-pointer rounded-2xl bg-red-20 px-4 py-3 text-left text-body-06 text-red-300"
-          >
-            여행방 나가기
-          </button>
+          isMeActive && (
+            <button
+              type="button"
+              onClick={() => setIsLeaveConfirmOpen(true)}
+              className="w-full cursor-pointer rounded-2xl bg-red-20 px-4 py-3 text-left text-body-06 text-red-300"
+            >
+              여행방 나가기
+            </button>
+          )
         )}
       </div>
 
@@ -210,11 +224,19 @@ function RoomInfoView({
         onOpenChange={(open) => !open && setInviteBlockedReason(null)}
         title="참여 인원이 가득 찼어요"
         description={
-          <>
-            새로운 참여자를 초대하려면
-            <br />
-            기존 참여자를 내보내주세요.
-          </>
+          hasPendingParticipant ? (
+            <>
+              일정 확인 전 참여자를 내보내면
+              <br />
+              자리가 생겨요.
+            </>
+          ) : (
+            <>
+              새로운 참여자를 초대하려면
+              <br />
+              기존 참여자를 내보내주세요.
+            </>
+          )
         }
         primaryText="확인"
         onPrimaryClick={() => setInviteBlockedReason(null)}

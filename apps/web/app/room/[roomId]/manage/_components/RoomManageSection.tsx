@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 // 알림 끄기 버튼과 함께 주석 처리 — 재연동 시 되살릴 것
@@ -31,8 +31,22 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const [mode, setMode] = useState<ModeT>('view');
   const [isInviteSheetOpen, setIsInviteSheetOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { roomData, isGetRoomLoading, isGetRoomError, refetchRoom } =
-    useGetRoom(roomId);
+  const {
+    roomData,
+    isGetRoomLoading,
+    isGetRoomError,
+    getRoomError,
+    refetchRoom,
+  } = useGetRoom(roomId);
+
+  // 일정 확인(activate)을 아직 안 마친 상태(SCHEDULE_PENDING)로 이 화면에
+  // 직접 진입하면 방 상세 조회가 403으로 실패한다 — 일반 에러로 보여주지 말고
+  // 일정 입력 흐름을 자체적으로 처리하는 방 상세 화면으로 보낸다.
+  useEffect(() => {
+    if (getRoomError?.code === 'SCHEDULE_ACTIVATION_REQUIRED') {
+      router.replace(`/room/${roomId}`);
+    }
+  }, [getRoomError, roomId, router]);
   const {
     roomMembersData,
     isGetRoomMembersLoading,
@@ -44,7 +58,11 @@ function RoomManageSection({ roomId }: RoomManageSectionProps) {
   const { deleteRoomMemberMutation } = useDeleteRoomMember();
   const { deleteRoomMutation } = useDeleteRoom();
 
-  if (isGetRoomLoading || isGetRoomMembersLoading) {
+  if (
+    isGetRoomLoading ||
+    isGetRoomMembersLoading ||
+    getRoomError?.code === 'SCHEDULE_ACTIVATION_REQUIRED'
+  ) {
     return (
       <div className="flex w-full flex-1 flex-col">
         <Header variant="page" title="여행방 상세" />

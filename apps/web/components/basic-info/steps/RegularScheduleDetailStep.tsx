@@ -13,7 +13,6 @@ import IconButton from '@/components/icon-button';
 import Modal from '@/components/modal';
 import { RegularScheduleT } from '@/types/schedule';
 import { cn } from '@/utils/cn';
-import { randomUUID } from '@/utils/uuid';
 
 import TimePicker from './TimePicker';
 
@@ -36,6 +35,21 @@ type RegularScheduleDetailStepProps = {
   onChange: (value: RegularScheduleT[]) => void;
   onNext: () => void;
   onSkip?: () => void;
+  /** true면 목록이 비어 있어도 목록 화면(추가하기 버튼 + "다음" 활성화)으로 시작한다
+   * — 갱신 입력(이미 사전 일정을 마친 사용자가 수정하러 들어온 경우)에 쓴다. 미지정
+   * 시 목록에 항목이 있는지로 판단한다(최초 입력에서 "네"를 고른 직후, 목록이 비어
+   * 있으면 인라인 입력 폼부터 보여줘야 함) */
+  startInListView?: boolean;
+  /** 추가하기 클릭 시 즉시 POST하고, 서버가 내려준(실제 id가 붙은) 항목을 반환한다 */
+  onAddSchedule: (
+    schedule: Omit<RegularScheduleT, 'id'>,
+  ) => Promise<RegularScheduleT>;
+  /** 수정하기 클릭 시 즉시 PATCH하고, 서버가 내려준 항목을 반환한다 */
+  onEditSchedule: (schedule: RegularScheduleT) => Promise<RegularScheduleT>;
+  /** 삭제하기 클릭 시 즉시 DELETE한다 */
+  onRemoveSchedule: (id: string) => Promise<void>;
+  /** 추가·수정·삭제 API가 실패했을 때 호출됨 — 부모가 공통 AlertModal로 안내한다 */
+  onError: (message: string) => void;
 };
 
 function RegularScheduleDetailStep({
@@ -43,11 +57,18 @@ function RegularScheduleDetailStep({
   onChange,
   onNext,
   onSkip,
+  startInListView,
+  onAddSchedule,
+  onEditSchedule,
+  onRemoveSchedule,
+  onError,
 }: RegularScheduleDetailStepProps) {
   const hasSchedules = value.length > 0;
   // 한 번이라도 리스트 화면(추가하기/수정하기)에 들어왔으면, 마지막 항목을
   // 지워 목록이 비어도 처음 인라인 입력 폼으로 되돌아가지 않고 빈 목록으로 남는다.
-  const [hasEnteredListView, setHasEnteredListView] = useState(hasSchedules);
+  const [hasEnteredListView, setHasEnteredListView] = useState(
+    startInListView ?? hasSchedules,
+  );
 
   useEffect(() => {
     if (hasSchedules) setHasEnteredListView(true);
@@ -59,6 +80,7 @@ function RegularScheduleDetailStep({
     null,
   );
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [draftDays, setDraftDays] = useState<number[]>([]);
   const [draftStartTime, setDraftStartTime] = useState('');
   const [draftEndTime, setDraftEndTime] = useState('');
@@ -92,40 +114,52 @@ function RegularScheduleDetailStep({
     setIsSheetOpen(true);
   };
 
-  const handleSaveSchedule = () => {
-    if (editingScheduleId) {
-      onChange(
-        value.map((schedule) =>
-          schedule.id === editingScheduleId
-            ? {
-                ...schedule,
-                days: draftDays,
-                startTime: draftStartTime,
-                endTime: draftEndTime,
-              }
-            : schedule,
-        ),
-      );
-    } else {
-      onChange([
-        ...value,
-        {
-          id: randomUUID(),
+  const handleSaveSchedule = async () => {
+    setIsSaving(true);
+    try {
+      if (editingScheduleId) {
+        const savedSchedule = await onEditSchedule({
+          id: editingScheduleId,
           days: draftDays,
           startTime: draftStartTime,
           endTime: draftEndTime,
-        },
-      ]);
+        });
+        onChange(
+          value.map((schedule) =>
+            schedule.id === editingScheduleId ? savedSchedule : schedule,
+          ),
+        );
+      } else {
+        const savedSchedule = await onAddSchedule({
+          days: draftDays,
+          startTime: draftStartTime,
+          endTime: draftEndTime,
+        });
+        onChange([...value, savedSchedule]);
+      }
+      resetDraft();
+      setEditingScheduleId(null);
+      setIsAddSheetOpen(false);
+      setIsSheetOpen(false);
+    } catch (error) {
+      // 시트를 닫고 공통 AlertModal로 실패를 알린다 — 로컬 목록은 API가 실제로
+      // 성공했을 때만 바뀌므로, 여기서는 아무 것도 건드리지 않고 그대로 둔다.
+      setIsAddSheetOpen(false);
+      setIsSheetOpen(false);
+      onError(error instanceof Error ? error.message : '저장하지 못했어요.');
+    } finally {
+      setIsSaving(false);
     }
-    resetDraft();
-    setEditingScheduleId(null);
-    setIsAddSheetOpen(false);
-    setIsSheetOpen(false);
   };
 
-  const handleRemoveSchedule = (id: string) => {
-    onChange(value.filter((schedule) => schedule.id !== id));
+  const handleRemoveSchedule = async (id: string) => {
     setOpenMenuId(null);
+    try {
+      await onRemoveSchedule(id);
+      onChange(value.filter((schedule) => schedule.id !== id));
+    } catch (error) {
+      onError(error instanceof Error ? error.message : '삭제하지 못했어요.');
+    }
   };
 
   // 요일 단위로 근무 패턴을 정의하는 구조라, 자정을 넘겨 다음 날로 이어지는
@@ -290,9 +324,11 @@ function RegularScheduleDetailStep({
       )}
 
       <CtaButtonGroup
-        primaryText={hasEnteredListView ? '다음' : '추가하기'}
+        primaryText={
+          hasEnteredListView ? '다음' : isSaving ? '저장 중...' : '추가하기'
+        }
         primaryColor="secondary"
-        primaryDisabled={hasEnteredListView ? false : isAddDisabled}
+        primaryDisabled={hasEnteredListView ? false : isAddDisabled || isSaving}
         onPrimaryClick={hasEnteredListView ? onNext : handleSaveSchedule}
         secondaryText={onSkip ? '건너뛰기' : undefined}
         secondaryVariant="text-link"
@@ -356,9 +392,15 @@ function RegularScheduleDetailStep({
             <div className="p-5">{draftForm}</div>
             <div className="px-5 pt-2 pb-4">
               <CtaButtonGroup
-                primaryText={editingScheduleId ? '수정하기' : '추가하기'}
+                primaryText={
+                  isSaving
+                    ? '저장 중...'
+                    : editingScheduleId
+                      ? '수정하기'
+                      : '추가하기'
+                }
                 primaryColor="secondary"
-                primaryDisabled={isAddDisabled}
+                primaryDisabled={isAddDisabled || isSaving}
                 onPrimaryClick={handleSaveSchedule}
                 className="px-0"
               />
