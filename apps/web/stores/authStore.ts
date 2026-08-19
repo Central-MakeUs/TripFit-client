@@ -6,7 +6,6 @@ import { SocialProviderT } from '@/types/auth';
 export type AuthStateT = {
   userId: string | null;
   accessToken: string | null;
-  refreshToken: string | null;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -23,7 +22,6 @@ export type AuthStateT = {
   setAuth: (auth: {
     userId: string;
     accessToken: string;
-    refreshToken: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -37,7 +35,6 @@ export type AuthStateT = {
     isGoogleCalendarConnected: boolean;
   }) => void;
   setAccessToken: (accessToken: string) => void;
-  setRefreshToken: (refreshToken: string) => void;
   setName: (name: {
     firstName: string;
     lastName: string;
@@ -61,7 +58,6 @@ export type AuthStateT = {
 const INITIAL_AUTH_STATE = {
   userId: null,
   accessToken: null,
-  refreshToken: null,
   email: null,
   firstName: null,
   lastName: null,
@@ -109,7 +105,6 @@ export const useAuthStore = create<AuthStateT>()(
       ...INITIAL_AUTH_STATE,
       setAuth: (auth) => set(auth),
       setAccessToken: (accessToken) => set({ accessToken }),
-      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setName: (name) => set({ ...name, hasName: true }),
       setProfile: (profile) => set(profile),
       setPushDeviceToken: (pushDeviceToken) => set({ pushDeviceToken }),
