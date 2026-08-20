@@ -50,6 +50,9 @@ type ScheduleCalendarProps = {
    * 경우에 사용 */
   scrollToYear?: number;
   scrollToMonth?: number;
+  /** scrollToYear/scrollToMonth로 스크롤할 때 상단 fixed 바 높이만큼 띄워주는
+   * scroll-margin-top 클래스 — ScheduleMonthSection에 그대로 전달 */
+  scrollMarginClassName?: string;
 };
 
 function ScheduleCalendar({
@@ -62,6 +65,7 @@ function ScheduleCalendar({
   maxDate,
   scrollToYear,
   scrollToMonth,
+  scrollMarginClassName,
 }: ScheduleCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -176,6 +180,7 @@ function ScheduleCalendar({
           maxDate={maxScheduleDate}
           selectedDateKey={isSheetOpen ? selectedDateKey : null}
           onSelectDate={openDay}
+          scrollMarginClassName={scrollMarginClassName}
         />
       ))}
       <div ref={sentinelRef} className="h-1 w-full" />
