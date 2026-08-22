@@ -25,6 +25,9 @@ type ScheduleMonthSectionProps = {
   maxDate?: Date;
   selectedDateKey: string | null;
   onSelectDate: (date: Date) => void;
+  /** scrollIntoView로 이 섹션을 스크롤할 때 상단에 겹치는 fixed 바(헤더 등) 높이만큼
+   * 띄워주는 scroll-margin-top 클래스 — 미지정 시 헤더 높이(h-11)만 반영 */
+  scrollMarginClassName?: string;
 };
 
 function ScheduleMonthSection({
@@ -36,6 +39,7 @@ function ScheduleMonthSection({
   maxDate,
   selectedDateKey,
   onSelectDate,
+  scrollMarginClassName = 'scroll-mt-11',
 }: ScheduleMonthSectionProps) {
   const { currentMonth, days, leadingEmptyCount } = useMonthGrid({
     year,
@@ -45,7 +49,10 @@ function ScheduleMonthSection({
   const effectiveMinDate = minDate && isAfter(minDate, today) ? minDate : today;
 
   return (
-    <div className="w-full" id={getMonthSectionId(year, month)}>
+    <div
+      className={cn('w-full', scrollMarginClassName)}
+      id={getMonthSectionId(year, month)}
+    >
       <h3 className="text-body-05 mb-5">
         {format(currentMonth, 'yyyy년 M월')}
       </h3>

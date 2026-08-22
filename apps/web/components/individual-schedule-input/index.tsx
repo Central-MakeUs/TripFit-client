@@ -144,6 +144,7 @@ function IndividualScheduleInput({
             maxDate={maxDate}
             scrollToYear={scrollToYear}
             scrollToMonth={scrollToMonth}
+            scrollMarginClassName={hasTripChips ? 'scroll-mt-27' : undefined}
           />
         )}
         <div aria-hidden className="h-14.5 w-full shrink-0" />
