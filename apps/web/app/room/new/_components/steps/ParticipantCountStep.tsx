@@ -8,7 +8,7 @@ type ParticipantCountStepProps = {
   onChange: (value: number) => void;
 };
 
-const PARTICIPANT_COUNT_OPTIONS = Array.from({ length: 21 }, (_, index) =>
+const PARTICIPANT_COUNT_OPTIONS = Array.from({ length: 11 }, (_, index) =>
   String(index),
 );
 
